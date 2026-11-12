@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Сравнение БОС</title>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;margin:0;padding:20px;background:#f0f2f5;color:#333;max-width:1400px;margin:0 auto}
+h1{margin:0 0 5px;font-size:26px}
+.sub{color:#666;margin-bottom:20px;font-size:14px}
+.drop-zone{border:2px dashed #bbb;border-radius:8px;padding:20px;margin-bottom:15px;background:#fff;transition:all .2s}
+.drop-zone.drag{border-color:#3498db;background:#ebf5fb}
+.drop-label{font-weight:600;margin-bottom:8px}
+.drop-filename{color:#666;margin-top:8px;font-size:13px}
+#btn-run{padding:12px 30px;font-size:16px;background:#3498db;color:#fff;border:none;border-radius:6px;cursor:pointer}
+#btn-run:disabled{background:#95a5a6;cursor:not-allowed}
+.status{margin-top:15px;padding:10px;border-radius:4px;font-size:14px}
+.status.error{background:#fde8e8;color:#c0392b}
+.report-toolbar{display:flex;gap:10px;margin-bottom:20px}
+.report-toolbar button{padding:8px 16px;background:#fff;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:14px}
+.report-toolbar button:hover{background:#f8f9fa}
+.summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.card{background:#fff;padding:14px 18px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.06)}
+.card .lbl{color:#666;font-size:12px;margin-bottom:4px}
+.card .num{font-size:24px;font-weight:600}
+.card.green .num{color:#27ae60}.card.red .num{color:#e74c3c}
+.card.yellow .num{color:#f39c12}.card.blue .num{color:#2980b9}
+.tabs{display:flex;gap:4px;margin-bottom:0;flex-wrap:wrap}
+.tab{padding:10px 18px;background:#e0e0e0;border:none;cursor:pointer;border-radius:6px 6px 0 0;font-size:14px}
+.tab.active{background:#fff;font-weight:600}
+.panel{background:#fff;border-radius:0 8px 8px 8px;padding:15px;box-shadow:0 2px 4px rgba(0,0,0,.06)}
+.panel.hidden{display:none}
+.toolbar{display:flex;gap:10px;margin-bottom:12px;align-items:center}
+input.filter{padding:8px 12px;border:1px solid #ccc;border-radius:4px;font-size:14px;width:320px}
+.row-count{color:#666;font-size:13px;margin-left:auto}
+.table-wrap{max-height:70vh;overflow:auto;border:1px solid #eee;border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{background:#2c3e50;color:#fff;padding:9px 10px;text-align:left;cursor:pointer;position:sticky;top:0;z-index:1;white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid #eaeaea;vertical-align:top}
+tr:hover td{background:#f8f9fa}
+tr.fuzzy td{background:#ebf5fb}
+.old-val{color:#c0392b;background:#fde8e8;padding:1px 5px;border-radius:3px}
+.new-val{color:#1e8449;background:#d5f5e3;padding:1px 5px;border-radius:3px;font-weight:500}
+.none{color:#aaa;font-style:italic}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.g{background:#ebf5fb;color:#2471a3}
+.badge.x{background:#f4f4f4;color:#555}
+.empty{padding:40px;text-align:center;color:#888}
+code{background:#f4f4f4;padding:1px 5px;border-radius:3px;font-size:12px}
+</style>
+</head>
+<body>
+
+<div id="screen-upload">
+  <h1>📊 Сравнение Google Sheets ↔ Excel</h1>
+  <p class="sub">Файлы никуда не отправляются — всё считается прямо в браузере.</p>
+
+  <div class="drop-zone" id="dz-g">
+    <div class="drop-label">1. Google Sheets (лист <code>data</code>)</div>
+    <input type="file" id="file-g" accept=".xlsx">
+    <div class="drop-filename" id="fn-g">Файл не выбран</div>
+  </div>
+
+  <div class="drop-zone" id="dz-x">
+    <div class="drop-label">2. Excel (лист <code>Данные</code>)</div>
+    <input type="file" id="file-x" accept=".xlsx">
+    <div class="drop-filename" id="fn-x">Файл не выбран</div>
+  </div>
+
+  <button id="btn-run" disabled>Сравнить</button>
+  <div id="status"></div>
+</div>
+
+<div id="screen-report" style="display:none">
+  <div class="report-toolbar">
+    <button id="btn-back">← Загрузить другие файлы</button>
+    <button id="btn-dl-xlsx">💾 Скачать Excel-отчёт</button>
+  </div>
+  <div id="report-content"></div>
+</div>
+
+<script>
+'use strict';
+
+// ============ STATUS ============
+const $ = id => document.getElementById(id);
+const setStatus = (msg, isErr=false) => {
+  const el = $('status');
+  el.textContent = msg;
+  el.className = isErr ? 'status error' : 'status';
+};
+
+// ============ FILE HANDLING ============
+let fileG = null, fileX = null;
+
+$('file-g').addEventListener('change', e => {
+  fileG = e.target.files[0] || null;
+  $('fn-g').textContent = fileG ? fileG.name : 'Файл не выбран';
+  updateRunButton();
+});
+$('file-x').addEventListener('change', e => {
+  fileX = e.target.files[0] || null;
+  $('fn-x').textContent = fileX ? fileX.name : 'Файл не выбран';
+  updateRunButton();
+});
+
+function updateRunButton() {
+  $('btn-run').disabled = !(fileG && fileX);
+}
+
+// Drag & drop
+for (const [dzId, inputId] of [['dz-g','file-g'], ['dz-x','file-x']]) {
+  const dz = $(dzId);
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag');
+    const f = e.dataTransfer.files[0];
+    if (f) {
+      const dt = new DataTransfer(); dt.items.add(f);
+      $(inputId).files = dt.files;
+      $(inputId).dispatchEvent(new Event('change'));
+    }
+  });
+}
+
+// ============ XLSX READING ============
+async function readSheet(file, preferredSheets) {
+  const buf = await file.arrayBuffer();
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buf);
+
+  let ws = null;
+  for (const name of preferredSheets) {
+    ws = wb.getWorksheet(name);
+    if (ws) break;
+  }
+  if (!ws) ws = wb.worksheets[0];
+  if (!ws) throw new Error('В файле нет листов');
+
+  const headers = [];
+  ws.getRow(1).eachCell((cell, col) => {
+    let v = cell.value;
+    if (v && typeof v === 'object') {
+      if (v.richText) v = v.richText.map(r => r.text).join('');
+      else if (v.text !== undefined) v = v.text;
+      else if (v.result !== undefined) v = v.result;
+    }
+    headers[col] = v == null ? '' : String(v).replace(/[\r\n]+/g, ' ').trim();
+  });
+
+  const rows = [];
+  ws.eachRow((row, rn) => {
+    if (rn === 1) return;
+    const obj = { __row: rn };
+    let hasValue = false;
+    row.eachCell({ includeEmpty: false }, (cell, col) => {
+      let v = cell.value;
+      if (v && typeof v === 'object' && !(v instanceof Date)) {
+        if (v.richText) v = v.richText.map(r => r.text).join('');
+        else if (v.text !== undefined) v = v.text;
+        else if (v.result !== undefined) v = v.result;
+      }
+      const h = headers[col];
+      if (h) {
+        obj[h] = v;
+        if (v !== null && v !== undefined && v !== '') hasValue = true;
+      }
+    });
+    if (hasValue) rows.push(obj);
+  });
+
+  return { headers: headers.filter(Boolean), rows };
+}
+
+// ============ NORMALIZATION ============
+function normalizeValue(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date) {
+    const y = v.getUTCFullYear();
+    const m = String(v.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(v.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') return v.trim();
+  if (typeof v === 'object') {
+    if (v.richText) return v.richText.map(r => r.text).join('').trim();
+    if (v.text !== undefined) return String(v.text).trim();
+    if (v.result !== undefined) return normalizeValue(v.result);
+  }
+  return String(v).trim();
+}
+
+function normalizeId(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(Math.trunc(v));
+  return String(v).trim();
+}
+
+function normalizeObject(v) {
+  if (v === null || v === undefined) return null;
+  return String(v).trim().replace(/^БВС\s+/i, '').replace(/\s+БВС$/i, '');
+}
+
+function valuesEqual(a, b, tol = 0) {
+  if (a === null || a === undefined || a === '') a = null;
+  if (b === null || b === undefined || b === '') b = null;
+  if (a === null && b === null) return true;
+  if (a === null || b === null) return false;
+  if (typeof a === 'number' && typeof b === 'number') {
+    return tol ? Math.abs(a - b) <= tol : a === b;
+  }
+  return String(a).trim() === String(b).trim();
+}
+
+// ============ COLUMN DETECTION ============
+function findLatestSuffix(headers) {
+  const text = headers.join(' | ');
+  const matches = [...text.matchAll(/\((\d{2})\.(\d{2})\.(\d{4})\)/g)];
+  if (!matches.length) return null;
+  const sorted = matches.map(m => ({
+    full: m[0],
+    ts: new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime()
+  })).sort((a, b) => b.ts - a.ts);
+  return sorted[0].full;
+}
+
+function findCol(headers, prefix, suffix = null) {
+  const p = prefix.replace(/\s+/g, ' ').trim();
+  for (const h of headers) {
+    if (!h) continue;
+    const hn = h.replace(/\s+/g, ' ').trim();
+    if (!hn.startsWith(p)) continue;
+    if (suffix === null) {
+      if (!/\(\d{2}\.\d{2}\.\d{4}\)/.test(hn)) return hn;
+    } else if (hn.includes(suffix)) return hn;
+  }
+  return null;
+}
+
+// ============ MAIN COMPARISON ============
+async function run() {
+  try {
+    setStatus('Читаю Google-файл…');
+    const gdata = await readSheet(fileG, ['data', 'Data', 'Данные']);
+
+    setStatus('Читаю Excel-файл…');
+    const xdata = await readSheet(fileX, ['Данные', 'Data', 'data']);
+
+    const suffix = findLatestSuffix(xdata.headers);
+    setStatus(`Актуальная дата Excel: ${suffix || '—'}`);
+
+    const COLS = {
+      'id': 'id', 'ФО': 'ФО', 'объект': 'объект',
+      'этап': findCol(xdata.headers, 'Наименование этапа', suffix),
+      'статус': 'Статус площади',
+      'общая площадь': findCol(xdata.headers, 'Общая площадь', suffix),
+      'площадь строительства': findCol(xdata.headers, 'Площадь объекта строительства', suffix),
+      'площадь блоков мезонина': findCol(xdata.headers, 'Площадь блоков мезонина'),
+      'площадь оперзоны': findCol(xdata.headers, 'Площадь оперзоны'),
+      'площадь заморозки': findCol(xdata.headers, 'Площадь заморозки', suffix),
+      'статус площадки': findCol(xdata.headers, 'Статус площадки', suffix),
+      'РВ': findCol(xdata.headers, 'Дата получения РВ', suffix),
+      'категория': findCol(xdata.headers, 'Категория объекта'),
+      'источник': findCol(xdata.headers, 'Источник данных площади объекта', suffix),
+      'повреждения': findCol(xdata.headers, 'Повреждение блока'),
+    };
+
+    const FIELDS = [
+      ['этап','Этап'], ['статус','Статус площади'],
+      ['общая площадь','Общая площадь'],
+      ['площадь строительства','Площадь объекта строительства'],
+      ['площадь блоков мезонина','Площадь блоков мезонина'],
+      ['площадь оперзоны','Площадь оперзоны'],
+      ['площадь заморозки','Площадь заморозки'],
+      ['статус площадки','Статус площадки'],
+      ['РВ','Дата получения РВ'],
+      ['категория','Категория объекта'],
+      ['источник','Источник данных'],
+      ['повреждения','Повреждение блока'],
+    ];
+
+    const gRows = gdata.rows.map(r => ({
+      __row: r.__row,
+      id: normalizeId(r['id']),
+      'ФО': normalizeValue(r['ФО']),
+      'объект': normalizeValue(r['объект']),
+      'объект_norm': normalizeObject(r['объект']),
+      'этап': normalizeValue(r['этап']),
+      'статус': normalizeValue(r['статус']),
+      'общая площадь': normalizeValue(r['общая площадь']),
+      'площадь строительства': normalizeValue(r['площадь строительства']),
+      'площадь блоков мезонина': normalizeValue(r['площадь блоков мезонина']),
+      'площадь оперзоны': normalizeValue(r['площадь оперзоны']),
+      'площадь заморозки': normalizeValue(r['площадь заморозки']),
+      'статус площадки': normalizeValue(r['статус площадки']),
+      'РВ': normalizeValue(r['РВ']),
+      'категория': normalizeValue(r['категория']),
+      'источник': normalizeValue(r['источник данных площади']),
+      'повреждения': normalizeValue(r['повреждения']),
+    }));
+
+    const xRows = xdata.rows.map(r => ({
+      __row: r.__row,
+      id: normalizeId(r[COLS['id']]),
+      'ФО': normalizeValue(r[COLS['ФО']]),
+      'объект': normalizeValue(r[COLS['объект']]),
+      'объект_norm': normalizeObject(r[COLS['объект']]),
+      'этап': normalizeValue(r[COLS['этап']]),
+      'статус': normalizeValue(r[COLS['статус']]),
+      'общая площадь': normalizeValue(r[COLS['общая площадь']]),
+      'площадь строительства': normalizeValue(r[COLS['площадь строительства']]),
+      'площадь блоков мезонина': normalizeValue(r[COLS['площадь блоков мезонина']]),
+      'площадь оперзоны': normalizeValue(r[COLS['площадь оперзоны']]),
+      'площадь заморозки': normalizeValue(r[COLS['площадь заморозки']]),
+      'статус площадки': normalizeValue(r[COLS['статус площадки']]),
+      'РВ': normalizeValue(r[COLS['РВ']]),
+      'категория': normalizeValue(r[COLS['категория']]),
+      'источник': normalizeValue(r[COLS['источник']]),
+      'повреждения': normalizeValue(r[COLS['повреждения']]),
+    }));
+
+    const pkey = r => `${r.id}|${r['ФО']}|${r['объект_norm']}`;
+    const skey = r => `${r['этап']}|${r['категория']}`;
+
+    const gGroups = {}, xGroups = {};
+    gRows.forEach(r => (gGroups[pkey(r)] ||= []).push(r));
+    xRows.forEach(r => (xGroups[pkey(r)] ||= []).push(r));
+
+    const pairs = [], onlyG = [], onlyX = [], dupsRaw = [];
+    const allKeys = new Set([...Object.keys(gGroups), ...Object.keys(xGroups)]);
+
+    for (const k of allKeys) {
+      const g = gGroups[k] || [];
+      const x = xGroups[k] || [];
+      const usedG = new Set(), usedX = new Set();
+
+      for (let i = 0; i < g.length; i++) {
+        for (let j = 0; j < x.length; j++) {
+          if (usedX.has(j)) continue;
+          if (skey(g[i]) === skey(x[j])) {
+            pairs.push([g[i], x[j], 'exact']);
+            usedG.add(i); usedX.add(j); break;
+          }
+        }
+      }
+      const rg = g.filter((_, i) => !usedG.has(i));
+      const rx = x.filter((_, j) => !usedX.has(j));
+      const minLen = Math.min(rg.length, rx.length);
+      for (let i = 0; i < minLen; i++) pairs.push([rg[i], rx[i], 'fuzzy']);
+      onlyG.push(...rg.slice(minLen));
+      onlyX.push(...rx.slice(minLen));
+
+      const cg = {};
+      g.forEach(r => { cg[skey(r)] = (cg[skey(r)] || 0) + 1; });
+      Object.entries(cg).forEach(([sk, c]) => {
+        if (c > 1) dupsRaw.push({ side: 'Google', key: k, skey: sk, count: c });
+      });
+      const cx = {};
+      x.forEach(r => { cx[skey(r)] = (cx[skey(r)] || 0) + 1; });
+      Object.entries(cx).forEach(([sk, c]) => {
+        if (c > 1) dupsRaw.push({ side: 'Excel', key: k, skey: sk, count: c });
+      });
+    }
+
+    const changes = [];
+    for (const [gr, xr, mtype] of pairs) {
+      for (const [fk, fl] of FIELDS) {
+        if (!valuesEqual(gr[fk], xr[fk])) {
+          changes.push({
+            id: gr.id, fo: gr['ФО'], obj: gr['объект'],
+            stage_old: gr['этап'], stage_new: xr['этап'],
+            field: fl, old: gr[fk], new: xr[fk],
+            grow: gr.__row, xrow: xr.__row, mtype,
+          });
+        }
+      }
+    }
+
+    const dupSeen = new Set();
+    const dups = dupsRaw.filter(d => {
+      const kk = `${d.side}|${d.key}|${d.skey}`;
+      if (dupSeen.has(kk)) return false;
+      dupSeen.add(kk); return true;
+    });
+
+    renderReport({ suffix, gRows, xRows, pairs, changes, onlyG, onlyX, dups });
+
+  } catch (e) {
+    console.error(e);
+    setStatus('Ошибка: ' + e.message, true);
+  }
+}
+
+// ============ RENDERING ============
+function esc(s) {
+  if (s === null || s === undefined) return '<span class="none">—</span>';
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function rv(s, cls) {
+  if (s === null || s === undefined || s === '') return '<span class="none">—</span>';
+  return `<span class="${cls}">${esc(s)}</span>`;
+}
+
+let currentData = null;
+
+function renderReport(d) {
+  currentData = d;
+  $('screen-upload').style.display = 'none';
+  $('screen-report').style.display = 'block';
+
+  const html = `
+    <div class="summary">
+      <div class="card"><div class="lbl">Google строк</div><div class="num">${d.gRows.length}</div></div>
+      <div class="card"><div class="lbl">Excel строк</div><div class="num">${d.xRows.length}</div></div>
+      <div class="card blue"><div class="lbl">Сопоставлено</div><div class="num">${d.pairs.length}</div><div class="lbl">${d.pairs.filter(p=>p[2]==='exact').length} точных / ${d.pairs.filter(p=>p[2]==='fuzzy').length} fuzzy</div></div>
+      <div class="card yellow"><div class="lbl">Изменений</div><div class="num">${d.changes.length}</div></div>
+      <div class="card green"><div class="lbl">Только в Excel</div><div class="num">${d.onlyX.length}</div></div>
+      <div class="card red"><div class="lbl">Только в Google</div><div class="num">${d.onlyG.length}</div></div>
+      <div class="card"><div class="lbl">Дублей</div><div class="num">${d.dups.length}</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="changes">Изменения (${d.changes.length})</button>
+      <button class="tab" data-tab="only_x">Только в Excel (${d.onlyX.length})</button>
+      <button class="tab" data-tab="only_g">Только в Google (${d.onlyG.length})</button>
+      <button class="tab" data-tab="dups">Дубли (${d.dups.length})</button>
+    </div>
+    <div class="panel" id="panel-changes">
+      <div class="toolbar"><input class="filter" id="f-changes" placeholder="🔍 Поиск..."><span class="row-count" id="c-changes"></span></div>
+      <div class="table-wrap"><table id="t-changes"><thead><tr>
+        <th data-s="id">ID</th><th data-s="fo">ФО</th><th data-s="obj">Объект</th>
+        <th data-s="stage_old">Этап (G)</th><th data-s="stage_new">Этап (X)</th>
+        <th data-s="field">Поле</th><th>Было</th><th>Стало</th><th>Стр.</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="panel hidden" id="panel-only_x">
+      <div class="toolbar"><input class="filter" id="f-only_x" placeholder="🔍 Поиск..."><span class="row-count" id="c-only_x"></span></div>
+      <div class="table-wrap"><table id="t-only_x"><thead><tr>
+        <th>ID</th><th>ФО</th><th>Объект</th><th>Этап</th><th>Статус</th>
+        <th>Общая</th><th>Строит.</th><th>Категория</th><th>Источник</th><th>Стр.</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="panel hidden" id="panel-only_g">
+      <div class="toolbar"><input class="filter" id="f-only_g" placeholder="🔍 Поиск..."><span class="row-count" id="c-only_g"></span></div>
+      <div class="table-wrap"><table id="t-only_g"><thead><tr>
+        <th>ID</th><th>ФО</th><th>Объект</th><th>Этап</th><th>Статус</th>
+        <th>Общая</th><th>Строит.</th><th>Категория</th><th>Источник</th><th>Стр.</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="panel hidden" id="panel-dups">
+      <div class="toolbar"><input class="filter" id="f-dups" placeholder="🔍 Поиск..."><span class="row-count" id="c-dups"></span></div>
+      <div class="table-wrap"><table id="t-dups"><thead><tr>
+        <th>Сторона</th><th>ID</th><th>ФО</th><th>Объект</th><th>Этап</th><th>Категория</th><th>Кол-во</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+  `;
+  $('report-content').innerHTML = html;
+
+  let cSort = { key: null, dir: 1 };
+  const renderChanges = () => {
+    const q = $('f-changes').value.toLowerCase();
+    let rows = d.changes.filter(r => {
+      if (!q) return true;
+      return [r.id, r.fo, r.obj, r.stage_old, r.stage_new, r.field].join(' ').toLowerCase().includes(q);
+    });
+    if (cSort.key) {
+      rows.sort((a, b) => {
+        const av = a[cSort.key] ?? '', bv = b[cSort.key] ?? '';
+        return (av > bv ? 1 : av < bv ? -1 : 0) * cSort.dir;
+      });
+    }
+    $('t-changes').querySelector('tbody').innerHTML = rows.map(r =>
+      `<tr class="${r.mtype === 'fuzzy' ? 'fuzzy' : ''}">
+        <td>${esc(r.id)}</td><td>${esc(r.fo)}</td><td>${esc(r.obj)}</td>
+        <td>${esc(r.stage_old)}</td><td>${esc(r.stage_new)}</td>
+        <td><b>${esc(r.field)}</b></td>
+        <td>${rv(r.old, 'old-val')}</td>
+        <td>${rv(r.new, 'new-val')}</td>
+        <td style="font-size:11px;color:#666">G:${r.grow}<br>X:${r.xrow}</td>
+      </tr>`
+    ).join('') || '<tr><td colspan="9" class="empty">Нет изменений</td></tr>';
+    $('c-changes').textContent = `${rows.length} из ${d.changes.length}`;
+  };
+  $('t-changes').querySelectorAll('th[data-s]').forEach(th => {
+    th.onclick = () => {
+      const k = th.dataset.s;
+      if (cSort.key === k) cSort.dir *= -1; else { cSort.key = k; cSort.dir = 1; }
+      renderChanges();
+    };
+  });
+  $('f-changes').oninput = renderChanges;
+  renderChanges();
+
+  const fillSimple = (tblId, filterId, countId, data, cols) => {
+    const render = () => {
+      const q = $(filterId).value.toLowerCase();
+      const rows = data.filter(r => !q || cols.map(c => r[c] || '').join(' ').toLowerCase().includes(q));
+      $(tblId).querySelector('tbody').innerHTML = rows.map(r =>
+        '<tr>' + cols.map(c => `<td>${c === '__row' ? r.__row : esc(r[c])}</td>`).join('') + '</tr>'
+      ).join('') || `<tr><td colspan="${cols.length}" class="empty">Нет данных</td></tr>`;
+      $(countId).textContent = `${rows.length} из ${data.length}`;
+    };
+    $(filterId).oninput = render;
+    render();
+  };
+
+  fillSimple('t-only_x', 'f-only_x', 'c-only_x', d.onlyX,
+    ['id', 'ФО', 'объект', 'этап', 'статус', 'общая площадь', 'площадь строительства', 'категория', 'источник', '__row']);
+  fillSimple('t-only_g', 'f-only_g', 'c-only_g', d.onlyG,
+    ['id', 'ФО', 'объект', 'этап', 'статус', 'общая площадь', 'площадь строительства', 'категория', 'источник', '__row']);
+
+  const renderDups = () => {
+    const q = $('f-dups').value.toLowerCase();
+    const rows = d.dups.filter(r => !q || [r.side, r.key, r.skey].join(' ').toLowerCase().includes(q));
+    $('t-dups').querySelector('tbody').innerHTML = rows.map(r => {
+      const [id, fo, obj] = r.key.split('|');
+      const [stage, cat] = r.skey.split('|');
+      return `<tr><td><span class="badge ${r.side === 'Google' ? 'g' : 'x'}">${r.side}</span></td>
+        <td>${esc(id)}</td><td>${esc(fo)}</td><td>${esc(obj)}</td>
+        <td>${esc(stage)}</td><td>${esc(cat)}</td><td>${r.count}</td></tr>`;
+    }).join('') || '<tr><td colspan="7" class="empty">Дублей нет</td></tr>';
+    $('c-dups').textContent = `${rows.length} из ${d.dups.length}`;
+  };
+  $('f-dups').oninput = renderDups;
+  renderDups();
+
+  document.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(x => x.classList.add('hidden'));
+      t.classList.add('active');
+      $('panel-' + t.dataset.tab).classList.remove('hidden');
+    };
+  });
+}
+
+// ============ DOWNLOAD XLSX ============
+async function downloadXlsx() {
+  if (!currentData) return;
+  const d = currentData;
+  const wb = new ExcelJS.Workbook();
+
+  const s = wb.addWorksheet('Сводка');
+  [
+    ['Параметр', 'Значение'],
+    ['Google строк', d.gRows.length],
+    ['Excel строк', d.xRows.length],
+    ['Актуальная дата', d.suffix || '—'],
+    ['Сопоставлено', d.pairs.length],
+    ['  точных', d.pairs.filter(p => p[2] === 'exact').length],
+    ['  fuzzy', d.pairs.filter(p => p[2] === 'fuzzy').length],
+    ['Изменений', d.changes.length],
+    ['Только в Google', d.onlyG.length],
+    ['Только в Excel', d.onlyX.length],
+    ['Дублей', d.dups.length],
+  ].forEach(r => s.addRow(r));
+  s.getRow(1).font = { bold: true };
+  s.columns = [{ width: 28 }, { width: 22 }];
+
+  const c = wb.addWorksheet('Изменения');
+  c.addRow(['ID', 'ФО', 'Объект', 'Этап (G)', 'Этап (X)', 'Поле', 'Было', 'Стало', 'G-стр', 'X-стр', 'Тип']);
+  c.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  c.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF333333' } };
+  d.changes.forEach(ch => {
+    const row = c.addRow([ch.id, ch.fo, ch.obj, ch.stage_old, ch.stage_new, ch.field,
+      ch.old ?? '', ch.new ?? '', ch.grow, ch.xrow, ch.mtype]);
+    row.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8CECC' } };
+    row.getCell(8).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD5E8D4' } };
+  });
+  c.columns = [
+    {width:12},{width:15},{width:20},{width:22},{width:22},{width:22},
+    {width:22},{width:22},{width:9},{width:9},{width:10}
+  ];
+
+  const ox = wb.addWorksheet('Только в Excel');
+  ox.addRow(['ID','ФО','Объект','Этап','Статус','Общая','Строит.','Категория','Источник','Строка']);
+  ox.getRow(1).font = { bold: true };
+  d.onlyX.forEach(r => {
+    const row = ox.addRow([r.id, r['ФО'], r['объект'], r['этап'], r['статус'],
+      r['общая площадь'] ?? '', r['площадь строительства'] ?? '',
+      r['категория'], r['источник'], r.__row]);
+    row.eachCell(cell => cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD5E8D4' } });
+  });
+
+  const og = wb.addWorksheet('Только в Google');
+  og.addRow(['ID','ФО','Объект','Этап','Статус','Общая','Строит.','Категория','Источник','Строка']);
+  og.getRow(1).font = { bold: true };
+  d.onlyG.forEach(r => {
+    const row = og.addRow([r.id, r['ФО'], r['объект'], r['этап'], r['статус'],
+      r['общая площадь'] ?? '', r['площадь строительства'] ?? '',
+      r['категория'], r['источник'], r.__row]);
+    row.eachCell(cell => cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8CECC' } });
+  });
+
+  const du = wb.addWorksheet('Дубли');
+  du.addRow(['Сторона','ID','ФО','Объект','Этап','Категория','Кол-во']);
+  du.getRow(1).font = { bold: true };
+  d.dups.forEach(r => {
+    const [id, fo, obj] = r.key.split('|');
+    const [stage, cat] = r.skey.split('|');
+    du.addRow([r.side, id, fo, obj, stage, cat, r.count]);
+  });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+$('btn-run').onclick = run;
+$('btn-back').onclick = () => {
+  $('screen-report').style.display = 'none';
+  $('screen-upload').style.display = 'block';
+  setStatus('');
+};
+$('btn-dl-xlsx').onclick = downloadXlsx;
+</script>
+</body>
+</html>
