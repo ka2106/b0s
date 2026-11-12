@@ -504,6 +504,14 @@ function loadGoogleSheet(sheetId, sheetName = 'data') {
   });
 }
 
+function parseLocaleNumber(s) {
+  if (typeof s !== 'string') return null;
+  const t = s.replace(/[\u00a0\u202f\s]/g, '').replace(',', '.');
+  if (t === '' || t === '-' || t === '.') return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
 function parseGviz(data) {
   const t = data.table;
   const headers = t.cols.map(c => (c.label || c.id || '').replace(/\s+/g, ' ').trim());
@@ -519,6 +527,10 @@ function parseGviz(data) {
         if (typeof raw === 'string' && raw.startsWith('Date(')) {
           const m = raw.match(/Date\((\d+),(\d+),(\d+)/);
           if (m) v = `${m[1]}-${String(parseInt(m[2])+1).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+        } else if (typeof raw === 'string') {
+          // пробуем распарсить локально-форматированное число вроде "18 818,38"
+          const n = parseLocaleNumber(raw);
+          v = n !== null ? n : raw;
         } else {
           v = raw;
         }
