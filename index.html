@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>БОС · Дашборд</title>
+<title>БОС · Аналитика</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -24,7 +24,8 @@
   --warning-bg:#fffbeb;
   --danger:#ef4444;
   --danger-bg:#fef2f2;
-  --slate-800:#1e293b;
+  --info:#0ea5e9;
+  --info-bg:#e0f2fe;
   --radius:12px;
   --radius-sm:8px;
   --shadow-sm:0 1px 2px rgba(0,0,0,.05);
@@ -41,7 +42,7 @@ body{
 header{
   background:var(--surface);border-bottom:1px solid var(--border);
   height:64px;display:flex;align-items:center;padding:0 24px;
-  justify-content:space-between;z-index:10;box-shadow:var(--shadow-sm);
+  justify-content:space-between;z-index:10;box-shadow:var(--shadow-sm);flex-shrink:0;
 }
 .logo-wrap{display:flex;align-items:center;gap:12px;}
 .logo-mark{
@@ -77,7 +78,7 @@ header{
 .kpi-card.orange::before{background:var(--warning);}
 .kpi-card.red::before{background:var(--danger);}
 .kpi-label{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
-.kpi-value{font-size:28px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;}
+.kpi-value{font-size:28px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.2;}
 .kpi-sub{font-size:12px;color:var(--text-muted);margin-top:auto;}
 
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
@@ -88,12 +89,12 @@ header{
 /* Bar Chart */
 .bar-chart{display:flex;flex-direction:column;gap:12px;}
 .bar-item{display:flex;align-items:center;gap:12px;}
-.bar-label{width:140px;font-size:13px;font-weight:500;color:var(--text-muted);text-align:right;}
-.bar-track{flex:1;height:24px;background:var(--bg);border-radius:4px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:600;color:#fff;transition:width 0.5s ease-out;}
+.bar-label{width:140px;font-size:13px;font-weight:500;color:var(--text-muted);text-align:right;flex-shrink:0;}
+.bar-track{flex:1;height:24px;background:var(--bg);border-radius:4px;overflow:hidden;display:flex;align-items:center;}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:700;color:#fff;transition:width 0.5s ease-out;min-width: 2px;}
 
 /* Delivery List */
-.delivery-list{display:flex;flex-direction:column;gap:8px;max-height:250px;overflow-y:auto;padding-right:4px;}
+.delivery-list{display:flex;flex-direction:column;gap:8px;}
 .delivery-item{
   display:flex;justify-content:space-between;align-items:center;
   padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);
@@ -105,10 +106,21 @@ header{
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums;}
 
+/* Year Table */
+.year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+.year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
+.year-table-wrap{overflow-x:auto;}
+.year-table{width:100%; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
+.year-table th, .year-table td{padding:8px; border:1px solid var(--border); text-align:center;}
+.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
+.year-table td:first-child{text-align:left; font-weight:600; background:var(--bg); position:sticky; left:0; z-index:2;}
+.cell-green{background:var(--success-bg) !important; color:var(--success); font-weight:700;}
+.cell-blue{background:var(--info-bg) !important; color:var(--info); font-weight:700;}
+.cell-link a{color:inherit; text-decoration:underline;}
+
 /* Table with Sidebar */
 .table-layout{display:flex;gap:20px;align-items:flex-start;}
 @media(max-width:900px){.table-layout{flex-direction:column;}}
-
 .sidebar{
   width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;position:sticky;top:24px;
@@ -116,56 +128,94 @@ header{
 .filter-group{margin-bottom:20px;}
 .filter-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .filter-title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.05em;}
-.filter-actions{font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;}
+.filter-actions{font-size:11px;color:var(--accent);cursor:pointer;font-weight:600; user-select:none;}
 .filter-actions:hover{text-decoration:underline;}
-
-/* Custom Checkbox */
 .checkbox-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
 .checkbox-item{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-muted);transition:color 0.15s;}
 .checkbox-item:hover{color:var(--text);}
-.checkbox-item input[type="checkbox"]{
-  appearance:none;width:16px;height:16px;border:1.5px solid var(--border);
-  border-radius:4px;cursor:pointer;position:relative;background:#fff;transition:all .15s;
-}
-.checkbox-item input[type="checkbox"]:checked{
-  background:var(--accent);border-color:var(--accent);
-}
-.checkbox-item input[type="checkbox"]:checked::after{
-  content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;
-  border:solid white;border-width:0 2px 2px 0;transform:rotate(45deg);
-}
+.checkbox-item input[type="checkbox"]{appearance:none;width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;position:relative;background:#fff;transition:all .15s;}
+.checkbox-item input[type="checkbox"]:checked{background:var(--accent);border-color:var(--accent);}
+.checkbox-item input[type="checkbox"]:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid white;border-width:0 2px 2px 0;transform:rotate(45deg);}
 
 .table-container{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;}
 .table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .table-title{font-size:16px;font-weight:700;}
-table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap;}
-th{background:var(--bg);color:var(--text-muted);padding:12px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:var(--bg);color:var(--text-muted);padding:12px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;}
 td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+td.num{white-space:nowrap;}
 tbody tr:hover td{background:var(--bg);}
-.status-badge{
-  display:inline-flex;align-items:center;padding:4px 8px;border-radius:4px;
-  font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;
-}
+.status-badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
 .status-badge.delivered{background:var(--success-bg);color:var(--success);}
-.status-badge.planned{background:var(--warning-bg);color:var(--warning);}
+.status-badge.planned{background:var(--info-bg);color:var(--info);}
 .status-badge.danger{background:var(--danger-bg);color:var(--danger);}
 .raw-link{color:var(--accent);text-decoration:none;font-weight:600;}
 .raw-link:hover{text-decoration:underline;}
 
-/* Timeline */
-.timeline-controls{display:flex;gap:12px;margin-bottom:20px;}
-.year-btn{
-  padding:8px 16px;border:1px solid var(--border);background:var(--surface);
-  border-radius:20px;font-weight:600;font-size:13px;cursor:pointer;
-}
-.year-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+/* Comparison Styles (Restored) */
+.mode-selector{display:flex;position:relative;background:#e2e8f0;border-radius:8px;padding:3px;width:340px;margin:0 auto 24px;box-shadow:inset 0 1px 2px rgba(0,0,0,.05);border:1px solid #cbd5e1;}
+.mode-selector label{flex:1;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:6px 10px;font-size:12px;font-weight:600;color:var(--text-muted);transition:color 0.2s;border-radius:6px;user-select:none;text-decoration:none!important;}
+.mode-selector input[type="radio"]{display:none;}
+.mode-selector input[type="radio"]:checked + span{color:var(--text);}
+.mode-slider{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);background:#fff;border-radius:5px;box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);transition:transform 0.2s ease-in-out;z-index:0;}
 
-/* Comparison specific */
-.comparison-view{background:var(--surface);border-radius:var(--radius);padding:24px;border:1px solid var(--border);}
 .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;}
-.card{border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
-.drop-zone{border:2px dashed var(--border);border-radius:var(--radius-sm);padding:30px;text-align:center;cursor:pointer;}
+.card{border:1px solid var(--border);border-radius:var(--radius);padding:20px;background:#fff;}
+.card-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.card-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;}
+.card-icon.g{background:#eff6ff;color:#2563eb}
+.card-icon.x{background:#f0fdf4;color:#15803d}
+.card-title{font-size:16px;font-weight:700;margin:0;}
+.field{margin-bottom:14px}
+.field-label{display:block;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.field input[type=text]{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;color:var(--text);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:var(--accent-hover)}
+.btn-secondary{background:#fff;color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover:not(:disabled){background:#f1f5f9}
+.btn-full{width:100%}
+.btn-lg{padding:12px 32px;font-size:14px}
+
+.drop-zone{border:1px dashed #cbd5e1;border-radius:var(--radius-sm);padding:24px 20px;text-align:center;cursor:pointer;background:#fff;transition:all .15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:130px;}
 .drop-zone:hover{border-color:var(--accent);background:var(--accent-soft);}
+.drop-zone input{display:none}
+.drop-text{font-size:13px;color:var(--text-muted);}
+.drop-filename{font-size:12px;font-weight:600;color:var(--accent);margin-top:4px;}
+.divider{display:flex;align-items:center;text-align:center;margin:20px 0;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;}
+.divider::before, .divider::after {content: '';flex: 1;border-bottom: 1px solid var(--border);}
+.divider::before {margin-right: 12px;}.divider::after {margin-left: 12px;}
+
+/* Compare Results */
+.summary{display:grid;grid-template-columns:repeat(5, 1fr);gap:12px;margin-bottom:24px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;box-shadow:var(--shadow-sm);border-left:3px solid var(--border);}
+.stat.blue{border-left-color:var(--accent)}.stat.yellow{border-left-color:var(--warning)}
+.stat.green{border-left-color:var(--success)}.stat.red{border-left-color:var(--danger)}
+.stat-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.stat-value{font-size:32px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1;}
+.stat-detail{font-size:11px;color:var(--text-muted);margin-top:6px}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0;}
+.tab{padding:11px 18px;background:transparent;border:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-muted);font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.tab-count{display:inline-block;padding:1px 7px;border-radius:10px;background:#f1f5f9;color:var(--text-muted);font-size:11px;font-weight:600;margin-left:6px;}
+.tab.active .tab-count{background:var(--accent-soft);color:var(--accent)}
+
+.panel{background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:16px;}
+.panel.hidden{display:none}
+.toolbar{display:flex;gap:10px;margin-bottom:12px;align-items:center;}
+input.filter{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;width:320px;font-family:inherit;}
+.row-count{color:var(--text-muted);font-size:12px;margin-left:auto;}
+.table-wrap{max-height:60vh;overflow:auto;border:1px solid var(--border);border-radius:var(--radius-sm);}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+tbody tr:nth-child(even) td {background-color: #f8fafc;}
+tbody tr:hover td {background-color: #eff6ff !important;}
+td.muted-text {color: var(--text-muted) !important;font-style: italic;}
+.old-val{color:var(--danger);background:var(--danger-bg);padding:1px 6px;border-radius:4px;font-weight:500;}
+.new-val{color:var(--success);background:var(--success-bg);padding:1px 6px;border-radius:4px;font-weight:600;}
+.arrow{color:var(--text-muted);margin:0 2px}
+
 </style>
 </head>
 <body>
@@ -189,7 +239,7 @@ tbody tr:hover td{background:var(--bg);}
       <!-- ==================== ВКЛАДКА: ДАШБОРД ==================== -->
       <div id="tab-dashboard" class="tab-content">
         <div id="dashboard-loading" style="text-align:center; padding:60px; font-size:16px; color:var(--text-muted);">
-          <span class="loader"></span> Загружаю данные из Google Sheets...
+          Загружаю данные...
         </div>
         
         <div id="dashboard-content" style="display:none;">
@@ -209,8 +259,9 @@ tbody tr:hover td{background:var(--bg);}
               <div class="kpi-sub" id="kpi-planned-count">0 объектов</div>
             </div>
             <div class="kpi-card red">
-              <div class="kpi-label">Проблемные / Отказ</div>
-              <div class="kpi-value" id="kpi-problem">0</div>
+              <div class="kpi-label">Заморозка / Отказ</div>
+              <div class="kpi-value" id="kpi-freeze">0</div>
+              <div class="kpi-sub" id="kpi-freeze-count">0 объектов</div>
             </div>
           </div>
 
@@ -220,8 +271,19 @@ tbody tr:hover td{background:var(--bg);}
               <div class="bar-chart" id="chart-status"></div>
             </div>
             <div class="chart-card">
-              <h3 class="chart-title">Сдача площадей по годам</h3>
+              <h3 class="chart-title">Сдача площадей по годам (до текущего)</h3>
               <div class="bar-chart" id="chart-years"></div>
+            </div>
+          </div>
+
+          <!-- Таблица по годам -->
+          <div class="chart-card" style="margin-bottom:24px;">
+            <div class="year-controls">
+              <h3 class="chart-title" style="margin:0;">Сдача площадей по месяцам</h3>
+              <select class="year-select" id="year-select"></select>
+            </div>
+            <div class="year-table-wrap">
+              <table class="year-table" id="year-table"></table>
             </div>
           </div>
 
@@ -241,33 +303,39 @@ tbody tr:hover td{background:var(--bg);}
       <!-- ==================== ВКЛАДКА: ТАБЛИЦА ==================== -->
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
-          
-          <!-- Сайдбар с фильтрами -->
           <aside class="sidebar">
             <div class="filter-group">
               <div class="filter-header">
                 <span class="filter-title">ФО</span>
-                <span class="filter-actions" data-target="fo">Сбросить</span>
+                <div style="display:flex; gap:8px;">
+                  <span class="filter-actions" data-target="fo" data-action="all">Все</span>
+                  <span class="filter-actions" data-target="fo" data-action="none">Ничего</span>
+                </div>
               </div>
               <div class="checkbox-list" id="filter-fo"></div>
             </div>
             <div class="filter-group">
               <div class="filter-header">
                 <span class="filter-title">Объект</span>
-                <span class="filter-actions" data-target="obj">Сбросить</span>
+                <div style="display:flex; gap:8px;">
+                  <span class="filter-actions" data-target="obj" data-action="all">Все</span>
+                  <span class="filter-actions" data-target="obj" data-action="none">Ничего</span>
+                </div>
               </div>
               <div class="checkbox-list" id="filter-obj"></div>
             </div>
             <div class="filter-group">
               <div class="filter-header">
                 <span class="filter-title">Статус</span>
-                <span class="filter-actions" data-target="status">Сбросить</span>
+                <div style="display:flex; gap:8px;">
+                  <span class="filter-actions" data-target="status" data-action="all">Все</span>
+                  <span class="filter-actions" data-target="status" data-action="none">Ничего</span>
+                </div>
               </div>
               <div class="checkbox-list" id="filter-status"></div>
             </div>
           </aside>
 
-          <!-- Таблица -->
           <div class="table-container">
             <div class="table-header">
               <span class="table-title">Реестр объектов</span>
@@ -294,30 +362,72 @@ tbody tr:hover td{background:var(--bg);}
 
       <!-- ==================== ВКЛАДКА: СРАВНЕНИЕ ==================== -->
       <div id="tab-compare" class="tab-content" style="display:none;">
-        <div class="comparison-view">
-          <h2 style="margin-top:0">Сравнение версий</h2>
-          <p style="color:var(--text-muted)">Загрузите Excel-файл, чтобы сравнить его с текущими данными из Google Sheets.</p>
-          
-          <div class="upload-grid" style="grid-template-columns: 1fr;">
-            <div class="card">
-              <h3>Excel-файл</h3>
-              <label class="drop-zone" id="dz-compare">
-                <input type="file" id="file-compare" accept=".xlsx">
+        
+        <div class="mode-selector">
+          <div class="mode-slider" id="mode-slider"></div>
+          <label><input type="radio" name="compare-mode" value="g_vs_x" checked><span>Google ↔ Excel</span></label>
+          <label><input type="radio" name="compare-mode" value="x_vs_x"><span>Excel ↔ Excel</span></label>
+        </div>
+
+        <div id="compare-upload-screen">
+          <div class="upload-grid">
+            <div class="card" id="card-left">
+              <div class="card-header">
+                <div class="card-icon g" id="left-icon">G</div>
+                <div class="card-title" id="left-title">Google Sheets</div>
+              </div>
+              <div id="google-fields">
+                <div class="field">
+                  <label class="field-label">Sheet ID</label>
+                  <input type="text" id="gsheet-id-comp" value="1mDdg8Z1KpH8iDbf9PMnqnEA0dp_FZY1T1ab0RpY0etM">
+                </div>
+                <div class="field">
+                  <label class="field-label">Имя листа</label>
+                  <input type="text" id="gsheet-name-comp" value="data">
+                </div>
+                <button class="btn btn-primary btn-full" id="btn-load-g-comp" style="margin-bottom:14px;">Загрузить из Google Sheets</button>
+                <div class="divider">или загрузите файл</div>
+              </div>
+              <label class="drop-zone" id="dz-left-comp">
+                <input type="file" id="file-left-comp" accept=".xlsx">
                 <div style="font-size:24px;margin-bottom:8px;">📄</div>
-                <div>Перетащите <strong>.xlsx</strong> или нажмите</div>
-                <div class="drop-filename" id="fn-compare" style="font-size:12px;color:var(--accent);margin-top:8px;"></div>
+                <div class="drop-text">Перетащите <strong>.xlsx</strong> или нажмите</div>
+                <div class="drop-filename" id="fn-left-comp"></div>
+              </label>
+            </div>
+
+            <div class="card" id="card-right">
+              <div class="card-header">
+                <div class="card-icon x" id="right-icon">X</div>
+                <div class="card-title" id="right-title">Excel-файл</div>
+              </div>
+              <label class="drop-zone" id="dz-right-comp" style="margin-top: 2px;">
+                <input type="file" id="file-right-comp" accept=".xlsx">
+                <div style="font-size:24px;margin-bottom:8px;">📄</div>
+                <div class="drop-text">Перетащите <strong>.xlsx</strong> или нажмите</div>
+                <div class="drop-filename" id="fn-right-comp"></div>
               </label>
             </div>
           </div>
-          
-          <div style="text-align:center; margin-top:20px;">
-            <button class="btn btn-primary" id="btn-run-compare" disabled style="background:var(--accent);color:#fff;padding:10px 24px;border:none;border-radius:8px;font-weight:600;cursor:pointer;">Сравнить с Google</button>
-          </div>
-
-          <div id="compare-results" style="margin-top:32px; display:none;">
-             <!-- Результаты сравнения будут тут -->
+          <div style="text-align:center; padding:8px 0;">
+            <button class="btn btn-primary btn-lg" id="btn-run-comp" disabled>Сравнить данные</button>
           </div>
         </div>
+
+        <div id="compare-report-screen" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;">
+            <div>
+              <h2 style="font-size:20px;font-weight:700;margin:0;">Результат сравнения</h2>
+              <p style="color:var(--text-muted);font-size:13px;margin:6px 0 0" id="compare-meta"></p>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-secondary" id="btn-back-comp">← Назад</button>
+              <button class="btn btn-primary" id="btn-dl-comp">Скачать Excel</button>
+            </div>
+          </div>
+          <div id="compare-content"></div>
+        </div>
+
       </div>
 
     </div>
@@ -331,16 +441,17 @@ const SHEET_NAME = 'data';
 
 const NUM_FMT = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
 const fmt = v => typeof v === 'number' ? NUM_FMT.format(v) : (v || '');
+const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-let rawData = [];
-let filteredData = [];
-let filters = { fo: new Set(), obj: new Set(), status: new Set() };
-
-// Linkify function
 const linkify = s => {
   if (!s) return '';
   return String(s).replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" class="raw-link">${url}</a>`);
 };
+
+let rawData = [];
+let filteredData = [];
+let filters = { fo: new Set(), obj: new Set(), status: new Set() };
+let selectedYear = new Date().getFullYear();
 
 // Navigation Logic
 document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -353,7 +464,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 });
 
 // ============ FETCH & PARSE ============
-function loadGoogleSheet() {
+function loadGoogleSheet(id = SHEET_ID, name = SHEET_NAME) {
   return new Promise((resolve, reject) => {
     const cbName = 'gviz_' + Date.now();
     const timeout = setTimeout(() => { delete window[cbName]; reject(new Error('Timeout')); }, 15000);
@@ -363,7 +474,7 @@ function loadGoogleSheet() {
       resolve(parseGviz(data));
     };
     const script = document.createElement('script');
-    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:${cbName}&sheet=${SHEET_NAME}&headers=1`;
+    script.src = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=responseHandler:${cbName}&sheet=${name}&headers=1`;
     script.onerror = () => { clearTimeout(timeout); delete window[cbName]; reject(new Error('Network error')); };
     document.head.appendChild(script);
   });
@@ -400,14 +511,14 @@ function parseGviz(data) {
 // ============ DATA PROCESSING ============
 function processData(headers, rows) {
   return rows.map(r => {
-    // Нормализация полей
     const getVal = k => r[k] !== undefined ? r[k] : null;
     
     const areaBuild = parseFloat(String(getVal('площадь строительства') || '0').replace(',', '.')) || 0;
     const areaTotal = parseFloat(String(getVal('общая площадь') || '0').replace(',', '.')) || 0;
+    const areaFreeze = parseFloat(String(getVal('площадь заморозки') || '0').replace(',', '.')) || 0;
+    
     const rvText = getVal('РВ') ? String(getVal('РВ')) : '';
     
-    // Дата для сортировки
     let date = null;
     const dMatch = rvText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
     if (dMatch) date = new Date(dMatch[3], dMatch[2]-1, dMatch[1]);
@@ -421,6 +532,7 @@ function processData(headers, rows) {
       category: getVal('категория') || '',
       areaTotal,
       areaBuild,
+      areaFreeze,
       rvText,
       rvDate: date,
       rvSort: date ? date.getTime() : 0
@@ -433,48 +545,35 @@ function renderDashboard(data) {
   $('dashboard-loading').style.display = 'none';
   $('dashboard-content').style.display = 'block';
 
-  // 1. KPI
-  let totalArea = 0, deliveredArea = 0, plannedArea = 0, problemCount = 0;
-  let deliveredCount = 0, plannedCount = 0;
-  let statusMap = {}; // status -> area
-  let yearMap = {}; // year -> area
+  const uniqueObjs = new Set(data.map(r => r.obj).filter(Boolean)).size;
+  
+  const delivered = data.filter(r => r.status === 'Завершен');
+  const deliveredArea = delivered.reduce((sum, r) => sum + r.areaBuild, 0);
+  const deliveredObjsCount = new Set(delivered.map(r => r.obj)).size;
 
-  const now = new Date();
+  const planned = data.filter(r => r.status === 'В работе');
+  const plannedArea = planned.reduce((sum, r) => sum + r.areaBuild, 0);
+  const plannedObjsCount = new Set(planned.map(r => r.obj)).size;
 
-  data.forEach(r => {
-    totalArea += r.areaBuild;
-    const isDelivered = r.status === 'Завершен';
-    const isProblem = r.status === 'Утрачен' || r.status === 'Поврежден частично' || r.status === 'Отказ от строительства';
-    const isPlanned = r.status === 'В работе';
+  const refused = data.filter(r => r.status === 'Отказ от строительства');
+  const freezeArea = refused.reduce((sum, r) => sum + r.areaFreeze, 0);
+  const refusedObjsCount = new Set(refused.map(r => r.obj)).size;
 
-    if (isDelivered) { deliveredArea += r.areaBuild; deliveredCount++; }
-    else if (isPlanned) { plannedArea += r.areaBuild; plannedCount++; }
-    else if (isProblem) { problemCount++; }
-
-    // Status Chart
-    if (!statusMap[r.status]) statusMap[r.status] = 0;
-    statusMap[r.status] += r.areaBuild;
-
-    // Year Chart (only if there is a date)
-    if (r.rvDate) {
-      const y = r.rvDate.getFullYear();
-      if (!yearMap[y]) yearMap[y] = 0;
-      yearMap[y] += r.areaBuild;
-    }
-  });
-
-  $('kpi-objects').textContent = data.length;
+  $('kpi-objects').textContent = uniqueObjs;
   $('kpi-delivered').textContent = fmt(deliveredArea);
-  $('kpi-delivered-count').textContent = `${deliveredCount} объектов`;
+  $('kpi-delivered-count').textContent = `${deliveredObjsCount} объектов`;
   $('kpi-planned').textContent = fmt(plannedArea);
-  $('kpi-planned-count').textContent = `${plannedCount} объектов`;
-  $('kpi-problem').textContent = problemCount;
+  $('kpi-planned-count').textContent = `${plannedObjsCount} объектов`;
+  $('kpi-freeze').textContent = fmt(freezeArea);
+  $('kpi-freeze-count').textContent = `${refusedObjsCount} объектов`;
 
-  // 2. Bar Chart - Statuses
+  // Bar Chart - Statuses
+  let statusMap = {};
+  data.forEach(r => { statusMap[r.status] = (statusMap[r.status] || 0) + r.areaBuild; });
   const maxStatusArea = Math.max(...Object.values(statusMap), 1);
   const statusColors = {
     'Завершен': 'var(--success)',
-    'В работе': 'var(--warning)',
+    'В работе': 'var(--info)',
     'Утрачен': 'var(--danger)',
     'Поврежден частично': '#f97316',
     'Отказ от строительства': '#64748b'
@@ -489,13 +588,23 @@ function renderDashboard(data) {
         <div class="bar-item">
           <div class="bar-label">${status}</div>
           <div class="bar-track">
-            <div class="bar-fill" style="width:${pct}%; background:${color};">${fmt(area)}</div>
+            <div class="bar-fill" style="width:${pct}%; background:${color};"></div>
           </div>
+          <div style="font-weight:700; font-size:12px; width:100px; text-align:right;">${fmt(area)}</div>
         </div>
       `;
     }).join('');
 
-  // 3. Bar Chart - Years
+  // Bar Chart - Years
+  let yearMap = {};
+  const currentYear = new Date().getFullYear();
+  data.forEach(r => {
+    if (r.rvDate) {
+      const y = r.rvDate.getFullYear();
+      if (y <= currentYear) yearMap[y] = (yearMap[y] || 0) + r.areaBuild;
+    }
+  });
+
   const sortedYears = Object.keys(yearMap).sort((a,b) => a - b);
   const maxYearArea = Math.max(...Object.values(yearMap), 1);
   
@@ -506,22 +615,25 @@ function renderDashboard(data) {
       <div class="bar-item">
         <div class="bar-label">${year} год</div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:${pct}%; background:var(--accent);">${fmt(area)}</div>
+          <div class="bar-fill" style="width:${pct}%; background:var(--accent);"></div>
         </div>
+        <div style="font-weight:700; font-size:12px; width:100px; text-align:right;">${fmt(area)}</div>
       </div>
     `;
   }).join('');
 
-  // 4. Lists (Upcoming & Recent)
+  initYearTable(data);
+
+  // Lists
   const sortedByDate = [...data].filter(r => r.rvDate).sort((a,b) => a.rvDate - b.rvDate);
-  
+  const now = new Date();
   const upcoming = sortedByDate.filter(r => r.rvDate >= now && r.status !== 'Завершен').slice(0, 5);
   const recent = sortedByDate.filter(r => r.rvDate < now || r.status === 'Завершен').sort((a,b) => b.rvDate - a.rvDate).slice(0, 5);
 
   const renderList = (arr, type) => arr.map(r => `
     <div class="delivery-item ${type}">
       <div class="delivery-date">${r.rvText.match(/\d{2}\.\d{2}\.\d{4}/) ? r.rvText.match(/\d{2}\.\d{2}\.\d{4}/)[0] : '—'}</div>
-      <div class="delivery-obj">${r.obj} <br><span style="font-size:11px">${r.stage}</span></div>
+      <div class="delivery-obj">${r.obj} <br><span style="font-size:11px; color:#94a3b8;">${r.stage}</span></div>
       <div class="delivery-area">${fmt(r.areaBuild)}</div>
     </div>
   `).join('');
@@ -530,14 +642,72 @@ function renderDashboard(data) {
   $('list-recent').innerHTML = recent.length ? renderList(recent, 'past') : '<div style="color:#666;font-size:13px;">Нет данных</div>';
 }
 
-// ============ RENDER TABLE & FILTERS ============
+// ============ YEAR TABLE ============
+function initYearTable(data) {
+  const monthsRu = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+  const years = new Set();
+  data.forEach(r => { if (r.rvDate) years.add(r.rvDate.getFullYear()); });
+  const currentYear = new Date().getFullYear();
+  years.add(currentYear);
+  
+  const sortedYears = [...years].sort((a,b) => b - a);
+  const select = $('year-select');
+  select.innerHTML = sortedYears.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y} год</option>`).join('');
+  
+  const renderTable = (year) => {
+    const yearData = data.filter(r => r.rvDate && r.rvDate.getFullYear() === year);
+    
+    const objMap = {};
+    yearData.forEach(r => {
+      if (!objMap[r.obj]) objMap[r.obj] = { obj: r.obj, months: Array(12).fill(0), total: 0, items: [] };
+      const month = r.rvDate.getMonth();
+      objMap[r.obj].months[month] += r.areaBuild;
+      objMap[r.obj].total += r.areaBuild;
+      objMap[r.obj].items.push(r);
+    });
+
+    const sortedObjs = Object.values(objMap).sort((a,b) => b.total - a.total);
+    
+    let html = `<tr><th>сдача площадей, ${year} год</th>${monthsRu.map(m => `<th>${m}</th>`).join('')}<th>всего:</th></tr>`;
+    
+    sortedObjs.forEach(o => {
+      html += `<tr><td>${o.obj}</td>`;
+      for (let m = 0; m < 12; m++) {
+        const val = o.months[m];
+        if (val > 0) {
+          const items = o.items.filter(i => i.rvDate.getMonth() === m);
+          const titleText = items.map(i => `${i.status} | РВ: ${i.rvText}`).join('\n');
+          const isDelivered = items.every(i => i.status === 'Завершен');
+          const cls = isDelivered ? 'cell-green' : 'cell-blue';
+          
+          const linkMatch = items[0].rvText.match(/(https?:\/\/[^\s]+)/);
+          const href = linkMatch ? linkMatch[0] : null;
+          
+          if (href) {
+            html += `<td class="${cls} cell-link" title="${titleText}"><a href="${href}" target="_blank">${fmt(val)}</a></td>`;
+          } else {
+            html += `<td class="${cls}" title="${titleText}">${fmt(val)}</td>`;
+          }
+        } else {
+          html += `<td style="color:#e2e8f0;">-</td>`;
+        }
+      }
+      html += `<td style="font-weight:800;">${fmt(o.total)}</td></tr>`;
+    });
+    
+    $('year-table').innerHTML = html;
+  };
+
+  select.onchange = (e) => renderTable(parseInt(e.target.value));
+  renderTable(currentYear);
+}
+
+// ============ TABLE & FILTERS ============
 function initFilters(data) {
   const uniqueFo = [...new Set(data.map(r => r.fo).filter(Boolean))].sort();
   const uniqueObj = [...new Set(data.map(r => r.obj).filter(Boolean))].sort();
   const uniqueStatus = [...new Set(data.map(r => r.status).filter(Boolean))].sort();
 
-  // По умолчанию все выключено, чтобы показать пользователю чистый интерфейс
-  // Но чтобы данные были видны, при первом рендере выбираем все.
   filters.fo = new Set(uniqueFo);
   filters.obj = new Set(uniqueObj);
   filters.status = new Set(uniqueStatus);
@@ -555,7 +725,6 @@ function initFilters(data) {
   renderCheckboxes('filter-obj', uniqueObj, 'obj');
   renderCheckboxes('filter-status', uniqueStatus, 'status');
 
-  // Events
   document.querySelectorAll('.checkbox-item input').forEach(cb => {
     cb.onchange = () => {
       const fk = cb.dataset.filter;
@@ -565,12 +734,17 @@ function initFilters(data) {
     };
   });
 
-  // Reset buttons
   document.querySelectorAll('.filter-actions').forEach(btn => {
     btn.onclick = () => {
       const target = btn.dataset.target;
+      const action = btn.dataset.action; // 'all' или 'none'
       const checkboxes = document.querySelectorAll(`input[data-filter="${target}"]`);
-      checkboxes.forEach(cb => { cb.checked = true; filters[target].add(cb.value); });
+      
+      checkboxes.forEach(cb => {
+        cb.checked = (action === 'all');
+        if (action === 'all') filters[target].add(cb.value);
+        else filters[target].delete(cb.value);
+      });
       applyFilters();
     };
   });
@@ -578,9 +752,9 @@ function initFilters(data) {
 
 function applyFilters() {
   filteredData = rawData.filter(r => {
-    const matchFo = filters.fo.size === 0 || filters.fo.has(r.fo);
-    const matchObj = filters.obj.size === 0 || filters.obj.has(r.obj);
-    const matchStatus = filters.status.size === 0 || filters.status.has(r.status);
+    const matchFo = filters.fo.has(r.fo);
+    const matchObj = filters.obj.has(r.obj);
+    const matchStatus = filters.status.has(r.status);
     return matchFo && matchObj && matchStatus;
   });
   renderTable();
@@ -595,7 +769,6 @@ function renderTable() {
     if (r.status === 'Завершен') statusClass = 'delivered';
     if (r.status === 'Утрачен' || r.status === 'Отказ от строительства') statusClass = 'danger';
 
-    // Извлекаем только дату для таблицы, пряча лишний текст
     const dateOnly = r.rvText.match(/\d{2}\.\d{2}\.\d{4}/) ? r.rvText.match(/\d{2}\.\d{2}\.\d{4}/)[0] : r.rvText;
 
     return `
@@ -606,9 +779,9 @@ function renderTable() {
         </td>
         <td>${r.category}</td>
         <td><span class="status-badge ${statusClass}">${r.status}</span></td>
-        <td style="font-variant-numeric:tabular-nums">${fmt(r.areaTotal)}</td>
-        <td style="font-variant-numeric:tabular-nums;font-weight:600;">${fmt(r.areaBuild)}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="${r.rvText}">
+        <td class="num" style="font-variant-numeric:tabular-nums">${fmt(r.areaTotal)}</td>
+        <td class="num" style="font-variant-numeric:tabular-nums;font-weight:600;">${fmt(r.areaBuild)}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.rvText}">
           ${linkify(dateOnly || '—')}
         </td>
       </tr>
@@ -616,18 +789,332 @@ function renderTable() {
   }).join('');
 }
 
-// ============ COMPARISON LOGIC (BASIC RESTORE) ============
-// Поскольку пользователь просил в первую очередь визуал, здесь базовая заглушка для сравнения
-// Вы можете взять полную логику из предыдущего скрипта, если нужно детальное сравнение.
-$('file-compare').onchange = e => {
-  const f = e.target.files[0];
-  $('fn-compare').textContent = f ? f.name : '';
-  $('btn-run-compare').disabled = !f;
+// ============ COMPARE LOGIC ============
+let compareState = { leftData: null, rightData: null, mode: 'g_vs_x' };
+let currentCompareData = null;
+
+const modeSlider = $('mode-slider');
+document.querySelectorAll('input[name="compare-mode"]').forEach((radio, index) => {
+  radio.addEventListener('change', e => {
+    modeSlider.style.transform = `translateX(${index * 100}%)`;
+    compareState.mode = e.target.value;
+    const isGvsX = compareState.mode === 'g_vs_x';
+    
+    $('google-fields').style.display = isGvsX ? 'block' : 'none';
+    $('left-icon').className = isGvsX ? 'card-icon g' : 'card-icon x';
+    $('left-icon').textContent = isGvsX ? 'G' : 'X';
+    $('left-title').textContent = isGvsX ? 'Google Sheets' : 'Excel-файл (Старый)';
+    $('right-title').textContent = isGvsX ? 'Excel-файл' : 'Excel-файл (Новый)';
+    
+    compareState.leftData = null; compareState.rightData = null;
+    $('fn-left-comp').textContent = ''; $('fn-right-comp').textContent = '';
+    updateCompareBtn();
+  });
+});
+
+function updateCompareBtn() { $('btn-run-comp').disabled = !(compareState.leftData && compareState.rightData); }
+
+$('btn-load-g-comp').onclick = async () => {
+  const id = $('gsheet-id-comp').value.trim();
+  const name = $('gsheet-name-comp').value.trim() || 'data';
+  try {
+    const data = await loadGoogleSheet(id, name);
+    compareState.leftData = { ...data, type: 'google' };
+    alert(`Google: Загружено ${data.rows.length} строк`);
+  } catch (e) { alert('Ошибка: ' + e.message); }
+  updateCompareBtn();
 };
 
-$('btn-run-compare').onclick = () => {
-  alert('Логика сравнения (из предыдущих версий) интегрируется сюда. Сейчас главное — визуализация.');
+async function readXlsxComp(file, preferredSheets) {
+  const buf = await file.arrayBuffer();
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buf);
+  let ws = null;
+  for (const name of preferredSheets) { ws = wb.getWorksheet(name); if (ws) break; }
+  if (!ws) ws = wb.worksheets[0];
+
+  const headers = [];
+  const headerRow = ws.getRow(1);
+  const lastCol = Math.max(ws.columnCount || 0, 60);
+  for (let col = 1; col <= lastCol; col++) {
+    const cell = headerRow.getCell(col);
+    let v = cell ? cell.value : null;
+    if (v && typeof v === 'object' && !(v instanceof Date)) {
+      if (v.richText) v = v.richText.map(r => r.text).join('');
+      else if (v.text !== undefined) v = v.text;
+      else if (v.result !== undefined) v = v.result;
+    }
+    headers[col] = v == null ? '' : String(v).replace(/\s+/g, ' ').trim();
+  }
+
+  const rows = [];
+  ws.eachRow((row, rn) => {
+    if (rn === 1) return;
+    const obj = { __row: rn };
+    let hasValue = false;
+    row.eachCell({ includeEmpty: false }, (cell, col) => {
+      let v = cell.value;
+      if (v && typeof v === 'object' && !(v instanceof Date)) {
+        if (v.richText) v = v.richText.map(r => r.text).join('');
+        else if (v.text !== undefined) v = v.text;
+        else if (v.result !== undefined) v = v.result;
+      }
+      const h = headers[col];
+      if (h) {
+        obj[h] = v;
+        if (v !== null && v !== undefined && v !== '') hasValue = true;
+      }
+    });
+    if (hasValue) rows.push(obj);
+  });
+  return { headers: headers.filter(Boolean), rows };
+}
+
+$('file-left-comp').onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  $('fn-left-comp').textContent = f.name;
+  const data = await readXlsxComp(f, ['data', 'Data', 'Данные']);
+  compareState.leftData = { ...data, type: 'excel' };
+  updateCompareBtn();
 };
+
+$('file-right-comp').onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  $('fn-right-comp').textContent = f.name;
+  const data = await readXlsxComp(f, ['Данные', 'Data', 'data']);
+  compareState.rightData = { ...data, type: 'excel' };
+  updateCompareBtn();
+};
+
+// Helpers for compare
+function getColumnMappingComp(headers) {
+  const find = (prefix, suffix=null) => headers.find(h => h.toLowerCase().startsWith(prefix.toLowerCase()) && (!suffix || h.includes(suffix)));
+  return {
+    'id': headers.find(h=>h.toLowerCase()==='id'), 'ФО': headers.find(h=>h.toLowerCase()==='фо'), 'объект': headers.find(h=>h.toLowerCase()==='объект'),
+    'этап': find('Наименование этапа'), 'статус': headers.find(h=>h.toLowerCase()==='статус площади'),
+    'общая площадь': find('Общая площадь'), 'площадь строительства': find('Площадь объекта строительства'),
+    'площадь блоков мезонина': find('Площадь блоков мезонина'), 'площадь оперзоны': find('Площадь оперзоны'),
+    'площадь заморозки': find('Площадь заморозки'), 'статус площадки': find('Статус площадки'),
+    'РВ': find('Дата получения РВ'), 'категория': headers.find(h=>h.toLowerCase()==='категория объекта'),
+    'источник': find('Источник данных площади объекта'), 'повреждения': headers.find(h=>h.toLowerCase()==='повреждение блока')
+  };
+}
+function normalizeValueComp(v) {
+  if (v === null || v === undefined) return null;
+  if (v instanceof Date) return `${String(v.getDate()).padStart(2,'0')}.${String(v.getMonth()+1).padStart(2,'0')}.${v.getFullYear()}`;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const s = v.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+    const d = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (d) return `${d[3]}.${d[2]}.${d[1]}`;
+    return s;
+  }
+  return String(v);
+}
+function normalizeIdComp(v) { return v == null ? null : String(v).trim(); }
+function normalizeObjectComp(v) { return v == null ? null : String(v).trim().replace(/^БВС\s+/i, '').replace(/\s+БВС$/i, ''); }
+function valuesEqualComp(a, b) {
+  if (a === null || a === undefined || a === '') a = null;
+  if (b === null || b === undefined || b === '') b = null;
+  if (a === null && b === null) return true;
+  if (a === null || b === null) return false;
+  if (typeof a === 'number' && typeof b === 'number') return Math.round(a*100) === Math.round(b*100);
+  return String(a).trim() === String(b).trim();
+}
+
+function extractNormalizedRowsComp(data, type) {
+  const mapping = type === 'excel' ? getColumnMappingComp(data.headers) : null;
+  return data.rows.map(r => {
+    const get = (key, fallbackKey) => type === 'google' ? normalizeValueComp(r[key] || r[fallbackKey]) : normalizeValueComp(r[mapping[key]]);
+    return {
+      __row: r.__row,
+      id: normalizeIdComp(type === 'google' ? r['id'] : r[mapping['id']]),
+      'ФО': get('ФО'), 'объект': get('объект'), 'объект_norm': normalizeObjectComp(get('объект')),
+      'этап': get('этап'), 'статус': get('статус'),
+      'общая площадь': get('общая площадь'), 'площадь строительства': get('площадь строительства'),
+      'площадь блоков мезонина': get('площадь блоков мезонина'), 'площадь оперзоны': get('площадь оперзоны'),
+      'площадь заморозки': get('площадь заморозки'), 'статус площадки': get('статус площадки'),
+      'РВ': get('РВ'), 'категория': get('категория'),
+      'источник': type === 'google' ? normalizeValueComp(r['источник данных площади'] || r['источник']) : get('источник'),
+      'повреждения': get('повреждения'),
+    };
+  });
+}
+
+function runComparisonComp() {
+  const left = compareState.leftData, right = compareState.rightData;
+  const gRows = extractNormalizedRowsComp(left, left.type), xRows = extractNormalizedRowsComp(right, right.type);
+
+  const FIELDS = [
+    ['этап','Этап'], ['статус','Статус площади'], ['общая площадь','Общая площадь'],
+    ['площадь строительства','Площадь объекта строительства'], ['площадь блоков мезонина','Площадь блоков мезонина'],
+    ['площадь оперзоны','Площадь оперзоны'], ['площадь заморозки','Площадь заморозки'],
+    ['статус площадки','Статус площадки'], ['РВ','Дата получения РВ'],
+    ['категория','Категория объекта'], ['источник','Источник данных'], ['повреждения','Повреждение блока'],
+  ];
+
+  const pkey = r => `${r.id}|${r['ФО']}|${r['объект_norm']}`, skey = r => `${r['этап'] || ''}|${r['категория'] || ''}`;
+  const gGroups = {}, xGroups = {};
+  gRows.forEach(r => (gGroups[pkey(r)] ||= []).push(r));
+  xRows.forEach(r => (xGroups[pkey(r)] ||= []).push(r));
+
+  const pairs = [], onlyG = [], onlyX = [];
+  const allKeys = new Set([...Object.keys(gGroups), ...Object.keys(xGroups)]);
+
+  for (const k of allKeys) {
+    const g = gGroups[k] || [], x = xGroups[k] || [];
+    const usedG = new Set(), usedX = new Set();
+    for (let i = 0; i < g.length; i++) {
+      for (let j = 0; j < x.length; j++) {
+        if (usedX.has(j)) continue;
+        if (skey(g[i]) === skey(x[j])) { pairs.push([g[i], x[j], 'exact']); usedG.add(i); usedX.add(j); break; }
+      }
+    }
+    const rg = g.filter((_, i) => !usedG.has(i)), rx = x.filter((_, j) => !usedX.has(j));
+    const minLen = Math.min(rg.length, rx.length);
+    for (let i = 0; i < minLen; i++) pairs.push([rg[i], rx[i], 'fuzzy']);
+    onlyG.push(...rg.slice(minLen)); onlyX.push(...rx.slice(minLen));
+  }
+
+  const changes = [];
+  for (const [gr, xr] of pairs) {
+    for (const [fk, fl] of FIELDS) {
+      if (!valuesEqualComp(gr[fk], xr[fk])) {
+        changes.push({ id: gr.id, fo: gr['ФО'], obj: gr['объект'], stage_old: gr['этап'], stage_new: xr['этап'], field: fl, old: gr[fk], new: xr[fk] });
+      }
+    }
+  }
+  renderCompareResults({ gRows, xRows, pairs, changes, onlyG, onlyX, mode: compareState.mode });
+}
+
+function renderCompareResults(d) {
+  currentCompareData = d;
+  $('compare-upload-screen').style.display = 'none';
+  $('compare-report-screen').style.display = 'block';
+  
+  const leftLabel = d.mode === 'g_vs_x' ? 'Google' : 'Excel (Старый)';
+  const rightLabel = d.mode === 'g_vs_x' ? 'Excel' : 'Excel (Новый)';
+
+  let html = `
+    <div class="summary">
+      <div class="stat"><div class="stat-label">${leftLabel}</div><div class="stat-value">${d.gRows.length}</div><div class="stat-detail">строк</div></div>
+      <div class="stat"><div class="stat-label">${rightLabel}</div><div class="stat-value">${d.xRows.length}</div><div class="stat-detail">строк</div></div>
+      <div class="stat yellow"><div class="stat-label">Изменений</div><div class="stat-value">${d.changes.length}</div><div class="stat-detail">ячеек</div></div>
+      <div class="stat green"><div class="stat-label">Только в ${rightLabel}</div><div class="stat-value">${d.onlyX.length}</div><div class="stat-detail">добавлено</div></div>
+      <div class="stat red"><div class="stat-label">Только в ${leftLabel}</div><div class="stat-value">${d.onlyG.length}</div><div class="stat-detail">удалено</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="changes">Изменения<span class="tab-count">${d.changes.length}</span></button>
+      <button class="tab" data-tab="only_x">Только в ${rightLabel}<span class="tab-count">${d.onlyX.length}</span></button>
+      <button class="tab" data-tab="only_g">Только в ${leftLabel}<span class="tab-count">${d.onlyG.length}</span></button>
+    </div>
+    <div class="panel" id="panel-changes">
+      <div class="toolbar"><input class="filter" id="f-changes" placeholder="Поиск..."><span class="row-count" id="c-changes"></span></div>
+      <div class="table-wrap">
+        <table id="t-changes"><thead><tr><th>ID</th><th>ФО</th><th>Объект</th><th>Этап</th><th>Поле</th><th>Было</th><th>Стало</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+    <div class="panel hidden" id="panel-only_x">
+      <div class="table-wrap"><table id="t-only_x"><thead><tr><th>ID</th><th>ФО</th><th>Объект</th><th>Этап</th><th>Статус</th><th>Общая</th><th>Строит.</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="panel hidden" id="panel-only_g">
+      <div class="table-wrap"><table id="t-only_g"><thead><tr><th>ID</th><th>ФО</th><th>Объект</th><th>Этап</th><th>Статус</th><th>Общая</th><th>Строит.</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  `;
+  $('compare-content').innerHTML = html;
+
+  let prevKey = null;
+  $('t-changes').querySelector('tbody').innerHTML = d.changes.map(r => {
+    const currKey = `${r.id}|${r.obj}|${r.stage_new}`;
+    const isGrouped = (currKey === prevKey); prevKey = currKey;
+    const cls = isGrouped ? 'muted-text' : '';
+    
+    let stageHtml = r.field === 'Этап' ? `<span class="old-val">${r.stage_old}</span> → <span class="new-val">${r.stage_new}</span>` : (r.stage_new || r.stage_old || '');
+    if (isGrouped && r.field !== 'Этап') stageHtml = '';
+
+    return `<tr>
+      <td class="${cls}">${r.id}</td><td class="${cls}">${r.fo}</td><td class="${cls}">${r.obj}</td>
+      <td class="${cls}">${stageHtml}</td><td><strong>${r.field}</strong></td>
+      <td><span class="old-val">${r.old || '—'}</span></td><td><span class="new-val">${r.new || '—'}</span></td>
+    </tr>`;
+  }).join('');
+
+  const fill = (id, data) => {
+    $(id).querySelector('tbody').innerHTML = data.map(r => `<tr><td>${r.id}</td><td>${r['ФО']}</td><td>${r['объект']}</td><td>${r['этап']}</td><td>${r['статус']}</td><td>${fmt(r['общая площадь'])}</td><td>${fmt(r['площадь строительства'])}</td></tr>`).join('');
+  };
+  fill('t-only_x', d.onlyX); fill('t-only_g', d.onlyG);
+
+  document.querySelectorAll('#compare-content .tab').forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll('#compare-content .tab').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('#compare-content .panel').forEach(x => x.classList.add('hidden'));
+      t.classList.add('active'); $('panel-' + t.dataset.tab).classList.remove('hidden');
+    };
+  });
+}
+
+// ============ DOWNLOAD COMPARE ============
+async function downloadCompareXlsx() {
+  if (!currentCompareData) return;
+  const d = currentCompareData;
+  const wb = new ExcelJS.Workbook();
+
+  const s = wb.addWorksheet('Сводка');
+  [
+    ['Параметр', 'Значение'],
+    ['Режим сравнения', d.mode === 'g_vs_x' ? 'Google ↔ Excel' : 'Excel ↔ Excel'],
+    ['Изменений', d.changes.length],
+    ['Только слева', d.onlyG.length],
+    ['Только справа', d.onlyX.length],
+  ].forEach(r => s.addRow(r));
+  s.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  s.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+  s.columns = [{ width: 26 }, { width: 30 }];
+
+  const c = wb.addWorksheet('Изменения');
+  c.addRow(['ID', 'ФО', 'Объект', 'Этап', 'Поле', 'Было', 'Стало']);
+  c.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  c.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+  
+  d.changes.forEach(ch => {
+    const stageDisplay = ch.field === 'Этап' ? `${ch.old ?? ''} → ${ch.new ?? ''}` : (ch.stage_new || ch.stage_old || '');
+    const row = c.addRow([ch.id, ch.fo, ch.obj, stageDisplay, ch.field, ch.old ?? '', ch.new ?? '']);
+    row.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } };
+    row.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0FDF4' } };
+  });
+  c.columns = [{ width: 12 }, { width: 15 }, { width: 20 }, { width: 30 }, { width: 24 }, { width: 20 }, { width: 20 }];
+
+  const ox = wb.addWorksheet('Только справа');
+  ox.addRow(['ID', 'ФО', 'Объект', 'Этап', 'Статус', 'Общая', 'Строит.']);
+  ox.getRow(1).font = { bold: true };
+  d.onlyX.forEach(r => {
+    const row = ox.addRow([r.id, r['ФО'], r['объект'], r['этап'], r['статус'], r['общая площадь'] ?? '', r['площадь строительства'] ?? '']);
+    row.eachCell(cell => cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0FDF4' } });
+  });
+
+  const og = wb.addWorksheet('Только слева');
+  og.addRow(['ID', 'ФО', 'Объект', 'Этап', 'Статус', 'Общая', 'Строит.']);
+  og.getRow(1).font = { bold: true };
+  d.onlyG.forEach(r => {
+    const row = og.addRow([r.id, r['ФО'], r['объект'], r['этап'], r['статус'], r['общая площадь'] ?? '', r['площадь строительства'] ?? '']);
+    row.eachCell(cell => cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } });
+  });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+$('btn-run-comp').onclick = runComparisonComp;
+$('btn-back-comp').onclick = () => { $('compare-upload-screen').style.display = 'block'; $('compare-report-screen').style.display = 'none'; };
+$('btn-dl-comp').onclick = downloadCompareXlsx;
 
 // ============ INIT ============
 async function init() {
@@ -635,7 +1122,6 @@ async function init() {
     const { headers, rows } = await loadGoogleSheet();
     rawData = processData(headers, rows);
     filteredData = [...rawData];
-    
     renderDashboard(rawData);
     initFilters(rawData);
     renderTable();
