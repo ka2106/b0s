@@ -6,7 +6,7 @@
 <title>БОС · Сравнение версий</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <style>
 :root{
@@ -33,7 +33,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   background:var(--bg);color:var(--text);
   font-size:14px;line-height:1.5;
   -webkit-font-smoothing:antialiased;
@@ -54,7 +54,9 @@ header{
   display:flex;align-items:center;justify-content:center;
   font-weight:700;font-size:16px;color:#fff;letter-spacing:-.5px;
 }
-.header-text h1{font-size:17px;font-weight:600;margin:0;letter-spacing:-.01em;}
+.header-text h1{
+  font-size:18px;font-weight:700;margin:0;letter-spacing:-.02em;
+}
 
 /* ============ Main ============ */
 main{padding:32px 0 60px}
@@ -96,19 +98,18 @@ main{padding:32px 0 60px}
   flex-direction:column;
 }
 .card-header{
-  display:flex;align-items:center;gap:12px;
+  display:flex;align-items:center;gap:14px;
   margin-bottom:20px;padding-bottom:16px;
   border-bottom:1px solid var(--border);
 }
 .card-icon{
-  width:36px;height:36px;border-radius:8px;
+  width:38px;height:38px;border-radius:8px;
   display:flex;align-items:center;justify-content:center;
   font-size:16px;font-weight:700;flex-shrink:0;
 }
 .card-icon.g{background:#eff6ff;color:#2563eb}
 .card-icon.x{background:#f0fdf4;color:#15803d}
-.card-title{font-size:15px;font-weight:600;margin:0}
-.card-sub{font-size:12px;color:var(--text-muted);margin:2px 0 0}
+.card-title{font-size:16px;font-weight:700;margin:0;letter-spacing:-.01em;}
 
 .field{margin-bottom:14px}
 .field-label{
@@ -141,17 +142,25 @@ main{padding:32px 0 60px}
 .btn-full{width:100%}
 .btn-lg{padding:12px 32px;font-size:14px}
 
+/* Исправленный разделитель */
 .divider{
-  position:relative;text-align:center;margin:14px 0;
-  font-size:11px;color:var(--text-dim);text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  text-align:center;
+  margin: 20px 0;
+  font-size:11px;
+  color:var(--text-dim);
+  text-transform:uppercase;
   letter-spacing:.05em;
+  font-weight:600;
 }
-.divider::before,.divider::after{
-  content:'';position:absolute;top:50%;width:calc(50% - 30px);height:1px;
-  background:var(--border);
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border);
 }
-.divider::before{left:0}
-.divider::after{right:0}
+.divider::before { margin-right: 12px; }
+.divider::after { margin-left: 12px; }
 
 /* Drop Zone */
 .drop-zone{
@@ -198,7 +207,7 @@ main{padding:32px 0 60px}
   display:flex;justify-content:space-between;align-items:flex-start;
   gap:16px;margin-bottom:24px;flex-wrap:wrap;
 }
-.report-title{font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+.report-title{font-size:20px;font-weight:700;margin:0;letter-spacing:-.01em}
 .report-meta{color:var(--text-muted);font-size:13px;margin:6px 0 0}
 .report-actions{display:flex;gap:8px}
 
@@ -246,11 +255,6 @@ main{padding:32px 0 60px}
   border-radius:0 0 var(--radius) var(--radius);padding:16px;
 }
 .panel.hidden{display:none}
-.panel-note{
-  font-size:12px;color:var(--text-muted);padding:10px 12px;
-  background:#f8fafc;border-radius:var(--radius-sm);
-  border-left:2px solid var(--border-strong);margin-bottom:12px;
-}
 
 .toolbar{display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap;}
 input.filter{
@@ -338,10 +342,7 @@ footer{text-align:center;padding:24px 0;color:var(--text-dim);font-size:11px;bor
     <div class="card" id="card-left">
       <div class="card-header">
         <div class="card-icon g" id="left-icon">G</div>
-        <div>
-          <div class="card-title" id="left-title">Google Sheets</div>
-          <div class="card-sub" id="left-sub">Авто-загрузка или файл .xlsx</div>
-        </div>
+        <div class="card-title" id="left-title">Google Sheets</div>
       </div>
 
       <div id="google-fields">
@@ -373,15 +374,10 @@ footer{text-align:center;padding:24px 0;color:var(--text-dim);font-size:11px;bor
     <div class="card" id="card-right">
       <div class="card-header">
         <div class="card-icon x" id="right-icon">X</div>
-        <div>
-          <div class="card-title" id="right-title">Excel-файл</div>
-          <div class="card-sub" id="right-sub">Лист «Данные»</div>
-        </div>
+        <div class="card-title" id="right-title">Excel-файл</div>
       </div>
 
-      <!-- Надпись "Файл .xlsx" убрана, так как она дублируется внутри зоны -->
-
-      <label class="drop-zone" id="dz-right">
+      <label class="drop-zone" id="dz-right" style="margin-top: 2px;">
         <input type="file" id="file-right" accept=".xlsx">
         <div class="drop-icon">📄</div>
         <div class="drop-text">Перетащите <strong>.xlsx</strong> или нажмите</div>
@@ -467,11 +463,9 @@ document.querySelectorAll('input[name="compare-mode"]').forEach(radio => {
     $('left-icon').className = isGvsX ? 'card-icon g' : 'card-icon x';
     $('left-icon').textContent = isGvsX ? 'G' : 'X';
     $('left-title').textContent = isGvsX ? 'Google Sheets' : 'Excel-файл (Старый)';
-    $('left-sub').textContent = isGvsX ? 'Авто-загрузка или файл .xlsx' : 'Лист «Данные»';
     
     // Правая сторона
     $('right-title').textContent = isGvsX ? 'Excel-файл' : 'Excel-файл (Новый)';
-    $('right-sub').textContent = isGvsX ? 'Лист «Данные»' : 'Лист «Данные»';
     
     // Сброс загруженных данных
     state.leftData = null;
