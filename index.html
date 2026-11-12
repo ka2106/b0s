@@ -45,7 +45,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 @media(max-width:900px){.charts-row{grid-template-columns:1fr;}}
-.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);}
+.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm); overflow: hidden;}
 .chart-title{font-size:15px;font-weight:700;margin:0 0 16px 0;}
 
 .bar-chart{display:flex;flex-direction:column;gap:12px;}
@@ -64,14 +64,14 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
-.year-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-sm);}
-.year-table{width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:12px 8px; border-bottom:1px solid var(--border); text-align:center;}
-.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; position:sticky; top:0;}
-.year-table th:first-child{text-align:left; padding-left:16px;}
-.year-table td:first-child{text-align:left; font-weight:500; position:sticky; left:0; z-index:2; padding-left:16px;}
-.year-table td:last-child{text-align:right; font-weight:700; padding-right:16px;}
-.year-table th:last-child{text-align:right; background:var(--bg); padding-right:16px;}
+
+/* Таблица сдачи площадей (без горизонтальной прокрутки) */
+.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); overflow: hidden;}
+.year-table{width:100%; table-layout: fixed; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
+.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
+.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:18%;}
+.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:10%;}
 
 .text-delivered { color: #059669; font-weight: 600; }
 .text-planned { color: #4f46e5; font-weight: 600; }
@@ -237,7 +237,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
             <div class="year-table-wrap"><table class="year-table" id="year-table"></table></div>
           </div>
           <div class="charts-row">
-            <div class="chart-card"><h3 class="chart-title">Ближайшие к сдаче (Планируемые)</h3><div class="delivery-list" id="list-upcoming"></div></div>
+            <div class="chart-card"><h3 class="chart-title">Ближайшие к сдаче объекты</h3><div class="delivery-list" id="list-upcoming"></div></div>
             <div class="chart-card"><h3 class="chart-title">Последние сданные объекты</h3><div class="delivery-list" id="list-recent"></div></div>
           </div>
         </div>
@@ -460,14 +460,14 @@ function renderDashboard(data) {
   $('kpi-delivered-year').textContent = fmt(deliveredAreaThisYear);
   $('kpi-delivered-sub').textContent = `${deliveredObjsThisYear} объектов`;
 
-  // 3. Осталось сдать (План текущего года)
+  // 3. Осталось сдать
   const remainingThisYear = data.filter(r => r.status === 'В работе' && r.rvDate && r.rvDate.getFullYear() === currentYear);
   const remainingAreaThisYear = remainingThisYear.reduce((sum, r) => sum + r.areaBuild, 0);
   const remainingObjsThisYear = new Set(remainingThisYear.map(r => r.obj)).size;
   $('kpi-remaining').textContent = fmt(remainingAreaThisYear);
   $('kpi-remaining-sub').textContent = `${remainingObjsThisYear} объектов`;
 
-  // 4. Ближайший к сдаче (с указанием этапа)
+  // 4. Ближайший к сдаче
   const now = new Date();
   const upcoming = [...data].filter(r => r.status === 'В работе' && r.rvDate && r.rvDate >= now).sort((a,b) => a.rvDate - b.rvDate);
   if (upcoming.length > 0) {
@@ -496,14 +496,29 @@ function renderDashboard(data) {
       return `<div class="bar-item"><div class="bar-label">${status}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${statusColors[status] || 'var(--accent)'};"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
 
-  // Bar Chart - Years
-  let yearMap = {};
-  data.forEach(r => { if (r.rvDate) { const y = r.rvDate.getFullYear(); if (y <= currentYear) yearMap[y] = (yearMap[y] || 0) + r.areaBuild; } });
-  const sortedYears = Object.keys(yearMap).sort((a,b) => a - b);
+  // Bar Chart - Years (Группировка "Ранее")
+  let yearMap = { 'Ранее': 0 };
+  data.forEach(r => { 
+    if (r.rvDate) { 
+      const y = r.rvDate.getFullYear(); 
+      if (y < 2024) {
+        yearMap['Ранее'] += r.areaBuild;
+      } else if (y <= currentYear) {
+        yearMap[y] = (yearMap[y] || 0) + r.areaBuild; 
+      }
+    } 
+  });
+  
+  const sortedYears = Object.keys(yearMap).sort((a,b) => {
+    if (a === 'Ранее') return -1;
+    if (b === 'Ранее') return 1;
+    return a - b;
+  });
+  
   const maxYearArea = Math.max(...Object.values(yearMap), 1);
   $('chart-years').innerHTML = sortedYears.map(year => {
     const area = yearMap[year]; const pct = (area / maxYearArea) * 100;
-    return `<div class="bar-item"><div class="bar-label">${year} год</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:var(--accent);"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
+    return `<div class="bar-item"><div class="bar-label">${year}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:var(--accent);"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
 
   initYearTable(data);
@@ -617,7 +632,7 @@ function renderTable() {
   }).join('');
 }
 
-// ================= COMPARE (FIXED) =================
+// ================= COMPARE =================
 let compareState = { leftData: null, rightData: null, mode: 'g_vs_x' };
 let currentCompareData = null;
 const modeSlider = $('mode-slider');
@@ -719,7 +734,7 @@ function parseNum(v) {
 }
 function valuesEqualComp(a, b) {
   let na = parseNum(a), nb = parseNum(b);
-  if (na !== null && nb !== null) return Math.abs(na - nb) < 0.01; // Точность до копеек
+  if (na !== null && nb !== null) return Math.abs(na - nb) < 0.01;
   let sa = String(a || '').trim(), sb = String(b || '').trim();
   if (sa === '-' || sa === '') sa = '';
   if (sb === '-' || sb === '') sb = '';
