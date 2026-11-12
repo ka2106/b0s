@@ -7,7 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
   --bg:#f1f5f9; --surface:#ffffff; --border:#e2e8f0; --text:#0f172a; --text-muted:#64748b;
@@ -25,6 +27,17 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 .logo-wrap{display:flex;align-items:center;gap:12px;}
 .logo-mark{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:16px;}
 .logo-text{font-size:16px;font-weight:700;letter-spacing:-.02em;}
+
+/* Header controls */
+.header-controls{display:flex;align-items:center;gap:20px;}
+.switch-wrap{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-muted);}
+.switch{position:relative;display:inline-block;width:36px;height:20px;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#cbd5e1;transition:.4s;border-radius:20px;}
+.slider:before{position:absolute;content:"";height:14px;width:14px;left:3px;bottom:3px;background-color:white;transition:.4s;border-radius:50%;}
+input:checked + .slider{background-color:var(--accent);}
+input:checked + .slider:before{transform:translateX(16px);}
+
 .nav-tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:10px;}
 .nav-btn{padding:8px 20px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;background:transparent;color:var(--text-muted);}
 .nav-btn:hover{color:var(--text);}
@@ -33,9 +46,11 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 .container{max-width:1500px;margin:0 auto;}
 .text-left{text-align:left !important;} .text-center{text-align:center !important;} .text-right{text-align:right !important;}
 
+/* KPI Cards */
 .dashboard-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:16px;margin-bottom:24px;}
 @media(max-width:1024px){.dashboard-grid{grid-template-columns:repeat(2, 1fr);}}
-.kpi-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;}
+.kpi-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;cursor:pointer;transition:transform 0.1s, box-shadow 0.1s;}
+.kpi-card:hover{transform:translateY(-2px); box-shadow:var(--shadow);}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;}
 .kpi-card.blue::before{background:var(--accent);} .kpi-card.green::before{background:var(--success);}
 .kpi-card.orange::before{background:var(--warning);} .kpi-card.purple::before{background:#8b5cf6;}
@@ -45,7 +60,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 @media(max-width:900px){.charts-row{grid-template-columns:1fr;}}
-.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm); overflow: hidden;}
+.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);}
 .chart-title{font-size:15px;font-weight:700;margin:0 0 16px 0;}
 
 .bar-chart{display:flex;flex-direction:column;gap:12px;}
@@ -64,24 +79,23 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
-
-/* Таблица сдачи площадей (без горизонтальной прокрутки) */
-.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); overflow: hidden;}
+.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
 .year-table{width:100%; table-layout: fixed; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
 .year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
-.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:18%;}
+.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:18%; overflow:hidden; text-overflow:ellipsis;}
 .year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:10%;}
 
 .text-delivered { color: #059669; font-weight: 600; }
 .text-planned { color: #4f46e5; font-weight: 600; }
 
+/* Тултип */
 .tooltip-wrap { position: relative; display: inline-block; cursor: pointer; }
 .tooltip-wrap::before { content: ''; position: absolute; bottom: 100%; left: 0; width: 100%; height: 15px; }
 .tooltip-wrap .tooltip-text {
   visibility: hidden; opacity: 0; pointer-events: none;
   width: max-content; max-width: 400px; background-color: #1e293b; color: #fff;
-  text-align: left; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 100;
+  text-align: left; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 9999;
   bottom: 150%; left: 50%; transform: translateX(-50%); transition: opacity 0.2s;
   font-size: 12px; font-weight: 400; white-space: nowrap; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
 }
@@ -125,6 +139,9 @@ tbody tr:hover td{background:var(--bg);}
 .status-badge.danger{background:var(--danger-bg);color:var(--danger);}
 .raw-link{color:var(--accent);text-decoration:none;font-weight:600;}
 .raw-link:hover{text-decoration:underline;}
+
+/* Map */
+#map { width: 100%; height: 70vh; border-radius: var(--radius); box-shadow: var(--shadow); z-index: 1;}
 
 /* COMPARE STYLES */
 .mode-selector{display:flex;position:relative;background:#e2e8f0;border-radius:8px;padding:3px;width:340px;margin:0 auto 24px;box-shadow:inset 0 1px 2px rgba(0,0,0,.05);border:1px solid #cbd5e1;}
@@ -193,11 +210,22 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
 <div class="app">
   <header>
     <div class="logo-wrap"><div class="logo-mark">Б</div><div class="logo-text">БОС · Аналитика</div></div>
-    <nav class="nav-tabs">
-      <button class="nav-btn active" data-tab="dashboard">Дашборд</button>
-      <button class="nav-btn" data-tab="table">Таблица</button>
-      <button class="nav-btn" data-tab="compare">Сравнение</button>
-    </nav>
+    
+    <div class="header-controls">
+      <label class="switch-wrap">
+        <div class="switch">
+          <input type="checkbox" id="toggle-bvs" checked>
+          <span class="slider"></span>
+        </div>
+        Показывать БВС
+      </label>
+      <nav class="nav-tabs">
+        <button class="nav-btn active" data-tab="dashboard">Дашборд</button>
+        <button class="nav-btn" data-tab="table">Таблица</button>
+        <button class="nav-btn" data-tab="map">Карта</button>
+        <button class="nav-btn" data-tab="compare">Сравнение</button>
+      </nav>
+    </div>
   </header>
 
   <div class="main-content" id="main-content">
@@ -208,16 +236,16 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
         <div id="dashboard-loading" style="text-align:center; padding:60px; font-size:16px; color:var(--text-muted);">Загружаю данные...</div>
         <div id="dashboard-content" style="display:none;">
           <div class="dashboard-grid">
-            <div class="kpi-card blue">
+            <div class="kpi-card blue" onclick="drillDown('all')">
               <div class="kpi-label">Всего объектов</div>
               <div class="kpi-value" id="kpi-objects">0</div>
             </div>
-            <div class="kpi-card green">
+            <div class="kpi-card green" onclick="drillDown('delivered')">
               <div class="kpi-label">Сдано в <span id="kpi-year-label"></span> г.</div>
               <div class="kpi-value" id="kpi-delivered-year">0</div>
               <div class="kpi-sub" id="kpi-delivered-sub">0 объектов</div>
             </div>
-            <div class="kpi-card orange">
+            <div class="kpi-card orange" onclick="drillDown('remaining')">
               <div class="kpi-label">Осталось сдать</div>
               <div class="kpi-value" id="kpi-remaining">0</div>
               <div class="kpi-sub" id="kpi-remaining-sub">0 объектов</div>
@@ -247,7 +275,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
-            <div class="filter-group">
+            <div class="filter-group open">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <div class="filter-title-wrap">
                   <span class="filter-title">ФО</span>
@@ -289,7 +317,13 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
             </div>
           </aside>
           <div class="table-container">
-            <div class="table-header"><span class="table-title">Реестр объектов</span><span style="font-size:12px;color:var(--text-muted)" id="table-count">0 строк</span></div>
+            <div class="table-header">
+              <span class="table-title">Реестр объектов</span>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:12px;color:var(--text-muted)" id="table-count">0 строк</span>
+                <button class="btn btn-secondary" id="btn-export-excel">Экспорт в Excel</button>
+              </div>
+            </div>
             <div style="overflow-x:auto;">
               <table>
                 <thead><tr><th class="text-left">Объект / Этап</th><th class="text-left">Категория</th><th class="text-center">Статус площадки</th><th class="text-right">Мезонин</th><th class="text-right">Оперзона</th><th class="text-right">Заморозка</th><th class="text-right">Строительство</th><th class="text-center">РВ (Дата)</th><th class="text-left">Источник данных</th><th class="text-left">Повреждения</th></tr></thead>
@@ -298,6 +332,11 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- MAP -->
+      <div id="tab-map" class="tab-content" style="display:none;">
+        <div id="map"></div>
       </div>
 
       <!-- COMPARE -->
@@ -351,8 +390,35 @@ const fmt = v => typeof v === 'number' ? NUM_FMT.format(v) : (v || '');
 const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const linkify = s => { if (!s) return ''; return String(s).replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" class="raw-link">${url}</a>`); };
 
-let rawData = [], filteredData = [];
+let allData = []; 
+let rawData = []; 
+let filteredData = []; 
 let filters = { fo: new Set(), obj: new Set(), category: new Set(), status: new Set() };
+let showBVS = true;
+let map = null;
+let markersLayer = null;
+
+const cityCoords = {
+  "Москва": [55.7558, 37.6173], "Алексин": [54.5044, 37.0667], "Алматы": [43.2389, 76.8897],
+  "Архангельск": [64.5393, 40.5182], "Астана": [51.1694, 71.4491], "Бишкек": [42.8746, 74.5698],
+  "Благовещенск": [50.2907, 127.5272], "Владивосток": [43.1155, 131.8855], "Владикавказ": [43.0367, 44.6678],
+  "Владимир": [56.1290, 40.4070], "Волгоград": [48.7194, 44.5018], "Воронеж": [51.6608, 39.2003],
+  "Екатеринбург": [56.8389, 60.6057], "Есипово": [56.1556, 37.1583], "Иваново": [57.0003, 40.9739],
+  "Иркутск": [52.2871, 104.3050], "Казань": [55.7963, 49.1088], "Коледино": [55.4167, 37.5000],
+  "Комсомольск-на-Амуре": [50.5500, 137.0000], "Котовск": [52.5833, 41.5000], "Краснодар": [45.0355, 38.9753],
+  "Красноярск": [56.0153, 92.8932], "Курск": [51.7304, 36.1926], "Магас": [43.1687, 44.8133],
+  "Махачкала": [42.9849, 47.5047], "Минск": [53.9045, 27.5615], "Невинномысск": [44.6333, 41.9333],
+  "Нижний Новгород": [56.3269, 44.0059], "Новосибирск": [55.0084, 82.9357], "Омск": [54.9893, 73.3682],
+  "Оренбург": [51.7682, 55.0969], "Пенза": [53.2007, 45.0046], "Пермь": [58.0105, 56.2502],
+  "Петрозаводск": [61.7849, 34.3469], "Ростов-на-Дону": [47.2357, 39.7015], "Рязань": [54.6269, 39.6916],
+  "Самара": [53.1959, 50.1002], "Санкт-Петербург": [59.9343, 30.3351], "Сарапул": [56.4614, 53.8028],
+  "Саратов": [51.5336, 46.0343], "Симферополь": [44.9521, 34.1024], "Смоленск": [54.7818, 32.0401],
+  "Софьино": [55.5000, 38.0000], "Ташкент": [41.2995, 69.2401], "Тбилиси": [41.7151, 44.8271],
+  "Тверь": [56.8587, 35.9176], "Тюмень": [57.1522, 65.5272], "Улан-Удэ": [51.8335, 107.5841],
+  "Уфа": [54.7388, 55.9721], "Фаниполь": [53.7500, 27.3333], "Хабаровск": [48.4827, 135.0838],
+  "Химки": [55.8896, 37.4450], "Челябинск": [55.1644, 61.4368], "Чита": [52.0340, 113.4994],
+  "Электросталь": [55.7847, 38.4447], "Юрга": [55.7167, 84.8833], "Ярославль": [57.6261, 39.8845]
+};
 
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.onclick = () => {
@@ -360,8 +426,40 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
     btn.classList.add('active');
     $('tab-' + btn.dataset.tab).style.display = 'block';
+    
+    if (btn.dataset.tab === 'map') {
+      if (!map) initMap();
+      else map.invalidateSize();
+      updateMap();
+    }
   };
 });
+
+$('toggle-bvs').onchange = (e) => {
+  showBVS = e.target.checked;
+  processAllData();
+};
+
+function readURL() {
+  const params = new URLSearchParams(window.location.search);
+  ['fo', 'obj', 'category', 'status'].forEach(k => {
+    if (params.has(k)) {
+      filters[k] = new Set(params.get(k).split(','));
+    } else {
+      filters[k] = null;
+    }
+  });
+}
+function updateURL() {
+  const params = new URLSearchParams();
+  Object.keys(filters).forEach(k => {
+    if (filters[k] !== null && filters[k].size > 0) {
+      params.set(k, Array.from(filters[k]).join(','));
+    }
+  });
+  const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+  window.history.replaceState({}, '', newUrl);
+}
 
 function loadGoogleSheet(id = SHEET_ID, name = SHEET_NAME) {
   return new Promise((resolve, reject) => {
@@ -438,9 +536,52 @@ function processData(headers, rows) {
       areaMezzanine: parseA('площадь блоков мезонина'), areaOper: parseA('площадь оперзоны'),
       areaFreeze: parseA('площадь заморозки'), areaBuild: parseA('площадь строительства'),
       source: getVal('источник данных площади') || '', damage: getVal('повреждения') || '',
-      rvText: cleanRvText, rvLink: rvLink, rvDate: date, rvSort: date ? date.getTime() : 0
+      rvText: cleanRvText, rvLink: rvLink, rvDate: date, rvSort: date ? date.getTime() : 0,
+      isBVS: (String(getVal('категория')||'').includes('БВС') || String(getVal('объект')||'').includes('БВС') || String(getVal('этап')||'').includes('БВС'))
     };
   });
+}
+
+function processAllData() {
+  rawData = showBVS ? allData : allData.filter(r => !r.isBVS);
+  
+  if (filters.fo === null) filters.fo = new Set([...new Set(rawData.map(r => r.fo).filter(Boolean))].sort());
+  if (filters.obj === null) filters.obj = new Set([...new Set(rawData.map(r => r.obj).filter(Boolean))].sort());
+  if (filters.category === null) filters.category = new Set([...new Set(rawData.map(r => r.category).filter(Boolean))].sort());
+  if (filters.status === null) filters.status = new Set([...new Set(rawData.map(r => r.status).filter(Boolean))].sort());
+
+  document.querySelectorAll('.checkbox-item input').forEach(cb => {
+    const fk = cb.dataset.filter;
+    if (filters[fk]) {
+      cb.checked = filters[fk].has(cb.value);
+    }
+  });
+
+  applyFilters();
+  renderDashboard(rawData);
+  if (map) updateMap();
+}
+
+function drillDown(type) {
+  document.querySelector('.nav-btn[data-tab="table"]').click();
+  
+  filters.fo = new Set([...new Set(rawData.map(r => r.fo).filter(Boolean))]);
+  filters.obj = new Set([...new Set(rawData.map(r => r.obj).filter(Boolean))]);
+  filters.category = new Set([...new Set(rawData.map(r => r.category).filter(Boolean))]);
+  filters.status = new Set([...new Set(rawData.map(r => r.status).filter(Boolean))]);
+
+  if (type === 'delivered') {
+    filters.status = new Set(['Завершен']);
+  } else if (type === 'remaining') {
+    filters.status = new Set(['В работе']);
+  }
+  
+  document.querySelectorAll('.checkbox-item input').forEach(cb => {
+    const fk = cb.dataset.filter;
+    cb.checked = filters[fk].has(cb.value);
+  });
+
+  applyFilters();
 }
 
 function renderDashboard(data) {
@@ -449,25 +590,21 @@ function renderDashboard(data) {
   const currentYear = new Date().getFullYear();
   $('kpi-year-label').textContent = currentYear;
 
-  // 1. Всего объектов
   const uniqueObjs = new Set(data.map(r => r.obj).filter(Boolean)).size;
   $('kpi-objects').textContent = uniqueObjs;
 
-  // 2. Сдано в текущем году
   const deliveredThisYear = data.filter(r => r.status === 'Завершен' && r.rvDate && r.rvDate.getFullYear() === currentYear);
   const deliveredAreaThisYear = deliveredThisYear.reduce((sum, r) => sum + r.areaBuild, 0);
   const deliveredObjsThisYear = new Set(deliveredThisYear.map(r => r.obj)).size;
   $('kpi-delivered-year').textContent = fmt(deliveredAreaThisYear);
   $('kpi-delivered-sub').textContent = `${deliveredObjsThisYear} объектов`;
 
-  // 3. Осталось сдать
   const remainingThisYear = data.filter(r => r.status === 'В работе' && r.rvDate && r.rvDate.getFullYear() === currentYear);
   const remainingAreaThisYear = remainingThisYear.reduce((sum, r) => sum + r.areaBuild, 0);
   const remainingObjsThisYear = new Set(remainingThisYear.map(r => r.obj)).size;
   $('kpi-remaining').textContent = fmt(remainingAreaThisYear);
   $('kpi-remaining-sub').textContent = `${remainingObjsThisYear} объектов`;
 
-  // 4. Ближайший к сдаче
   const now = new Date();
   const upcoming = [...data].filter(r => r.status === 'В работе' && r.rvDate && r.rvDate >= now).sort((a,b) => a.rvDate - b.rvDate);
   if (upcoming.length > 0) {
@@ -479,7 +616,6 @@ function renderDashboard(data) {
     $('kpi-nearest-date').textContent = 'Нет запланированных';
   }
 
-  // Bar Chart - Statuses
   let statusMap = {};
   data.forEach(r => { statusMap[r.status] = (statusMap[r.status] || 0) + ((r.status === 'Отказ от строительства') ? r.areaFreeze : r.areaBuild); });
   const maxStatusArea = Math.max(...Object.values(statusMap), 1);
@@ -496,7 +632,6 @@ function renderDashboard(data) {
       return `<div class="bar-item"><div class="bar-label">${status}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${statusColors[status] || 'var(--accent)'};"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
 
-  // Bar Chart - Years (Группировка "Ранее")
   let yearMap = { 'Ранее': 0 };
   data.forEach(r => { 
     if (r.rvDate) { 
@@ -592,26 +727,48 @@ function initFilters(data) {
   const uniqueObj = [...new Set(data.map(r => r.obj).filter(Boolean))].sort();
   const uniqueCategory = [...new Set(data.map(r => r.category).filter(Boolean))].sort();
   const uniqueStatus = [...new Set(data.map(r => r.status).filter(Boolean))].sort();
-  filters.fo = new Set(uniqueFo); filters.obj = new Set(uniqueObj); filters.category = new Set(uniqueCategory); filters.status = new Set(uniqueStatus);
   
-  const renderCheckboxes = (id, items, key) => { $(id).innerHTML = items.map(item => `<label class="checkbox-item"><input type="checkbox" data-filter="${key}" value="${item}" checked><span>${item || '(пусто)'}</span></label>`).join(''); };
-  renderCheckboxes('filter-fo', uniqueFo, 'fo'); renderCheckboxes('filter-obj', uniqueObj, 'obj'); renderCheckboxes('filter-category', uniqueCategory, 'category'); renderCheckboxes('filter-status', uniqueStatus, 'status');
+  const renderCheckboxes = (id, items, key) => { 
+    $(id).innerHTML = items.map(item => `
+      <label class="checkbox-item">
+        <input type="checkbox" data-filter="${key}" value="${item}" ${filters[key] ? (filters[key].has(item) ? 'checked' : '') : 'checked'}>
+        <span>${item || '(пусто)'}</span>
+      </label>`).join(''); 
+  };
+  renderCheckboxes('filter-fo', uniqueFo, 'fo'); 
+  renderCheckboxes('filter-obj', uniqueObj, 'obj'); 
+  renderCheckboxes('filter-category', uniqueCategory, 'category'); 
+  renderCheckboxes('filter-status', uniqueStatus, 'status');
   
   document.querySelectorAll('.checkbox-item input').forEach(cb => {
-    cb.onchange = () => { const fk = cb.dataset.filter; if (cb.checked) filters[fk].add(cb.value); else filters[fk].delete(cb.value); applyFilters(); };
+    cb.onchange = () => { 
+      const fk = cb.dataset.filter; 
+      if (cb.checked) filters[fk].add(cb.value); 
+      else filters[fk].delete(cb.value); 
+      applyFilters(); 
+    };
   });
   document.querySelectorAll('.filter-actions').forEach(btn => {
     btn.onclick = (e) => {
       e.stopPropagation(); const target = btn.dataset.target; const action = btn.dataset.action;
-      document.querySelectorAll(`input[data-filter="${target}"]`).forEach(cb => { cb.checked = (action === 'all'); if (action === 'all') filters[target].add(cb.value); else filters[target].delete(cb.value); });
+      document.querySelectorAll(`input[data-filter="${target}"]`).forEach(cb => { 
+        cb.checked = (action === 'all'); 
+        if (action === 'all') filters[target].add(cb.value); else filters[target].delete(cb.value); 
+      });
       applyFilters();
     };
   });
 }
+
 function applyFilters() {
-  filteredData = rawData.filter(r => filters.fo.has(r.fo) && filters.obj.has(r.obj) && filters.category.has(r.category) && filters.status.has(r.status));
+  filteredData = rawData.filter(r => 
+    filters.fo.has(r.fo) && filters.obj.has(r.obj) && filters.category.has(r.category) && filters.status.has(r.status)
+  );
   renderTable();
+  updateURL(); 
+  if (map) updateMap();
 }
+
 function renderTable() {
   $('table-count').textContent = `${filteredData.length} строк`;
   $('table-body').innerHTML = filteredData.map(r => {
@@ -632,7 +789,77 @@ function renderTable() {
   }).join('');
 }
 
-// ================= COMPARE =================
+$('btn-export-excel').onclick = async () => {
+  if (!filteredData.length) return alert('Нет данных для экспорта');
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Выборка');
+  ws.addRow(['Объект', 'Этап', 'Категория', 'Статус площадки', 'Мезонин', 'Оперзона', 'Заморозка', 'Строительство', 'РВ', 'Источник', 'Повреждения']);
+  ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+  
+  filteredData.forEach(r => {
+    ws.addRow([r.obj, r.stage, r.category, r.status, r.areaMezzanine, r.areaOper, r.areaFreeze, r.areaBuild, r.rvText, r.source, r.damage]);
+  });
+  
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Выборка_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+function initMap() {
+  map = L.map('map').setView([61.5240, 90.3180], 3);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
+}
+
+function updateMap() {
+  if (!map) return;
+  markersLayer.clearLayers();
+  const grouped = {};
+  
+  filteredData.forEach(r => {
+    if (!cityCoords[r.obj]) return;
+    if (!grouped[r.obj]) grouped[r.obj] = { coords: cityCoords[r.obj], area: 0, count: 0, status: r.status };
+    grouped[r.obj].area += r.areaBuild;
+    grouped[r.obj].count++;
+  });
+
+  Object.entries(grouped).forEach(([city, d]) => {
+    const radius = Math.max(50000, d.area * 5);
+    const color = d.status === 'Завершен' ? '#10b981' : (d.status === 'В работе' ? '#0ea5e9' : '#ef4444');
+    
+    L.circle(d.coords, {
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.5,
+      radius: radius
+    }).bindPopup(`
+      <b>${city}</b><br>
+      Объектов: ${d.count}<br>
+      Площадь: ${fmt(d.area)} м²<br>
+      <a href="#" onclick="drillDownMap('${city}');return false;">Показать в таблице</a>
+    `).addTo(markersLayer);
+  });
+}
+
+function drillDownMap(city) {
+  document.querySelector('.nav-btn[data-tab="table"]').click();
+  filters.obj = new Set([city]);
+  document.querySelectorAll('input[data-filter="obj"]').forEach(cb => {
+    cb.checked = filters.obj.has(cb.value);
+  });
+  applyFilters();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// COMPARE
 let compareState = { leftData: null, rightData: null, mode: 'g_vs_x' };
 let currentCompareData = null;
 const modeSlider = $('mode-slider');
@@ -798,11 +1025,12 @@ $('btn-run-comp').onclick = runComparisonComp; $('btn-back-comp').onclick = () =
 async function init() {
   try {
     const { headers, rows } = await loadGoogleSheet();
-    rawData = processData(headers, rows);
-    filteredData = [...rawData];
-    renderDashboard(rawData);
-    initFilters(rawData);
-    renderTable();
+    allData = processData(headers, rows);
+    
+    readURL();
+    initFilters(allData);
+    processAllData();
+    
   } catch (e) {
     $('dashboard-loading').innerHTML = `<span style="color:var(--danger)">Ошибка загрузки: ${e.message}</span>`;
   }
