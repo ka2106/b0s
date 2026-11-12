@@ -522,15 +522,18 @@ function parseGviz(data) {
     (r.c || []).forEach((cell, i) => {
       if (i >= headers.length || !headers[i]) return;
       let v = null;
-      if (cell && cell.v !== undefined && cell.v !== null) {
-        const raw = cell.v;
-        if (typeof raw === 'string' && raw.startsWith('Date(')) {
-          const m = raw.match(/Date\((\d+),(\d+),(\d+)/);
-          if (m) v = `${m[1]}-${String(parseInt(m[2])+1).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
-        } else {
-          v = raw;
-        }
-      }
+if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
+  const raw = cell.v;
+  if (typeof raw === 'string' && raw.startsWith('Date(')) {
+    const m = raw.match(/Date\((\d+),(\d+),(\d+)/);
+    if (m) v = `${m[1]}-${String(parseInt(m[2])+1).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+  } else {
+    v = raw;
+  }
+} else if (cell && cell.f) {
+  const f = String(cell.f).trim();
+  if (f && !/^-?[\d\s,\.]+$/.test(f)) v = f;
+}
       obj[headers[i]] = v;
       if (v !== null && v !== '') hasValue = true;
     });
@@ -583,8 +586,12 @@ console.log('[readXlsx] parsed headers:',
     const obj = { __row: rn };
     let hasValue = false;
     row.eachCell({ includeEmpty: false }, (cell, col) => {
-      let v = cell.value;
-      if (v && typeof v === 'object' && !(v instanceof Date)) {
+     let v = cell.value;
+if (v === null || v === undefined || v === '') {
+  const txt = cell.text;
+  if (txt && txt !== '') v = txt;
+}
+if (v && typeof v === 'object' && !(v instanceof Date)) {
         if (v.richText) v = v.richText.map(r => r.text).join('');
         else if (v.text !== undefined) v = v.text;
         else if (v.result !== undefined) v = v.result;
@@ -1019,8 +1026,14 @@ function renderReport(d) {
       const q = $(filterId).value.toLowerCase();
       const rows = data.filter(r => !q || cols.map(c => r[c] || '').join(' ').toLowerCase().includes(q));
       $(tblId).querySelector('tbody').innerHTML = rows.length
-        ? rows.map(r => '<tr>' + cols.map(c => `<td>${esc(fmtVal(r[c]))}</td>`).join('') + '</tr>').join('')
-        : `<tr><td colspan="${cols.length}" class="empty"><div class="empty-icon">○</div>Нет записей</td></tr>`;
+  ? rows.map(r => '<tr>' + cols.map(c => {
+      const val = r[c];
+      if (c === 'id' && (val === null || val === undefined || val === '')) {
+        return '<td><span class="none">(нет ID)</span></td>';
+      }
+      return `<td>${esc(fmtVal(val))}</td>`;
+    }).join('') + '</tr>').join('')
+  : `<tr><td colspan="${cols.length}" class="empty"><div class="empty-icon">○</div>Нет записей</td></tr>`;
       $(countId).textContent = `${rows.length} из ${data.length}`;
     };
     $(filterId).oninput = render;
