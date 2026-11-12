@@ -62,7 +62,7 @@ header{
 
 /* Main Content */
 .main-content{flex:1;overflow-y:auto;padding:24px;}
-.container{max-width:1400px;margin:0 auto;}
+.container{max-width:1500px;margin:0 auto;}
 
 /* Helpers */
 .text-left{text-align:left !important;}
@@ -117,11 +117,12 @@ header{
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
 .year-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-sm);}
 .year-table{width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:12px 8px; border-bottom:1px solid var(--border); border-right: none; border-left: none; text-align:center;}
+.year-table th, .year-table td{padding:12px 8px; border-bottom:1px solid var(--border); text-align:center;}
 .year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; position:sticky; top:0;}
 .year-table th:first-child{text-align:left; padding-left:16px;}
-.year-table td:first-child{text-align:left; font-weight:500; background:#fff; position:sticky; left:0; z-index:2; padding-left:16px;}
-.year-table td:last-child{text-align:right; font-weight:700; background:var(--bg); padding-right:16px;}
+/* Убран белый фон у первого и последнего столбца */
+.year-table td:first-child{text-align:left; font-weight:500; position:sticky; left:0; z-index:2; padding-left:16px;}
+.year-table td:last-child{text-align:right; font-weight:700; padding-right:16px;}
 .year-table th:last-child{text-align:right; background:var(--bg); padding-right:16px;}
 
 /* Цвета текста без заливки */
@@ -146,11 +147,19 @@ header{
   width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;position:sticky;top:24px;
 }
-.filter-group{margin-bottom:20px;}
-.filter-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+
+/* Аккордеон фильтров */
+.filter-group{border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px;}
+.filter-group:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
+.filter-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;}
+.filter-header::after{content:'▼'; font-size:10px; color:var(--text-muted); transition:transform 0.2s;}
+.filter-group.open .filter-header::after{transform:rotate(180deg);}
 .filter-title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.05em;}
-.filter-actions{font-size:11px;color:var(--accent);cursor:pointer;font-weight:600; user-select:none;}
+.filter-actions{font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;}
 .filter-actions:hover{text-decoration:underline;}
+.filter-content{display:none; margin-top:10px;}
+.filter-group.open .filter-content{display:block;}
+
 .checkbox-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
 .checkbox-item{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-muted);transition:color 0.15s;}
 .checkbox-item:hover{color:var(--text);}
@@ -166,10 +175,7 @@ th{background:var(--bg);color:var(--text-muted);padding:12px;text-align:left;fon
 td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle;}
 tbody tr:hover td{background:var(--bg);}
 
-.status-badge{
-  display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;
-  border-radius:6px;font-size:12px;font-weight:500;
-}
+.status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;}
 .status-badge.delivered{background:var(--success-bg);color:var(--success);}
 .status-badge.planned{background:var(--info-bg);color:var(--info);}
 .status-badge.danger{background:var(--danger-bg);color:var(--danger);}
@@ -326,35 +332,49 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
-            <div class="filter-group">
+            <!-- Аккордеон ФО -->
+            <div class="filter-group open">
               <div class="filter-header">
                 <span class="filter-title">ФО</span>
-                <div style="display:flex; gap:8px;">
+                <div style="display:flex; gap:8px;" onclick="event.stopPropagation()">
                   <span class="filter-actions" data-target="fo" data-action="all">Все</span>
                   <span class="filter-actions" data-target="fo" data-action="none">Ничего</span>
                 </div>
               </div>
-              <div class="checkbox-list" id="filter-fo"></div>
+              <div class="filter-content"><div class="checkbox-list" id="filter-fo"></div></div>
             </div>
-            <div class="filter-group">
+            <!-- Аккордеон Объект -->
+            <div class="filter-group open">
               <div class="filter-header">
                 <span class="filter-title">Объект</span>
-                <div style="display:flex; gap:8px;">
+                <div style="display:flex; gap:8px;" onclick="event.stopPropagation()">
                   <span class="filter-actions" data-target="obj" data-action="all">Все</span>
                   <span class="filter-actions" data-target="obj" data-action="none">Ничего</span>
                 </div>
               </div>
-              <div class="checkbox-list" id="filter-obj"></div>
+              <div class="filter-content"><div class="checkbox-list" id="filter-obj"></div></div>
             </div>
-            <div class="filter-group">
+            <!-- Аккордеон Категория -->
+            <div class="filter-group open">
+              <div class="filter-header">
+                <span class="filter-title">Категория</span>
+                <div style="display:flex; gap:8px;" onclick="event.stopPropagation()">
+                  <span class="filter-actions" data-target="category" data-action="all">Все</span>
+                  <span class="filter-actions" data-target="category" data-action="none">Ничего</span>
+                </div>
+              </div>
+              <div class="filter-content"><div class="checkbox-list" id="filter-category"></div></div>
+            </div>
+            <!-- Аккордеон Статус -->
+            <div class="filter-group open">
               <div class="filter-header">
                 <span class="filter-title">Статус</span>
-                <div style="display:flex; gap:8px;">
+                <div style="display:flex; gap:8px;" onclick="event.stopPropagation()">
                   <span class="filter-actions" data-target="status" data-action="all">Все</span>
                   <span class="filter-actions" data-target="status" data-action="none">Ничего</span>
                 </div>
               </div>
-              <div class="checkbox-list" id="filter-status"></div>
+              <div class="filter-content"><div class="checkbox-list" id="filter-status"></div></div>
             </div>
           </aside>
 
@@ -370,9 +390,13 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                     <th class="text-left">Объект / Этап</th>
                     <th class="text-left">Категория</th>
                     <th class="text-center">Статус площадки</th>
-                    <th class="text-right">Общая площадь</th>
+                    <th class="text-right">Мезонин</th>
+                    <th class="text-right">Оперзона</th>
+                    <th class="text-right">Заморозка</th>
                     <th class="text-right">Строительство</th>
                     <th class="text-center">РВ (Дата)</th>
+                    <th class="text-left">Источник данных</th>
+                    <th class="text-left">Повреждения</th>
                   </tr>
                 </thead>
                 <tbody id="table-body"></tbody>
@@ -463,7 +487,6 @@ const $ = id => document.getElementById(id);
 const SHEET_ID = '1mDdg8Z1KpH8iDbf9PMnqnEA0dp_FZY1T1ab0RpY0etM';
 const SHEET_NAME = 'data';
 
-// Используем Intl.NumberFormat с minimumFractionDigits: 2, чтобы всегда было 2 знака после запятой
 const NUM_FMT = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmt = v => typeof v === 'number' ? NUM_FMT.format(v) : (v || '');
 const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -475,7 +498,7 @@ const linkify = s => {
 
 let rawData = [];
 let filteredData = [];
-let filters = { fo: new Set(), obj: new Set(), status: new Set() };
+let filters = { fo: new Set(), obj: new Set(), category: new Set(), status: new Set() };
 let selectedYear = new Date().getFullYear();
 
 // Navigation Logic
@@ -485,6 +508,15 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
     btn.classList.add('active');
     $('tab-' + btn.dataset.tab).style.display = 'block';
+  };
+});
+
+// Accordion Logic
+document.querySelectorAll('.filter-header').forEach(header => {
+  header.onclick = (e) => {
+    // Игнорируем клики по кнопкам "Все" / "Ничего"
+    if (e.target.classList.contains('filter-actions')) return;
+    header.closest('.filter-group').classList.toggle('open');
   };
 });
 
@@ -514,7 +546,16 @@ function parseGviz(data) {
     let hasValue = false;
     (r.c || []).forEach((cell, i) => {
       if (i >= headers.length || !headers[i]) return;
+      
       let v = null;
+      let link = null;
+      
+      // Извлекаем скрытую ссылку, если она есть (через Ctrl+K)
+      if (cell && cell.f) {
+        const hrefMatch = cell.f.match(/href="([^"]+)"/);
+        if (hrefMatch) link = hrefMatch[1];
+      }
+
       if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
         const raw = cell.v;
         if (typeof raw === 'string' && raw.startsWith('Date(')) {
@@ -522,10 +563,13 @@ function parseGviz(data) {
           if (m) v = `${String(parseInt(m[3])).padStart(2,'0')}.${String(parseInt(m[2])+1).padStart(2,'0')}.${m[1]}`;
         } else v = raw;
       } else if (cell && cell.f) {
-        const f = String(cell.f).trim();
+        const f = String(cell.f).replace(/<[^>]+>/g, '').trim(); // убираем html теги
         if (f && !/^-?[\d\s,\.]+$/.test(f)) v = f;
       }
+      
       obj[headers[i]] = v;
+      if (link) obj[headers[i] + '_link'] = link;
+      
       if (v !== null && v !== '') hasValue = true;
     });
     if (hasValue) rows.push(obj);
@@ -537,12 +581,10 @@ function parseGviz(data) {
 function processData(headers, rows) {
   return rows.map(r => {
     const getVal = k => r[k] !== undefined ? r[k] : null;
-    
-    const areaBuild = parseFloat(String(getVal('площадь строительства') || '0').replace(',', '.')) || 0;
-    const areaTotal = parseFloat(String(getVal('общая площадь') || '0').replace(',', '.')) || 0;
-    const areaFreeze = parseFloat(String(getVal('площадь заморозки') || '0').replace(',', '.')) || 0;
+    const parseA = (k) => parseFloat(String(getVal(k) || '0').replace(/\s/g, '').replace(',', '.')) || 0;
     
     const rvText = getVal('РВ') ? String(getVal('РВ')) : '';
+    const rvLink = getVal('РВ_link') || null;
     
     let date = null;
     const dMatch = rvText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
@@ -555,10 +597,14 @@ function processData(headers, rows) {
       stage: getVal('этап') || '',
       status: getVal('статус площадки') || 'Не указан',
       category: getVal('категория') || '',
-      areaTotal,
-      areaBuild,
-      areaFreeze,
+      areaMezzanine: parseA('площадь блоков мезонина'),
+      areaOper: parseA('площадь оперзоны'),
+      areaFreeze: parseA('площадь заморозки'),
+      areaBuild: parseA('площадь строительства'),
+      source: getVal('источник данных площади') || '',
+      damage: getVal('повреждения') || '',
       rvText,
+      rvLink,
       rvDate: date,
       rvSort: date ? date.getTime() : 0
     };
@@ -624,15 +670,13 @@ function renderDashboard(data) {
       `;
     }).join('');
 
-  // Bar Chart - Years (Только до текущего года включительно)
+  // Bar Chart - Years
   let yearMap = {};
   const currentYear = new Date().getFullYear();
   data.forEach(r => {
     if (r.rvDate) {
       const y = r.rvDate.getFullYear();
-      if (y <= currentYear) {
-        yearMap[y] = (yearMap[y] || 0) + r.areaBuild;
-      }
+      if (y <= currentYear) yearMap[y] = (yearMap[y] || 0) + r.areaBuild;
     }
   });
 
@@ -662,10 +706,9 @@ function renderDashboard(data) {
   const recent = sortedByDate.filter(r => r.rvDate < now || r.status === 'Завершен').sort((a,b) => b.rvDate - a.rvDate).slice(0, 5);
 
   const renderList = (arr, type) => arr.map(r => {
-    const linkMatch = r.rvText.match(/(https?:\/\/[^\s]+)/);
     const dateOnly = r.rvText.match(/\d{2}\.\d{2}\.\d{4}/) ? r.rvText.match(/\d{2}\.\d{2}\.\d{4}/)[0] : '—';
-    const dateHtml = linkMatch 
-      ? `<a href="${linkMatch[0]}" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-style:dotted;">${dateOnly}</a>` 
+    const dateHtml = r.rvLink 
+      ? `<a href="${r.rvLink}" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-style:dotted;">${dateOnly}</a>` 
       : dateOnly;
 
     return `
@@ -716,20 +759,16 @@ function initYearTable(data) {
         if (val > 0) {
           const items = o.items.filter(i => i.rvDate.getMonth() === m);
           
-          // Собираем текст для тултипа
           const tooltipLines = items.map(i => {
-            const linkMatch = i.rvText.match(/(https?:\/\/[^\s]+)/);
             const dateStr = i.rvText.replace(/(https?:\/\/[^\s]+)/, '').trim() || '—';
-            const linkHtml = linkMatch ? `<a href="${linkMatch[0]}" target="_blank" style="color:#60a5fa; text-decoration:underline;">Ссылка</a>` : '';
+            const linkHtml = i.rvLink ? `<a href="${i.rvLink}" target="_blank" style="color:#60a5fa; text-decoration:underline;">Ссылка</a>` : '';
             return `${i.status} | РВ: ${dateStr} ${linkHtml}`;
           }).join('<br>');
           
           const isDelivered = items.every(i => i.status === 'Завершен');
           const cls = isDelivered ? 'text-delivered' : 'text-planned';
           
-          // Если есть ссылка - делаем цифру кликабельной
-          const linkMatch = items[0].rvText.match(/(https?:\/\/[^\s]+)/);
-          const href = linkMatch ? linkMatch[0] : null;
+          const href = items[0].rvLink;
           const content = href 
             ? `<a href="${href}" target="_blank" style="color:inherit; text-decoration:none;">${fmt(val)}</a>` 
             : fmt(val);
@@ -741,7 +780,7 @@ function initYearTable(data) {
             </div>
           </td>`;
         } else {
-          html += `<td></td>`; // Пустая ячейка
+          html += `<td></td>`; 
         }
       }
       html += `<td class="text-right">${fmt(o.total)}</td></tr>`;
@@ -758,10 +797,12 @@ function initYearTable(data) {
 function initFilters(data) {
   const uniqueFo = [...new Set(data.map(r => r.fo).filter(Boolean))].sort();
   const uniqueObj = [...new Set(data.map(r => r.obj).filter(Boolean))].sort();
+  const uniqueCategory = [...new Set(data.map(r => r.category).filter(Boolean))].sort();
   const uniqueStatus = [...new Set(data.map(r => r.status).filter(Boolean))].sort();
 
   filters.fo = new Set(uniqueFo);
   filters.obj = new Set(uniqueObj);
+  filters.category = new Set(uniqueCategory);
   filters.status = new Set(uniqueStatus);
 
   const renderCheckboxes = (containerId, items, filterKey) => {
@@ -775,6 +816,7 @@ function initFilters(data) {
 
   renderCheckboxes('filter-fo', uniqueFo, 'fo');
   renderCheckboxes('filter-obj', uniqueObj, 'obj');
+  renderCheckboxes('filter-category', uniqueCategory, 'category');
   renderCheckboxes('filter-status', uniqueStatus, 'status');
 
   document.querySelectorAll('.checkbox-item input').forEach(cb => {
@@ -787,7 +829,8 @@ function initFilters(data) {
   });
 
   document.querySelectorAll('.filter-actions').forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      e.stopPropagation(); // Чтобы не срабатывал аккордеон
       const target = btn.dataset.target;
       const action = btn.dataset.action;
       const checkboxes = document.querySelectorAll(`input[data-filter="${target}"]`);
@@ -806,8 +849,9 @@ function applyFilters() {
   filteredData = rawData.filter(r => {
     const matchFo = filters.fo.has(r.fo);
     const matchObj = filters.obj.has(r.obj);
+    const matchCategory = filters.category.has(r.category);
     const matchStatus = filters.status.has(r.status);
-    return matchFo && matchObj && matchStatus;
+    return matchFo && matchObj && matchCategory && matchStatus;
   });
   renderTable();
 }
@@ -822,6 +866,9 @@ function renderTable() {
     if (r.status === 'Утрачен' || r.status === 'Отказ от строительства') statusClass = 'danger';
 
     const dateOnly = r.rvText.match(/\d{2}\.\d{2}\.\d{4}/) ? r.rvText.match(/\d{2}\.\d{2}\.\d{4}/)[0] : r.rvText;
+    const dateHtml = r.rvLink 
+      ? `<a href="${r.rvLink}" target="_blank" class="raw-link">${dateOnly}</a>` 
+      : linkify(dateOnly || '—');
 
     return `
       <tr>
@@ -831,11 +878,13 @@ function renderTable() {
         </td>
         <td class="text-left">${r.category}</td>
         <td class="text-center"><span class="status-badge ${statusClass}">${r.status}</span></td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums">${fmt(r.areaTotal)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums">${fmt(r.areaMezzanine)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums">${fmt(r.areaOper)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums">${fmt(r.areaFreeze)}</td>
         <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${fmt(r.areaBuild)}</td>
-        <td class="text-center" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.rvText}">
-          ${linkify(dateOnly || '—')}
-        </td>
+        <td class="text-center">${dateHtml}</td>
+        <td class="text-left" style="color:var(--text-muted);font-size:11px;max-width:150px;white-space:normal;">${r.source}</td>
+        <td class="text-left" style="color:var(--text-muted);font-size:11px;max-width:200px;white-space:normal;">${r.damage}</td>
       </tr>
     `;
   }).join('');
