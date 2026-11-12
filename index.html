@@ -551,15 +551,31 @@ async function readXlsx(file, preferredSheets) {
   if (!ws) throw new Error('В файле нет листов');
 
   const headers = [];
-  ws.getRow(1).eachCell((cell, col) => {
-    let v = cell.value;
-    if (v && typeof v === 'object') {
-      if (v.richText) v = v.richText.map(r => r.text).join('');
-      else if (v.text !== undefined) v = v.text;
-      else if (v.result !== undefined) v = v.result;
-    }
-    headers[col] = v == null ? '' : String(v).replace(/\s+/g, ' ').trim();
-  });
+const headerRow = ws.getRow(1);
+const lastCol = Math.max(ws.columnCount || 0, 60);
+for (let col = 1; col <= lastCol; col++) {
+  const cell = headerRow.getCell(col);
+  let v = cell ? cell.value : null;
+
+  if (v && typeof v === 'object') {
+    if (v.richText) v = v.richText.map(r => r.text).join('');
+    else if (v.text !== undefined) v = v.text;
+    else if (v.result !== undefined) v = v.result;
+  }
+
+  let str = v == null ? '' : String(v).replace(/\s+/g, ' ').trim();
+
+  if (!str && cell) {
+    const txt = cell.text;
+    if (txt) str = String(txt).replace(/\s+/g, ' ').trim();
+  }
+
+  headers[col] = str;
+}
+
+console.log('[readXlsx] parsed headers:',
+  headers.map((h, i) => h ? `${i}:${h}` : null).filter(Boolean)
+);
 
   const rows = [];
   ws.eachRow((row, rn) => {
