@@ -587,13 +587,15 @@ function normalizeValue(v) {
     return `${y}-${m}-${d}`;
   }
   if (typeof v === 'number') return v;
-  if (typeof v === 'string') return v.trim();
+  if (typeof v === 'string') {
+    return v.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\u00A0/g, ' ').trim();
+  }
   if (typeof v === 'object') {
-    if (v.richText) return v.richText.map(r => r.text).join('').trim();
-    if (v.text !== undefined) return String(v.text).trim();
+    if (v.richText) return v.richText.map(r => r.text).join('').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+    if (v.text !== undefined) return String(v.text).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
     if (v.result !== undefined) return normalizeValue(v.result);
   }
-  return String(v).trim();
+  return String(v).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
 }
 
 function normalizeId(v) {
@@ -607,13 +609,14 @@ function normalizeObject(v) {
   return String(v).trim().replace(/^БВС\s+/i, '').replace(/\s+БВС$/i, '');
 }
 
-function valuesEqual(a, b, tol = 0) {
+function valuesEqual(a, b, tol = 1e-6) {
   if (a === null || a === undefined || a === '') a = null;
   if (b === null || b === undefined || b === '') b = null;
   if (a === null && b === null) return true;
   if (a === null || b === null) return false;
-  if (typeof a === 'number' && typeof b === 'number') {
-    return tol ? Math.abs(a - b) <= tol : a === b;
+  const na = Number(a), nb = Number(b);
+  if (!isNaN(na) && !isNaN(nb)) {
+    return Math.abs(na - nb) <= tol;
   }
   return String(a).trim() === String(b).trim();
 }
