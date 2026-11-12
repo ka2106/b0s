@@ -61,24 +61,25 @@ header{
 /* ============ Main ============ */
 main{padding:32px 0 60px}
 
-/* Mode Selector */
+/* Segmented Control */
 .mode-selector{
-  display:flex;justify-content:center;gap:24px;margin-bottom:24px;
-  background:var(--surface);padding:12px 24px;border-radius:var(--radius);
-  border:1px solid var(--border);box-shadow:var(--shadow-sm);
-  width:fit-content;margin-left:auto;margin-right:auto;
+  display:flex; position:relative; background:#e2e8f0;
+  border-radius:8px; padding:4px; width:440px; margin:0 auto 24px;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.05); border:1px solid #cbd5e1;
 }
+@media(max-width:500px){.mode-selector{width:100%;}}
 .mode-selector label{
-  display:flex;align-items:center;gap:8px;cursor:pointer;
-  font-weight:500;color:var(--text-muted);transition:color .15s;
-  text-decoration: none !important;
+  flex:1; position:relative; z-index:1; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; padding:8px 16px; font-size:13px; font-weight:600; color:var(--text-muted);
+  transition:color 0.2s; border-radius:6px; user-select:none; text-decoration:none !important;
 }
-.mode-selector input[type="radio"]{
-  width:16px;height:16px;accent-color:var(--accent);cursor:pointer;
-}
-.mode-selector label:hover{color:var(--text);}
-.mode-selector input[type="radio"]:checked + span{
-  color:var(--accent);font-weight:600;text-decoration: none !important;
+.mode-selector input[type="radio"]{ display:none; }
+.mode-selector input[type="radio"]:checked + span{ color:var(--text); }
+.mode-slider{
+  position:absolute; top:4px; left:4px; width:calc(50% - 4px); height:calc(100% - 8px);
+  background:#fff; border-radius:6px;
+  box-shadow:0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+  transition:transform 0.2s ease-in-out; z-index:0;
 }
 
 /* Upload screen */
@@ -142,29 +143,21 @@ main{padding:32px 0 60px}
 .btn-full{width:100%}
 .btn-lg{padding:12px 32px;font-size:14px}
 
-/* Исправленный разделитель */
+/* Разделитель */
 .divider{
-  display:flex;
-  align-items:center;
-  text-align:center;
-  margin: 20px 0;
-  font-size:11px;
-  color:var(--text-dim);
-  text-transform:uppercase;
-  letter-spacing:.05em;
-  font-weight:600;
+  display:flex; align-items:center; text-align:center;
+  margin: 20px 0; font-size:11px; color:var(--text-dim);
+  text-transform:uppercase; letter-spacing:.05em; font-weight:600;
 }
 .divider::before, .divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid var(--border);
+  content: ''; flex: 1; border-bottom: 1px solid var(--border);
 }
 .divider::before { margin-right: 12px; }
 .divider::after { margin-left: 12px; }
 
-/* Drop Zone */
+/* Drop Zone (тоньше и светлее) */
 .drop-zone{
-  border:1.5px dashed var(--border-strong);
+  border:1px dashed #cbd5e1; /* Изменено: тоньше и светлее */
   border-radius:var(--radius-sm);
   padding:24px 20px;
   text-align:center;
@@ -229,7 +222,9 @@ main{padding:32px 0 60px}
   text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;
 }
 .stat-value{
-  font-size:24px;font-weight:700;letter-spacing:-.02em;
+  font-size:32px; /* Увеличено */
+  font-weight:800; /* Жирнее */
+  letter-spacing:-.03em;
   font-variant-numeric:tabular-nums;line-height:1;
 }
 .stat-detail{font-size:11px;color:var(--text-muted);margin-top:6px}
@@ -280,12 +275,18 @@ thead th{
   white-space:nowrap;user-select:none;border-bottom:1px solid var(--border);
 }
 thead th:hover{background:#f1f5f9}
+
+/* Zebra Style (чередование строк) */
 tbody td{
   padding:9px 12px;border-bottom:1px solid var(--border);
   vertical-align:top;color:var(--text);
 }
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:#f8fafc}
+tbody tr:nth-child(even) td {
+  background-color: #f8fafc; /* Цвет для четных строк */
+}
+tbody tr:hover td {
+  background-color: #eff6ff !important; /* Синий ховер при наведении */
+}
 
 .old-val{
   color:var(--old);background:var(--old-bg);padding:1px 6px;border-radius:4px;
@@ -324,8 +325,9 @@ footer{text-align:center;padding:24px 0;color:var(--text-dim);font-size:11px;bor
 
 <div id="screen-upload">
   
-  <!-- Переключатель режимов -->
+  <!-- Segmented Control -->
   <div class="mode-selector">
+    <div class="mode-slider" id="mode-slider"></div>
     <label>
       <input type="radio" name="compare-mode" value="g_vs_x" checked>
       <span>Google Sheets ↔ Excel</span>
@@ -452,9 +454,13 @@ function setCardReady(cardId, ready) {
 
 const state = { leftData: null, rightData: null, mode: 'g_vs_x' };
 
-// ============ Режимы интерфейса ============
-document.querySelectorAll('input[name="compare-mode"]').forEach(radio => {
+// ============ Режимы интерфейса (Segmented Control) ============
+const modeSlider = $('mode-slider');
+document.querySelectorAll('input[name="compare-mode"]').forEach((radio, index) => {
   radio.addEventListener('change', e => {
+    // Двигаем ползунок
+    modeSlider.style.transform = `translateX(${index * 100}%)`;
+    
     state.mode = e.target.value;
     const isGvsX = state.mode === 'g_vs_x';
     
@@ -481,6 +487,15 @@ document.querySelectorAll('input[name="compare-mode"]').forEach(radio => {
     updateButtons();
   });
 });
+
+// Инициализация ползунка при загрузке
+setTimeout(() => {
+  const checked = document.querySelector('input[name="compare-mode"]:checked');
+  if (checked) {
+    const index = Array.from(document.querySelectorAll('input[name="compare-mode"]')).indexOf(checked);
+    modeSlider.style.transform = `translateX(${index * 100}%)`;
+  }
+}, 50);
 
 function updateButtons() {
   $('btn-run').disabled = !(state.leftData && state.rightData);
@@ -540,21 +555,31 @@ function getColumnMapping(headers) {
 }
 
 function normalizeValue(v) {
-  if (v === null || v === undefined || v === '') return null;
+  if (v === null || v === undefined) return null;
   if (v instanceof Date) {
     const y = v.getUTCFullYear();
     const m = String(v.getUTCMonth() + 1).padStart(2, '0');
     const d = String(v.getUTCDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return `${d}.${m}.${y}`; // Формат ДД.ММ.ГГГГ
   }
   if (typeof v === 'number') return v;
-  if (typeof v === 'string') return v.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\u00A0/g, ' ').trim();
+  
+  if (typeof v === 'string') {
+    let s = v.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\u00A0/g, ' ').trim();
+    // Конвертируем "2022-12-26" в "26.12.2022"
+    const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      return `${isoMatch[3]}.${isoMatch[2]}.${isoMatch[1]}`;
+    }
+    return s;
+  }
+  
   if (typeof v === 'object') {
-    if (v.richText) return v.richText.map(r => r.text).join('').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
-    if (v.text !== undefined) return String(v.text).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+    if (v.richText) return normalizeValue(v.richText.map(r => r.text).join(''));
+    if (v.text !== undefined) return normalizeValue(v.text);
     if (v.result !== undefined) return normalizeValue(v.result);
   }
-  return String(v).replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+  return normalizeValue(String(v));
 }
 
 function normalizeId(v) {
@@ -582,10 +607,14 @@ function tryNum(x) {
 function valuesEqual(a, b) {
   const A = tryNum(a), B = tryNum(b);
   if (A.ok && B.ok) return NUM_FMT.format(A.n) === NUM_FMT.format(B.n);
+  
+  // Строгое сравнение: пустота (null, undefined, "") — это одно.
+  // Прочерк "-" — это отдельное значение, оно НЕ равно пустоте.
   const isE = x => x === null || x === undefined || (typeof x === 'string' && x.trim() === '');
   const eA = isE(a), eB = isE(b);
   if (eA && eB) return true;
   if (eA || eB) return false;
+  
   return String(a).trim() === String(b).trim();
 }
 
