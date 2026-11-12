@@ -61,23 +61,23 @@ header{
 /* ============ Main ============ */
 main{padding:32px 0 60px}
 
-/* Segmented Control */
+/* Segmented Control (Компактный) */
 .mode-selector{
   display:flex; position:relative; background:#e2e8f0;
-  border-radius:8px; padding:4px; width:440px; margin:0 auto 24px;
+  border-radius:8px; padding:3px; width:340px; margin:0 auto 24px;
   box-shadow:inset 0 1px 2px rgba(0,0,0,.05); border:1px solid #cbd5e1;
 }
-@media(max-width:500px){.mode-selector{width:100%;}}
+@media(max-width:400px){.mode-selector{width:100%;}}
 .mode-selector label{
   flex:1; position:relative; z-index:1; display:flex; align-items:center; justify-content:center;
-  cursor:pointer; padding:8px 16px; font-size:13px; font-weight:600; color:var(--text-muted);
+  cursor:pointer; padding:6px 10px; font-size:12px; font-weight:600; color:var(--text-muted);
   transition:color 0.2s; border-radius:6px; user-select:none; text-decoration:none !important;
 }
 .mode-selector input[type="radio"]{ display:none; }
 .mode-selector input[type="radio"]:checked + span{ color:var(--text); }
 .mode-slider{
-  position:absolute; top:4px; left:4px; width:calc(50% - 4px); height:calc(100% - 8px);
-  background:#fff; border-radius:6px;
+  position:absolute; top:3px; left:3px; width:calc(50% - 3px); height:calc(100% - 6px);
+  background:#fff; border-radius:5px;
   box-shadow:0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
   transition:transform 0.2s ease-in-out; z-index:0;
 }
@@ -155,9 +155,9 @@ main{padding:32px 0 60px}
 .divider::before { margin-right: 12px; }
 .divider::after { margin-left: 12px; }
 
-/* Drop Zone (тоньше и светлее) */
+/* Drop Zone */
 .drop-zone{
-  border:1px dashed #cbd5e1; /* Изменено: тоньше и светлее */
+  border:1px dashed #cbd5e1;
   border-radius:var(--radius-sm);
   padding:24px 20px;
   text-align:center;
@@ -204,10 +204,14 @@ main{padding:32px 0 60px}
 .report-meta{color:var(--text-muted);font-size:13px;margin:6px 0 0}
 .report-actions{display:flex;gap:8px}
 
+/* Stat cards (5 штук) */
 .summary{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  display:grid;grid-template-columns:repeat(5, 1fr);
   gap:12px;margin-bottom:24px;
 }
+@media(max-width:900px){.summary{grid-template-columns:repeat(3, 1fr);}}
+@media(max-width:600px){.summary{grid-template-columns:repeat(2, 1fr);}}
+
 .stat{
   background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);padding:16px 20px;
@@ -222,8 +226,8 @@ main{padding:32px 0 60px}
   text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;
 }
 .stat-value{
-  font-size:32px; /* Увеличено */
-  font-weight:800; /* Жирнее */
+  font-size:32px;
+  font-weight:800;
   letter-spacing:-.03em;
   font-variant-numeric:tabular-nums;line-height:1;
 }
@@ -282,10 +286,20 @@ tbody td{
   vertical-align:top;color:var(--text);
 }
 tbody tr:nth-child(even) td {
-  background-color: #f8fafc; /* Цвет для четных строк */
+  background-color: #f8fafc;
 }
 tbody tr:hover td {
-  background-color: #eff6ff !important; /* Синий ховер при наведении */
+  background-color: #eff6ff !important;
+}
+
+/* Стиль для группировки одинаковых объектов */
+td.muted-text {
+  color: var(--text-dim) !important;
+  font-style: italic;
+}
+td.muted-text .old-val, 
+td.muted-text .new-val {
+  display: none; /* Прячем дублирующиеся изменения, если объект тот же (для этапа) */
 }
 
 .old-val{
@@ -330,11 +344,11 @@ footer{text-align:center;padding:24px 0;color:var(--text-dim);font-size:11px;bor
     <div class="mode-slider" id="mode-slider"></div>
     <label>
       <input type="radio" name="compare-mode" value="g_vs_x" checked>
-      <span>Google Sheets ↔ Excel</span>
+      <span>Google ↔ Excel</span>
     </label>
     <label>
       <input type="radio" name="compare-mode" value="x_vs_x">
-      <span>Excel ↔ Excel (старая vs новая)</span>
+      <span>Excel ↔ Excel</span>
     </label>
   </div>
 
@@ -458,37 +472,26 @@ const state = { leftData: null, rightData: null, mode: 'g_vs_x' };
 const modeSlider = $('mode-slider');
 document.querySelectorAll('input[name="compare-mode"]').forEach((radio, index) => {
   radio.addEventListener('change', e => {
-    // Двигаем ползунок
     modeSlider.style.transform = `translateX(${index * 100}%)`;
     
     state.mode = e.target.value;
     const isGvsX = state.mode === 'g_vs_x';
     
-    // Левая сторона
     $('google-fields').style.display = isGvsX ? 'block' : 'none';
     $('left-icon').className = isGvsX ? 'card-icon g' : 'card-icon x';
     $('left-icon').textContent = isGvsX ? 'G' : 'X';
     $('left-title').textContent = isGvsX ? 'Google Sheets' : 'Excel-файл (Старый)';
-    
-    // Правая сторона
     $('right-title').textContent = isGvsX ? 'Excel-файл' : 'Excel-файл (Новый)';
     
-    // Сброс загруженных данных
-    state.leftData = null;
-    state.rightData = null;
-    $('fn-left').textContent = '';
-    $('fn-right').textContent = '';
-    $('dz-left').classList.remove('has-file');
-    $('dz-right').classList.remove('has-file');
-    setStatus('status-left', '', '');
-    setStatus('status-right', '', '');
-    setCardReady('card-left', false);
-    setCardReady('card-right', false);
+    state.leftData = null; state.rightData = null;
+    $('fn-left').textContent = ''; $('fn-right').textContent = '';
+    $('dz-left').classList.remove('has-file'); $('dz-right').classList.remove('has-file');
+    setStatus('status-left', '', ''); setStatus('status-right', '', '');
+    setCardReady('card-left', false); setCardReady('card-right', false);
     updateButtons();
   });
 });
 
-// Инициализация ползунка при загрузке
 setTimeout(() => {
   const checked = document.querySelector('input[name="compare-mode"]:checked');
   if (checked) {
@@ -506,8 +509,7 @@ function findLatestSuffix(headers) {
   const text = headers.join(' | ');
   const matches = [...text.matchAll(/\((\d{2})\.(\d{2})\.(\d{4})\)/g)];
   if (!matches.length) return null;
-  const sorted = matches.map(m => ({ full: m[0], ts: new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime() }))
-                        .sort((a, b) => b.ts - a.ts);
+  const sorted = matches.map(m => ({ full: m[0], ts: new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime() })).sort((a, b) => b.ts - a.ts);
   return sorted[0].full;
 }
 
@@ -516,8 +518,7 @@ function findCol(headers, prefix, suffix = null) {
   for (const h of headers) {
     if (!h) continue;
     const hn = h.replace(/\s+/g, ' ').trim();
-    const hnl = hn.toLowerCase();
-    if (!hnl.startsWith(p)) continue;
+    if (!hn.toLowerCase().startsWith(p)) continue;
     if (suffix === null) {
       if (!/\(\d{2}\.\d{2}\.\d{4}\)/.test(hn)) return h;
     } else if (hn.includes(suffix)) return h;
@@ -566,11 +567,8 @@ function normalizeValue(v) {
   
   if (typeof v === 'string') {
     let s = v.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\u00A0/g, ' ').trim();
-    // Конвертируем "2022-12-26" в "26.12.2022"
     const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (isoMatch) {
-      return `${isoMatch[3]}.${isoMatch[2]}.${isoMatch[1]}`;
-    }
+    if (isoMatch) return `${isoMatch[3]}.${isoMatch[2]}.${isoMatch[1]}`;
     return s;
   }
   
@@ -608,8 +606,6 @@ function valuesEqual(a, b) {
   const A = tryNum(a), B = tryNum(b);
   if (A.ok && B.ok) return NUM_FMT.format(A.n) === NUM_FMT.format(B.n);
   
-  // Строгое сравнение: пустота (null, undefined, "") — это одно.
-  // Прочерк "-" — это отдельное значение, оно НЕ равно пустоте.
   const isE = x => x === null || x === undefined || (typeof x === 'string' && x.trim() === '');
   const eA = isE(a), eB = isE(b);
   if (eA && eB) return true;
@@ -740,8 +736,7 @@ $('btn-load-g').addEventListener('click', async () => {
   const id = extractSheetId(raw);
   const name = $('gsheet-name').value.trim() || 'data';
   setStatus('status-left', 'Загружаю…', 'loading');
-  setCardReady('card-left', false);
-  state.leftData = null; updateButtons();
+  setCardReady('card-left', false); state.leftData = null; updateButtons();
   try {
     const data = await loadGoogleSheet(id, name);
     state.leftData = { ...data, type: 'google' };
@@ -758,14 +753,11 @@ $('file-left').addEventListener('change', e => {
   if (f) {
     state.leftData = null; setCardReady('card-left', false); updateButtons();
     setStatus('status-left', 'Читаю файл…', 'loading');
-    readXlsx(f, ['data', 'Data', 'Данные'])
-      .then(data => {
-        state.leftData = { ...data, type: 'excel' };
-        setStatus('status-left', `Загружено: ${data.rows.length} строк`, 'success');
-        setCardReady('card-left', true);
-      })
-      .catch(err => setStatus('status-left', 'Ошибка: ' + err.message, 'error'))
-      .finally(updateButtons);
+    readXlsx(f, ['data', 'Data', 'Данные']).then(data => {
+      state.leftData = { ...data, type: 'excel' };
+      setStatus('status-left', `Загружено: ${data.rows.length} строк`, 'success');
+      setCardReady('card-left', true);
+    }).catch(err => setStatus('status-left', 'Ошибка: ' + err.message, 'error')).finally(updateButtons);
   }
 });
 
@@ -776,14 +768,11 @@ $('file-right').addEventListener('change', e => {
   if (f) {
     state.rightData = null; setCardReady('card-right', false); updateButtons();
     setStatus('status-right', 'Читаю файл…', 'loading');
-    readXlsx(f, ['Данные', 'Data', 'data'])
-      .then(data => {
-        state.rightData = { ...data, type: 'excel' };
-        setStatus('status-right', `Загружено: ${data.rows.length} строк`, 'success');
-        setCardReady('card-right', true);
-      })
-      .catch(err => setStatus('status-right', 'Ошибка: ' + err.message, 'error'))
-      .finally(updateButtons);
+    readXlsx(f, ['Данные', 'Data', 'data']).then(data => {
+      state.rightData = { ...data, type: 'excel' };
+      setStatus('status-right', `Загружено: ${data.rows.length} строк`, 'success');
+      setCardReady('card-right', true);
+    }).catch(err => setStatus('status-right', 'Ошибка: ' + err.message, 'error')).finally(updateButtons);
   }
 });
 
@@ -795,11 +784,7 @@ $('file-right').addEventListener('change', e => {
   dz.addEventListener('drop', e => {
     e.preventDefault(); dz.classList.remove('drag');
     const f = e.dataTransfer.files[0];
-    if (f) {
-      const dt = new DataTransfer(); dt.items.add(f);
-      $(inputId).files = dt.files;
-      $(inputId).dispatchEvent(new Event('change'));
-    }
+    if (f) { const dt = new DataTransfer(); dt.items.add(f); $(inputId).files = dt.files; $(inputId).dispatchEvent(new Event('change')); }
   });
 });
 
@@ -807,11 +792,7 @@ $('file-right').addEventListener('change', e => {
 function extractNormalizedRows(data, type) {
   const mapping = type === 'excel' ? getColumnMapping(data.headers) : null;
   return data.rows.map(r => {
-    const get = (key, fallbackKey) => {
-      if (type === 'google') return normalizeValue(r[key] || r[fallbackKey]);
-      return normalizeValue(r[mapping[key]]);
-    };
-    
+    const get = (key, fallbackKey) => type === 'google' ? normalizeValue(r[key] || r[fallbackKey]) : normalizeValue(r[mapping[key]]);
     return {
       __row: r.__row,
       id: normalizeId(type === 'google' ? r['id'] : r[mapping['id']]),
@@ -835,8 +816,7 @@ function extractNormalizedRows(data, type) {
 }
 
 function runComparison() {
-  const left = state.leftData;
-  const right = state.rightData;
+  const left = state.leftData, right = state.rightData;
   if (!left || !right) return;
 
   const leftSuffix = findLatestSuffix(left.headers);
@@ -846,17 +826,11 @@ function runComparison() {
   const xRows = extractNormalizedRows(right, right.type);
 
   const FIELDS = [
-    ['этап','Этап'], ['статус','Статус площади'],
-    ['общая площадь','Общая площадь'],
-    ['площадь строительства','Площадь объекта строительства'],
-    ['площадь блоков мезонина','Площадь блоков мезонина'],
-    ['площадь оперзоны','Площадь оперзоны'],
-    ['площадь заморозки','Площадь заморозки'],
-    ['статус площадки','Статус площадки'],
-    ['РВ','Дата получения РВ'],
-    ['категория','Категория объекта'],
-    ['источник','Источник данных'],
-    ['повреждения','Повреждение блока'],
+    ['этап','Этап'], ['статус','Статус площади'], ['общая площадь','Общая площадь'],
+    ['площадь строительства','Площадь объекта строительства'], ['площадь блоков мезонина','Площадь блоков мезонина'],
+    ['площадь оперзоны','Площадь оперзоны'], ['площадь заморозки','Площадь заморозки'],
+    ['статус площадки','Статус площадки'], ['РВ','Дата получения РВ'],
+    ['категория','Категория объекта'], ['источник','Источник данных'], ['повреждения','Повреждение блока'],
   ];
 
   const pkey = r => `${r.id}|${r['ФО']}|${r['объект_norm']}`;
@@ -877,17 +851,14 @@ function runComparison() {
       for (let j = 0; j < x.length; j++) {
         if (usedX.has(j)) continue;
         if (skey(g[i]) === skey(x[j])) {
-          pairs.push([g[i], x[j], 'exact']);
-          usedG.add(i); usedX.add(j); break;
+          pairs.push([g[i], x[j], 'exact']); usedG.add(i); usedX.add(j); break;
         }
       }
     }
-    const rg = g.filter((_, i) => !usedG.has(i));
-    const rx = x.filter((_, j) => !usedX.has(j));
+    const rg = g.filter((_, i) => !usedG.has(i)), rx = x.filter((_, j) => !usedX.has(j));
     const minLen = Math.min(rg.length, rx.length);
     for (let i = 0; i < minLen; i++) pairs.push([rg[i], rx[i], 'fuzzy']);
-    onlyG.push(...rg.slice(minLen));
-    onlyX.push(...rx.slice(minLen));
+    onlyG.push(...rg.slice(minLen)); onlyX.push(...rx.slice(minLen));
   }
 
   const changes = [];
@@ -904,7 +875,7 @@ function runComparison() {
   }
 
   const metaStr = (leftSuffix || rightSuffix) 
-    ? `Даты: ${leftSuffix || 'нет'} ↔ ${rightSuffix || 'нет'} · Строк: ${gRows.length} ↔ ${xRows.length}`
+    ? `Строк: ${gRows.length} ↔ ${xRows.length} · Сопоставлено: ${pairs.length}`
     : `Строк: ${gRows.length} ↔ ${xRows.length}`;
 
   renderReport({ suffix: metaStr, gRows, xRows, pairs, changes, onlyG, onlyX, mode: state.mode });
@@ -921,24 +892,19 @@ function renderReport(d) {
 
   $('report-meta').textContent = d.suffix;
 
-  const exact = d.pairs.filter(p => p[2] === 'exact').length;
-  const fuzzy = d.pairs.filter(p => p[2] === 'fuzzy').length;
-  
   const leftLabel = d.mode === 'g_vs_x' ? 'Google' : 'Excel (Старый)';
   const rightLabel = d.mode === 'g_vs_x' ? 'Excel' : 'Excel (Новый)';
 
   const displayStage = r => {
-    if (r.field === 'Этап') {
-      return `${rv(r.old, 'old-val')}<span class="arrow">→</span>${rv(r.new, 'new-val')}`;
-    }
+    if (r.field === 'Этап') return `${rv(r.old, 'old-val')}<span class="arrow">→</span>${rv(r.new, 'new-val')}`;
     return esc(r.stage_new || r.stage_old || '');
   };
 
+  // Мы убрали карточку "Сопоставлено" из плиток (так как она сбивала с толку)
   $('report-content').innerHTML = `
     <div class="summary">
       <div class="stat"><div class="stat-label">${leftLabel}</div><div class="stat-value">${d.gRows.length}</div><div class="stat-detail">строк</div></div>
       <div class="stat"><div class="stat-label">${rightLabel}</div><div class="stat-value">${d.xRows.length}</div><div class="stat-detail">строк</div></div>
-      <div class="stat blue"><div class="stat-label">Сопоставлено</div><div class="stat-value">${d.pairs.length}</div><div class="stat-detail">${exact} точных · ${fuzzy} по порядку</div></div>
       <div class="stat yellow"><div class="stat-label">Изменений</div><div class="stat-value">${d.changes.length}</div><div class="stat-detail">ячеек</div></div>
       <div class="stat green"><div class="stat-label">Только в ${rightLabel}</div><div class="stat-value">${d.onlyX.length}</div><div class="stat-detail">добавлено</div></div>
       <div class="stat red"><div class="stat-label">Только в ${leftLabel}</div><div class="stat-value">${d.onlyG.length}</div><div class="stat-detail">удалено</div></div>
@@ -1003,20 +969,37 @@ function renderReport(d) {
         return (av > bv ? 1 : av < bv ? -1 : 0) * cSort.dir;
       });
     }
+
+    // Группировка для визуального склеивания
+    let prevKey = null;
+    const html = rows.map(r => {
+      const currKey = `${r.id}|${r.obj}|${r.stage_new}`;
+      const isGrouped = (currKey === prevKey);
+      prevKey = currKey;
+
+      const cls = isGrouped ? 'muted-text' : '';
+      
+      let stageHtml = displayStage(r);
+      // Если этап не менялся в этой строке, но мы в группе - прячем текст
+      if (isGrouped && r.field !== 'Этап') stageHtml = '';
+
+      return `<tr>
+        <td class="${cls} num">${esc(r.id)}</td>
+        <td class="${cls}">${esc(r.fo)}</td>
+        <td class="${cls}">${esc(r.obj)}</td>
+        <td class="${cls}">${stageHtml}</td>
+        <td><strong>${esc(r.field)}</strong></td>
+        <td>${rv(r.old, 'old-val')}</td>
+        <td>${rv(r.new, 'new-val')}</td>
+      </tr>`;
+    }).join('');
+
     $('t-changes').querySelector('tbody').innerHTML = rows.length
-      ? rows.map(r =>
-        `<tr>
-          <td class="num">${esc(r.id)}</td>
-          <td>${esc(r.fo)}</td>
-          <td>${esc(r.obj)}</td>
-          <td>${displayStage(r)}</td>
-          <td>${esc(r.field)}</td>
-          <td>${rv(r.old, 'old-val')}</td>
-          <td>${rv(r.new, 'new-val')}</td>
-        </tr>`).join('')
+      ? html
       : '<tr><td colspan="7" class="empty"><div class="empty-icon">✓</div>Нет изменений</td></tr>';
     $('c-changes').textContent = `${rows.length} из ${d.changes.length}`;
   };
+  
   $('t-changes').querySelectorAll('th[data-s]').forEach(th => {
     th.onclick = () => {
       const k = th.dataset.s;
@@ -1066,7 +1049,6 @@ async function downloadXlsx() {
     ['Параметр', 'Значение'],
     ['Режим сравнения', d.mode === 'g_vs_x' ? 'Google ↔ Excel' : 'Excel ↔ Excel'],
     ['Инфо', d.suffix],
-    ['Сопоставлено', d.pairs.length],
     ['Изменений', d.changes.length],
     ['Только слева', d.onlyG.length],
     ['Только справа', d.onlyX.length],
@@ -1079,6 +1061,7 @@ async function downloadXlsx() {
   c.addRow(['ID', 'ФО', 'Объект', 'Этап', 'Поле', 'Было', 'Стало']);
   c.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
   c.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+  
   d.changes.forEach(ch => {
     const stageDisplay = ch.field === 'Этап' ? `${ch.old ?? ''} → ${ch.new ?? ''}` : (ch.stage_new || ch.stage_old || '');
     const row = c.addRow([ch.id, ch.fo, ch.obj, stageDisplay, ch.field, ch.old ?? '', ch.new ?? '']);
