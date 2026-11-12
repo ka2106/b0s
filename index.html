@@ -197,10 +197,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
     <div class="container">
       
       <div id="tab-dashboard" class="tab-content">
-        <div id="dashboard-loading" style="text-align:center; padding:60px; font-size:16px; color:var(--text-muted);">
-          Загружаю данные...
-        </div>
-        
+        <div id="dashboard-loading" style="text-align:center; padding:60px; font-size:16px; color:var(--text-muted);">Загружаю данные...</div>
         <div id="dashboard-content" style="display:none;">
           <div class="dashboard-grid">
             <div class="kpi-card blue"><div class="kpi-label">Всего объектов</div><div class="kpi-value" id="kpi-objects">0</div></div>
@@ -208,17 +205,14 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
             <div class="kpi-card orange"><div class="kpi-label">В работе</div><div class="kpi-value" id="kpi-planned">0</div><div class="kpi-sub" id="kpi-planned-count">0 объектов</div></div>
             <div class="kpi-card red"><div class="kpi-label">Заморозка / Отказ</div><div class="kpi-value" id="kpi-freeze">0</div><div class="kpi-sub" id="kpi-freeze-count">0 объектов</div></div>
           </div>
-
           <div class="charts-row">
             <div class="chart-card"><h3 class="chart-title">Распределение площадей по статусам</h3><div class="bar-chart" id="chart-status"></div></div>
             <div class="chart-card"><h3 class="chart-title">Сдача площадей</h3><div class="bar-chart" id="chart-years"></div></div>
           </div>
-
           <div class="chart-card" style="margin-bottom:24px;">
             <div class="year-controls"><h3 class="chart-title" style="margin:0;">Сдача площадей по месяцам</h3><select class="year-select" id="year-select"></select></div>
             <div class="year-table-wrap"><table class="year-table" id="year-table"></table></div>
           </div>
-
           <div class="charts-row">
             <div class="chart-card"><h3 class="chart-title">Ближайшие к сдаче (Планируемые)</h3><div class="delivery-list" id="list-upcoming"></div></div>
             <div class="chart-card"><h3 class="chart-title">Последние сданные объекты</h3><div class="delivery-list" id="list-recent"></div></div>
@@ -233,9 +227,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <span class="filter-title">ФО</span>
                 <div style="display:flex; align-items:center; gap:12px;">
-                  <div class="filter-actions-wrap" onclick="event.stopPropagation()">
-                    <span class="filter-actions" data-target="fo" data-action="all">Все</span><span class="filter-actions" data-target="fo" data-action="none">Ничего</span>
-                  </div>
+                  <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="fo" data-action="all">Все</span><span class="filter-actions" data-target="fo" data-action="none">Ничего</span></div>
                   <div class="filter-arrow">▼</div>
                 </div>
               </div>
@@ -245,9 +237,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <span class="filter-title">Объект</span>
                 <div style="display:flex; align-items:center; gap:12px;">
-                  <div class="filter-actions-wrap" onclick="event.stopPropagation()">
-                    <span class="filter-actions" data-target="obj" data-action="all">Все</span><span class="filter-actions" data-target="obj" data-action="none">Ничего</span>
-                  </div>
+                  <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="obj" data-action="all">Все</span><span class="filter-actions" data-target="obj" data-action="none">Ничего</span></div>
                   <div class="filter-arrow">▼</div>
                 </div>
               </div>
@@ -257,9 +247,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <span class="filter-title">Категория</span>
                 <div style="display:flex; align-items:center; gap:12px;">
-                  <div class="filter-actions-wrap" onclick="event.stopPropagation()">
-                    <span class="filter-actions" data-target="category" data-action="all">Все</span><span class="filter-actions" data-target="category" data-action="none">Ничего</span>
-                  </div>
+                  <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="category" data-action="all">Все</span><span class="filter-actions" data-target="category" data-action="none">Ничего</span></div>
                   <div class="filter-arrow">▼</div>
                 </div>
               </div>
@@ -269,16 +257,13 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <span class="filter-title">Статус</span>
                 <div style="display:flex; align-items:center; gap:12px;">
-                  <div class="filter-actions-wrap" onclick="event.stopPropagation()">
-                    <span class="filter-actions" data-target="status" data-action="all">Все</span><span class="filter-actions" data-target="status" data-action="none">Ничего</span>
-                  </div>
+                  <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="status" data-action="all">Все</span><span class="filter-actions" data-target="status" data-action="none">Ничего</span></div>
                   <div class="filter-arrow">▼</div>
                 </div>
               </div>
               <div class="filter-content"><div class="checkbox-list" id="filter-status"></div></div>
             </div>
           </aside>
-
           <div class="table-container">
             <div class="table-header"><span class="table-title">Реестр объектов</span><span style="font-size:12px;color:var(--text-muted)" id="table-count">0 строк</span></div>
             <div style="overflow-x:auto;">
@@ -297,7 +282,6 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
           <label><input type="radio" name="compare-mode" value="g_vs_x" checked><span>Google ↔ Excel</span></label>
           <label><input type="radio" name="compare-mode" value="x_vs_x"><span>Excel ↔ Excel</span></label>
         </div>
-
         <div id="compare-upload-screen">
           <div class="upload-grid">
             <div class="card" id="card-left">
@@ -311,7 +295,6 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               </div>
               <label class="drop-zone" id="dz-left-comp"><input type="file" id="file-left-comp" accept=".xlsx"><div style="font-size:24px;margin-bottom:8px;">📄</div><div class="drop-text">Перетащите <strong>.xlsx</strong> или нажмите</div><div class="drop-filename" id="fn-left-comp"></div></label>
             </div>
-
             <div class="card" id="card-right">
               <div class="card-header"><div class="card-icon x" id="right-icon">X</div><div class="card-title" id="right-title">Excel-файл</div></div>
               <label class="drop-zone" id="dz-right-comp" style="margin-top: 2px;"><input type="file" id="file-right-comp" accept=".xlsx"><div style="font-size:24px;margin-bottom:8px;">📄</div><div class="drop-text">Перетащите <strong>.xlsx</strong> или нажмите</div><div class="drop-filename" id="fn-right-comp"></div></label>
@@ -320,7 +303,6 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
           </div>
           <div style="text-align:center; padding:8px 0;"><button class="btn btn-primary btn-lg" id="btn-run-comp" disabled>Сравнить данные</button></div>
         </div>
-
         <div id="compare-report-screen" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;">
             <div><h2 style="font-size:20px;font-weight:700;margin:0;">Результат сравнения</h2><p style="color:var(--text-muted);font-size:13px;margin:6px 0 0" id="compare-meta"></p></div>
@@ -374,7 +356,6 @@ function loadGoogleSheet(id = SHEET_ID, name = SHEET_NAME) {
   });
 }
 
-// УЛЬТРА-НАДЕЖНЫЙ ПАРСЕР ССЫЛОК
 function parseGviz(data) {
   const t = data.table;
   const headers = t.cols.map(c => (c.label || c.id || '').replace(/\s+/g, ' ').trim());
@@ -389,7 +370,6 @@ function parseGviz(data) {
       let link = null;
 
       if (cell) {
-        // 1. Ищем ссылку в HTML (Ctrl+K) или в свойстве hyperlink
         if (cell.p && cell.p.html) {
            const match = cell.p.html.match(/href="([^"]+)"/);
            if (match) link = match[1].replace(/&amp;/g, '&');
@@ -399,19 +379,16 @@ function parseGviz(data) {
            const match = cell.f.match(/href="([^"]+)"/);
            if (match) link = match[1].replace(/&amp;/g, '&');
         }
-        // 2. Если ячейка содержит чистый URL в 'v'
         if (!link && typeof cell.v === 'string' && /^https?:\/\//.test(cell.v.trim())) {
            link = cell.v.trim();
         }
 
-        // 3. Извлекаем отображаемое значение (текст или дату)
         if (cell.v !== undefined && cell.v !== null && cell.v !== '') {
           const raw = cell.v;
           if (typeof raw === 'string' && raw.startsWith('Date(')) {
             const m = raw.match(/Date\((\d+),(\d+),(\d+)/);
             if (m) v = `${String(parseInt(m[3])).padStart(2,'0')}.${String(parseInt(m[2])+1).padStart(2,'0')}.${m[1]}`;
           } else {
-            // Если v - это URL, а f - это текст (формула ГИПЕРССЫЛКА), берем f
             if (link && raw === link && cell.f) {
               v = String(cell.f).replace(/<[^>]+>/g, '').trim();
             } else {
@@ -422,7 +399,6 @@ function parseGviz(data) {
           v = String(cell.f).replace(/<[^>]+>/g, '').trim();
         }
         
-        // Если ссылку так и не нашли, но текст выглядит как ссылка
         if (!link && typeof v === 'string' && /^https?:\/\//.test(v)) {
           link = v;
         }
@@ -444,10 +420,21 @@ function processData(headers, rows) {
     const parseA = (k) => parseFloat(String(getVal(k) || '0').replace(/\s/g, '').replace(',', '.')) || 0;
     
     const rvText = getVal('РВ') ? String(getVal('РВ')) : '';
-    const rvLink = getVal('РВ_link') || null;
+    
+    // Ищем ссылку в столбце "РВ_link" или в новых столбцах "Ссылка РВ", "Ссылка", "URL"
+    let rvLink = getVal('РВ_link') || getVal('Ссылка РВ') || getVal('Ссылка') || getVal('URL') || null;
+    
+    // Если ссылки нет, но сам текст РВ выглядит как ссылка
+    if (!rvLink && /^https?:\/\//.test(rvText)) rvLink = rvText;
+    
+    // Если ссылка есть, но в тексте РВ полноценная ссылка, убираем её из текста даты
+    let cleanRvText = rvText;
+    if (rvLink && rvText.includes(rvLink)) {
+      cleanRvText = rvText.replace(rvLink, '').trim() || 'Ссылка';
+    }
     
     let date = null;
-    const dMatch = rvText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+    const dMatch = cleanRvText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
     if (dMatch) date = new Date(dMatch[3], dMatch[2]-1, dMatch[1]);
 
     return {
@@ -456,7 +443,7 @@ function processData(headers, rows) {
       areaMezzanine: parseA('площадь блоков мезонина'), areaOper: parseA('площадь оперзоны'),
       areaFreeze: parseA('площадь заморозки'), areaBuild: parseA('площадь строительства'),
       source: getVal('источник данных площади') || '', damage: getVal('повреждения') || '',
-      rvText, rvLink, rvDate: date, rvSort: date ? date.getTime() : 0
+      rvText: cleanRvText, rvLink: rvLink, rvDate: date, rvSort: date ? date.getTime() : 0
     };
   });
 }
@@ -505,9 +492,9 @@ function renderDashboard(data) {
   const now = new Date();
   const upcoming = sortedByDate.filter(r => r.rvDate >= now && r.status !== 'Завершен').slice(0, 5);
   const recent = sortedByDate.filter(r => r.rvDate < now || r.status === 'Завершен').sort((a,b) => b.rvDate - a.rvDate).slice(0, 5);
+  
   const renderList = (arr, type) => arr.map(r => {
-    const dateOnly = r.rvText.match(/\d{2}\.\d{2}\.\d{4}/) ? r.rvText.match(/\d{2}\.\d{2}\.\d{4}/)[0] : '—';
-    const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-style:dotted;">${dateOnly}</a>` : dateOnly;
+    const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-style:dotted;">${r.rvText}</a>` : r.rvText;
     return `<div class="delivery-item ${type}"><div class="delivery-date">${dateHtml}</div><div class="delivery-obj">${r.obj} <br><span style="font-size:11px; color:#94a3b8;">${r.stage}</span></div><div class="delivery-area">${fmt(r.areaBuild)}</div></div>`;
   }).join('');
   $('list-upcoming').innerHTML = upcoming.length ? renderList(upcoming, 'future') : '<div style="color:#666;font-size:13px;">Нет данных</div>';
@@ -537,7 +524,7 @@ function initYearTable(data) {
         if (val > 0) {
           const items = o.items.filter(i => i.rvDate.getMonth() === m);
           const tooltipLines = items.map(i => {
-            const dateStr = i.rvText.replace(/(https?:\/\/[^\s]+)/, '').trim() || '—';
+            const dateStr = i.rvText || '—';
             const linkHtml = i.rvLink ? `<a href="${i.rvLink}" target="_blank" style="color:#60a5fa; text-decoration:underline;">Ссылка</a>` : '';
             return `${i.status} | РВ: ${dateStr} ${linkHtml}`;
           }).join('<br>');
@@ -585,8 +572,7 @@ function renderTable() {
   $('table-count').textContent = `${filteredData.length} строк`;
   $('table-body').innerHTML = filteredData.map(r => {
     let statusClass = 'planned'; if (r.status === 'Завершен') statusClass = 'delivered'; if (r.status === 'Утрачен' || r.status === 'Отказ от строительства') statusClass = 'danger';
-    const dateOnly = r.rvText.match(/\d{2}\.\d{2}\.\d{4}/) ? r.rvText.match(/\d{2}\.\d{2}\.\d{4}/)[0] : (r.rvText.includes('http') ? 'Ссылка' : r.rvText);
-    const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" class="raw-link">${dateOnly || 'Открыть'}</a>` : linkify(dateOnly || '—');
+    const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" class="raw-link">${r.rvText}</a>` : linkify(r.rvText || '—');
     return `<tr>
         <td class="text-left"><div style="font-weight:600;color:var(--text)">${r.obj}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.stage}</div></td>
         <td class="text-left">${r.category}</td>
