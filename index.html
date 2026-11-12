@@ -151,11 +151,11 @@ header{
 .filter-group{border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px;}
 .filter-group:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
 .filter-header{display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;}
-.filter-title{font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.05em; flex:1;}
+.filter-title{font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.05em;}
 .filter-actions-wrap{display:flex; gap:8px; margin-right:10px;}
 .filter-actions{font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;}
 .filter-actions:hover{text-decoration:underline;}
-.filter-arrow{font-size:10px; color:var(--text-muted); transition:transform 0.2s; width:12px; text-align:center;}
+.filter-arrow{font-size:10px; color:var(--text-muted); transition:transform 0.2s;}
 .filter-group.open .filter-arrow{transform:rotate(180deg);}
 
 .filter-content{display:none; margin-top:10px;}
@@ -333,51 +333,59 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
-            <!-- Аккордеон ФО (схлопнут по умолчанию) -->
+            <!-- Аккордеон ФО -->
             <div class="filter-group">
-              <div class="filter-header">
+              <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <span class="filter-title">ФО</span>
-                <div class="filter-actions-wrap" onclick="event.stopPropagation()">
-                  <span class="filter-actions" data-target="fo" data-action="all">Все</span>
-                  <span class="filter-actions" data-target="fo" data-action="none">Ничего</span>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div class="filter-actions-wrap" onclick="event.stopPropagation()">
+                    <span class="filter-actions" data-target="fo" data-action="all">Все</span>
+                    <span class="filter-actions" data-target="fo" data-action="none">Ничего</span>
+                  </div>
+                  <div class="filter-arrow">▼</div>
                 </div>
-                <div class="filter-arrow">▼</div>
               </div>
               <div class="filter-content"><div class="checkbox-list" id="filter-fo"></div></div>
             </div>
             <!-- Аккордеон Объект -->
             <div class="filter-group">
-              <div class="filter-header">
+              <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <span class="filter-title">Объект</span>
-                <div class="filter-actions-wrap" onclick="event.stopPropagation()">
-                  <span class="filter-actions" data-target="obj" data-action="all">Все</span>
-                  <span class="filter-actions" data-target="obj" data-action="none">Ничего</span>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div class="filter-actions-wrap" onclick="event.stopPropagation()">
+                    <span class="filter-actions" data-target="obj" data-action="all">Все</span>
+                    <span class="filter-actions" data-target="obj" data-action="none">Ничего</span>
+                  </div>
+                  <div class="filter-arrow">▼</div>
                 </div>
-                <div class="filter-arrow">▼</div>
               </div>
               <div class="filter-content"><div class="checkbox-list" id="filter-obj"></div></div>
             </div>
             <!-- Аккордеон Категория -->
             <div class="filter-group">
-              <div class="filter-header">
+              <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <span class="filter-title">Категория</span>
-                <div class="filter-actions-wrap" onclick="event.stopPropagation()">
-                  <span class="filter-actions" data-target="category" data-action="all">Все</span>
-                  <span class="filter-actions" data-target="category" data-action="none">Ничего</span>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div class="filter-actions-wrap" onclick="event.stopPropagation()">
+                    <span class="filter-actions" data-target="category" data-action="all">Все</span>
+                    <span class="filter-actions" data-target="category" data-action="none">Ничего</span>
+                  </div>
+                  <div class="filter-arrow">▼</div>
                 </div>
-                <div class="filter-arrow">▼</div>
               </div>
               <div class="filter-content"><div class="checkbox-list" id="filter-category"></div></div>
             </div>
             <!-- Аккордеон Статус -->
             <div class="filter-group">
-              <div class="filter-header">
+              <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <span class="filter-title">Статус</span>
-                <div class="filter-actions-wrap" onclick="event.stopPropagation()">
-                  <span class="filter-actions" data-target="status" data-action="all">Все</span>
-                  <span class="filter-actions" data-target="status" data-action="none">Ничего</span>
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div class="filter-actions-wrap" onclick="event.stopPropagation()">
+                    <span class="filter-actions" data-target="status" data-action="all">Все</span>
+                    <span class="filter-actions" data-target="status" data-action="none">Ничего</span>
+                  </div>
+                  <div class="filter-arrow">▼</div>
                 </div>
-                <div class="filter-arrow">▼</div>
               </div>
               <div class="filter-content"><div class="checkbox-list" id="filter-status"></div></div>
             </div>
@@ -516,14 +524,6 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
   };
 });
 
-// Accordion Logic
-document.querySelectorAll('.filter-header').forEach(header => {
-  header.onclick = (e) => {
-    if (e.target.classList.contains('filter-actions')) return;
-    header.closest('.filter-group').classList.toggle('open');
-  };
-});
-
 // ============ FETCH & PARSE ============
 function loadGoogleSheet(id = SHEET_ID, name = SHEET_NAME) {
   return new Promise((resolve, reject) => {
@@ -555,24 +555,37 @@ function parseGviz(data) {
       let link = null;
 
       if (cell) {
-          // Максимально надежный поиск ссылок (ищем во всем объекте ячейки)
-          const cellStr = JSON.stringify(cell);
-          const urlMatch = cellStr.match(/(https?:\/\/[^"\\\s<]+)/);
-          if (urlMatch) {
-              link = urlMatch[1] || urlMatch[0];
-              link = link.replace(/\\/g, ''); // убираем экранирование
-          }
+        // 1. Google Sheets хранит ссылки Ctrl+K в cell.p.html
+        if (cell.p && cell.p.html) {
+           const match = cell.p.html.match(/href="([^"]+)"/);
+           if (match) link = match[1].replace(/&amp;/g, '&');
+        }
+        // 2. Иногда ссылка лежит в cell.hyperlink
+        if (!link && cell.hyperlink) {
+           link = cell.hyperlink;
+        }
+        // 3. Ищем href в отформатированном тексте
+        if (!link && typeof cell.f === 'string') {
+           const match = cell.f.match(/href="([^"]+)"/);
+           if (match) link = match[1].replace(/&amp;/g, '&');
+        }
+        // 4. Если в ячейку вставили голую ссылку текстом
+        if (!link && typeof cell.v === 'string' && /^https?:\/\//.test(cell.v.trim())) {
+           link = cell.v.trim();
+        }
 
-          if (cell.v !== undefined && cell.v !== null && cell.v !== '') {
-            const raw = cell.v;
-            if (typeof raw === 'string' && raw.startsWith('Date(')) {
-              const m = raw.match(/Date\((\d+),(\d+),(\d+)/);
-              if (m) v = `${String(parseInt(m[3])).padStart(2,'0')}.${String(parseInt(m[2])+1).padStart(2,'0')}.${m[1]}`;
-            } else v = raw;
-          } else if (cell.f) {
-            const f = String(cell.f).replace(/<[^>]+>/g, '').trim();
-            if (f && !/^-?[\d\s,\.]+$/.test(f)) v = f;
-          }
+        // Извлечение значения
+        if (cell.v !== undefined && cell.v !== null && cell.v !== '') {
+          const raw = cell.v;
+          if (typeof raw === 'string' && raw.startsWith('Date(')) {
+            const m = raw.match(/Date\((\d+),(\d+),(\d+)/);
+            if (m) v = `${String(parseInt(m[3])).padStart(2,'0')}.${String(parseInt(m[2])+1).padStart(2,'0')}.${m[1]}`;
+          } else v = raw;
+        } else if (cell.f) {
+          // Убираем html теги из текста
+          const f = String(cell.f).replace(/<[^>]+>/g, '').trim();
+          if (f && !/^-?[\d\s,\.]+$/.test(f)) v = f;
+        }
       }
       
       obj[headers[i]] = v;
@@ -972,14 +985,21 @@ async function readXlsxComp(file, preferredSheets) {
     let hasValue = false;
     row.eachCell({ includeEmpty: false }, (cell, col) => {
       let v = cell.value;
+      let link = null;
+      
       if (v && typeof v === 'object' && !(v instanceof Date)) {
+        if (v.hyperlink) link = v.hyperlink; // Достаем ссылку Excel
         if (v.richText) v = v.richText.map(r => r.text).join('');
         else if (v.text !== undefined) v = v.text;
         else if (v.result !== undefined) v = v.result;
+      } else if (v instanceof Date) {
+        v = `${String(v.getDate()).padStart(2,'0')}.${String(v.getMonth()+1).padStart(2,'0')}.${v.getFullYear()}`;
       }
+      
       const h = headers[col];
       if (h) {
         obj[h] = v;
+        if (link) obj[h + '_link'] = link; // Сохраняем ссылку
         if (v !== null && v !== undefined && v !== '') hasValue = true;
       }
     });
