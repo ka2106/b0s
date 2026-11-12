@@ -76,22 +76,35 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 .text-delivered { color: #059669; font-weight: 600; }
 .text-planned { color: #4f46e5; font-weight: 600; }
 
+/* Исправленный тултип (не исчезает при наведении) */
 .tooltip-wrap { position: relative; display: inline-block; cursor: pointer; }
-.tooltip-wrap .tooltip-text { visibility: hidden; width: max-content; max-width: 250px; background-color: #1e293b; color: #fff; text-align: left; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 10; bottom: 125%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.2s; font-size: 12px; font-weight: 400; white-space: normal; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); pointer-events: none; }
-.tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; }
+.tooltip-wrap::before { content: ''; position: absolute; bottom: 100%; left: 0; width: 100%; height: 15px; } /* Невидимый мостик */
+.tooltip-wrap .tooltip-text {
+  visibility: hidden; opacity: 0; pointer-events: none;
+  width: max-content; max-width: 320px; background-color: #1e293b; color: #fff;
+  text-align: left; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 100;
+  bottom: 150%; left: 50%; transform: translateX(-50%); transition: opacity 0.2s;
+  font-size: 12px; font-weight: 400; white-space: normal; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+}
+.tooltip-wrap:hover .tooltip-text {
+  visibility: visible; opacity: 1; pointer-events: auto; /* Позволяет кликать по ссылкам */
+}
 
 .table-layout{display:flex;gap:20px;align-items:flex-start;}
 @media(max-width:900px){.table-layout{flex-direction:column;}}
 .sidebar{width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;position:sticky;top:24px;}
+
+/* Красивые фильтры */
 .filter-group{border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px;}
 .filter-group:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
-.filter-header{display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;}
+.filter-header{display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding:4px 0;}
+.filter-title-wrap{display:flex; align-items:center; gap:6px;}
 .filter-title{font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:.05em;}
-.filter-actions-wrap{display:flex; gap:8px; margin-right:10px;}
+.filter-arrow{width:16px; height:16px; stroke:var(--text-muted); transition:transform 0.2s;}
+.filter-group.open .filter-arrow{transform:rotate(180deg);}
+.filter-actions-wrap{display:flex; gap:8px;}
 .filter-actions{font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;}
 .filter-actions:hover{text-decoration:underline;}
-.filter-arrow{font-size:10px; color:var(--text-muted); transition:transform 0.2s;}
-.filter-group.open .filter-arrow{transform:rotate(180deg);}
 .filter-content{display:none; margin-top:10px;}
 .filter-group.open .filter-content{display:block;}
 
@@ -117,6 +130,7 @@ tbody tr:hover td{background:var(--bg);}
 .raw-link{color:var(--accent);text-decoration:none;font-weight:600;}
 .raw-link:hover{text-decoration:underline;}
 
+/* COMPARE STYLES */
 .mode-selector{display:flex;position:relative;background:#e2e8f0;border-radius:8px;padding:3px;width:340px;margin:0 auto 24px;box-shadow:inset 0 1px 2px rgba(0,0,0,.05);border:1px solid #cbd5e1;}
 .mode-selector label{flex:1;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:6px 10px;font-size:12px;font-weight:600;color:var(--text-muted);transition:color 0.2s;border-radius:6px;user-select:none;text-decoration:none!important;}
 .mode-selector input[type="radio"]{display:none;}
@@ -182,10 +196,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
 
 <div class="app">
   <header>
-    <div class="logo-wrap">
-      <div class="logo-mark">Б</div>
-      <div class="logo-text">БОС · Аналитика</div>
-    </div>
+    <div class="logo-wrap"><div class="logo-mark">Б</div><div class="logo-text">БОС · Аналитика</div></div>
     <nav class="nav-tabs">
       <button class="nav-btn active" data-tab="dashboard">Дашборд</button>
       <button class="nav-btn" data-tab="table">Таблица</button>
@@ -196,6 +207,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
   <div class="main-content" id="main-content">
     <div class="container">
       
+      <!-- DASHBOARD -->
       <div id="tab-dashboard" class="tab-content">
         <div id="dashboard-loading" style="text-align:center; padding:60px; font-size:16px; color:var(--text-muted);">Загружаю данные...</div>
         <div id="dashboard-content" style="display:none;">
@@ -220,46 +232,47 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
         </div>
       </div>
 
+      <!-- TABLE -->
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
             <div class="filter-group">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
-                <span class="filter-title">ФО</span>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="fo" data-action="all">Все</span><span class="filter-actions" data-target="fo" data-action="none">Ничего</span></div>
-                  <div class="filter-arrow">▼</div>
+                <div class="filter-title-wrap">
+                  <span class="filter-title">ФО</span>
+                  <svg class="filter-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
+                <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="fo" data-action="all">Все</span><span class="filter-actions" data-target="fo" data-action="none">Ничего</span></div>
               </div>
               <div class="filter-content"><div class="checkbox-list" id="filter-fo"></div></div>
             </div>
             <div class="filter-group">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
-                <span class="filter-title">Объект</span>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="obj" data-action="all">Все</span><span class="filter-actions" data-target="obj" data-action="none">Ничего</span></div>
-                  <div class="filter-arrow">▼</div>
+                <div class="filter-title-wrap">
+                  <span class="filter-title">Объект</span>
+                  <svg class="filter-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
+                <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="obj" data-action="all">Все</span><span class="filter-actions" data-target="obj" data-action="none">Ничего</span></div>
               </div>
               <div class="filter-content"><div class="checkbox-list" id="filter-obj"></div></div>
             </div>
             <div class="filter-group">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
-                <span class="filter-title">Категория</span>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="category" data-action="all">Все</span><span class="filter-actions" data-target="category" data-action="none">Ничего</span></div>
-                  <div class="filter-arrow">▼</div>
+                <div class="filter-title-wrap">
+                  <span class="filter-title">Категория</span>
+                  <svg class="filter-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
+                <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="category" data-action="all">Все</span><span class="filter-actions" data-target="category" data-action="none">Ничего</span></div>
               </div>
               <div class="filter-content"><div class="checkbox-list" id="filter-category"></div></div>
             </div>
             <div class="filter-group">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
-                <span class="filter-title">Статус</span>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="status" data-action="all">Все</span><span class="filter-actions" data-target="status" data-action="none">Ничего</span></div>
-                  <div class="filter-arrow">▼</div>
+                <div class="filter-title-wrap">
+                  <span class="filter-title">Статус</span>
+                  <svg class="filter-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </div>
+                <div class="filter-actions-wrap" onclick="event.stopPropagation()"><span class="filter-actions" data-target="status" data-action="all">Все</span><span class="filter-actions" data-target="status" data-action="none">Ничего</span></div>
               </div>
               <div class="filter-content"><div class="checkbox-list" id="filter-status"></div></div>
             </div>
@@ -276,6 +289,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
         </div>
       </div>
 
+      <!-- COMPARE -->
       <div id="tab-compare" class="tab-content" style="display:none;">
         <div class="mode-selector">
           <div class="mode-slider" id="mode-slider"></div>
@@ -326,10 +340,8 @@ const fmt = v => typeof v === 'number' ? NUM_FMT.format(v) : (v || '');
 const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const linkify = s => { if (!s) return ''; return String(s).replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" class="raw-link">${url}</a>`); };
 
-let rawData = [];
-let filteredData = [];
+let rawData = [], filteredData = [];
 let filters = { fo: new Set(), obj: new Set(), category: new Set(), status: new Set() };
-let selectedYear = new Date().getFullYear();
 
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.onclick = () => {
@@ -365,48 +377,26 @@ function parseGviz(data) {
     let hasValue = false;
     (r.c || []).forEach((cell, i) => {
       if (i >= headers.length || !headers[i]) return;
-      
-      let v = null;
-      let link = null;
-
+      let v = null, link = null;
       if (cell) {
-        if (cell.p && cell.p.html) {
-           const match = cell.p.html.match(/href="([^"]+)"/);
-           if (match) link = match[1].replace(/&amp;/g, '&');
-        }
+        if (cell.p && cell.p.html) { const match = cell.p.html.match(/href="([^"]+)"/); if (match) link = match[1].replace(/&amp;/g, '&'); }
         if (!link && cell.hyperlink) link = cell.hyperlink;
-        if (!link && typeof cell.f === 'string') {
-           const match = cell.f.match(/href="([^"]+)"/);
-           if (match) link = match[1].replace(/&amp;/g, '&');
-        }
-        if (!link && typeof cell.v === 'string' && /^https?:\/\//.test(cell.v.trim())) {
-           link = cell.v.trim();
-        }
+        if (!link && typeof cell.f === 'string') { const match = cell.f.match(/href="([^"]+)"/); if (match) link = match[1].replace(/&amp;/g, '&'); }
+        if (!link && typeof cell.v === 'string' && /^https?:\/\//.test(cell.v.trim())) link = cell.v.trim();
 
         if (cell.v !== undefined && cell.v !== null && cell.v !== '') {
           const raw = cell.v;
           if (typeof raw === 'string' && raw.startsWith('Date(')) {
             const m = raw.match(/Date\((\d+),(\d+),(\d+)/);
             if (m) v = `${String(parseInt(m[3])).padStart(2,'0')}.${String(parseInt(m[2])+1).padStart(2,'0')}.${m[1]}`;
-          } else {
-            if (link && raw === link && cell.f) {
-              v = String(cell.f).replace(/<[^>]+>/g, '').trim();
-            } else {
-              v = raw;
-            }
-          }
+          } else v = raw;
         } else if (cell.f) {
           v = String(cell.f).replace(/<[^>]+>/g, '').trim();
         }
-        
-        if (!link && typeof v === 'string' && /^https?:\/\//.test(v)) {
-          link = v;
-        }
+        if (!link && typeof v === 'string' && /^https?:\/\//.test(v)) link = v;
       }
-      
       obj[headers[i]] = v;
       if (link) obj[headers[i] + '_link'] = link;
-      
       if (v !== null && v !== '') hasValue = true;
     });
     if (hasValue) rows.push(obj);
@@ -420,14 +410,9 @@ function processData(headers, rows) {
     const parseA = (k) => parseFloat(String(getVal(k) || '0').replace(/\s/g, '').replace(',', '.')) || 0;
     
     const rvText = getVal('РВ') ? String(getVal('РВ')) : '';
+    // Ищем ссылку в Q (Ссылка РВ) или скрытую в самой ячейке
+    let rvLink = getVal('Ссылка РВ') || getVal('РВ_link') || getVal('Ссылка') || getVal('URL') || null;
     
-    // Ищем ссылку в столбце "РВ_link" или в новых столбцах "Ссылка РВ", "Ссылка", "URL"
-    let rvLink = getVal('РВ_link') || getVal('Ссылка РВ') || getVal('Ссылка') || getVal('URL') || null;
-    
-    // Если ссылки нет, но сам текст РВ выглядит как ссылка
-    if (!rvLink && /^https?:\/\//.test(rvText)) rvLink = rvText;
-    
-    // Если ссылка есть, но в тексте РВ полноценная ссылка, убираем её из текста даты
     let cleanRvText = rvText;
     if (rvLink && rvText.includes(rvLink)) {
       cleanRvText = rvText.replace(rvLink, '').trim() || 'Ссылка';
@@ -476,8 +461,7 @@ function renderDashboard(data) {
       return `<div class="bar-item"><div class="bar-label">${status}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${statusColors[status] || 'var(--accent)'};"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
 
-  let yearMap = {};
-  const currentYear = new Date().getFullYear();
+  let yearMap = {}; const currentYear = new Date().getFullYear();
   data.forEach(r => { if (r.rvDate) { const y = r.rvDate.getFullYear(); if (y <= currentYear) yearMap[y] = (yearMap[y] || 0) + r.areaBuild; } });
   const sortedYears = Object.keys(yearMap).sort((a,b) => a - b);
   const maxYearArea = Math.max(...Object.values(yearMap), 1);
@@ -492,7 +476,6 @@ function renderDashboard(data) {
   const now = new Date();
   const upcoming = sortedByDate.filter(r => r.rvDate >= now && r.status !== 'Завершен').slice(0, 5);
   const recent = sortedByDate.filter(r => r.rvDate < now || r.status === 'Завершен').sort((a,b) => b.rvDate - a.rvDate).slice(0, 5);
-  
   const renderList = (arr, type) => arr.map(r => {
     const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-style:dotted;">${r.rvText}</a>` : r.rvText;
     return `<div class="delivery-item ${type}"><div class="delivery-date">${dateHtml}</div><div class="delivery-obj">${r.obj} <br><span style="font-size:11px; color:#94a3b8;">${r.stage}</span></div><div class="delivery-area">${fmt(r.areaBuild)}</div></div>`;
@@ -523,15 +506,26 @@ function initYearTable(data) {
         const val = o.months[m];
         if (val > 0) {
           const items = o.items.filter(i => i.rvDate.getMonth() === m);
-          const tooltipLines = items.map(i => {
+          
+          // Убираем дублирование (если Склад и АБЧ сданы в один день с одной ссылкой)
+          const uniqueItems = [];
+          const seen = new Set();
+          items.forEach(i => {
+            const key = `${i.status}|${i.rvText}|${i.rvLink}`;
+            if (!seen.has(key)) { seen.add(key); uniqueItems.push(i); }
+          });
+
+          const tooltipLines = uniqueItems.map(i => {
             const dateStr = i.rvText || '—';
-            const linkHtml = i.rvLink ? `<a href="${i.rvLink}" target="_blank" style="color:#60a5fa; text-decoration:underline;">Ссылка</a>` : '';
-            return `${i.status} | РВ: ${dateStr} ${linkHtml}`;
-          }).join('<br>');
+            const linkHtml = i.rvLink ? `<a href="${i.rvLink}" target="_blank" style="color:#60a5fa; text-decoration:underline; font-weight:600; margin-left:6px;">Ссылка</a>` : '';
+            return `<div style="margin-bottom:4px;">${i.status} | РВ: ${dateStr} ${linkHtml}</div>`;
+          }).join('');
+          
           const isDelivered = items.every(i => i.status === 'Завершен');
           const cls = isDelivered ? 'text-delivered' : 'text-planned';
           const href = items[0].rvLink;
           const content = href ? `<a href="${href}" target="_blank" style="color:inherit; text-decoration:none;">${fmt(val)}</a>` : fmt(val);
+          
           html += `<td><div class="tooltip-wrap"><span class="${cls}">${content}</span><div class="tooltip-text">${tooltipLines}</div></div></td>`;
         } else { html += `<td></td>`; }
       }
@@ -588,10 +582,11 @@ function renderTable() {
   }).join('');
 }
 
-// COMPARE LOGIC RESTORED
+// ================= COMPARE (PERFECT LOGIC RESTORED) =================
 let compareState = { leftData: null, rightData: null, mode: 'g_vs_x' };
 let currentCompareData = null;
 const modeSlider = $('mode-slider');
+
 document.querySelectorAll('input[name="compare-mode"]').forEach((radio, index) => {
   radio.addEventListener('change', e => {
     modeSlider.style.transform = `translateX(${index * 100}%)`; compareState.mode = e.target.value; const isGvsX = compareState.mode === 'g_vs_x';
@@ -600,12 +595,15 @@ document.querySelectorAll('input[name="compare-mode"]').forEach((radio, index) =
     compareState.leftData = null; compareState.rightData = null; $('fn-left-comp').textContent = ''; $('fn-right-comp').textContent = ''; $('status-g-comp').textContent = ''; $('status-x-comp').textContent = ''; updateCompareBtn();
   });
 });
+
 function updateCompareBtn() { $('btn-run-comp').disabled = !(compareState.leftData && compareState.rightData); }
+
 $('btn-load-g-comp').onclick = async () => {
   const id = $('gsheet-id-comp').value.trim(); const name = $('gsheet-name-comp').value.trim() || 'data'; const statusEl = $('status-g-comp'); statusEl.style.color = 'var(--text-muted)'; statusEl.textContent = 'Загрузка...';
   try { const data = await loadGoogleSheet(id, name); compareState.leftData = { ...data, type: 'google' }; statusEl.style.color = 'var(--success)'; statusEl.textContent = `✓ Загружено: ${data.rows.length} строк`; } catch (e) { statusEl.style.color = 'var(--danger)'; statusEl.textContent = 'Ошибка: ' + e.message; }
   updateCompareBtn();
 };
+
 async function readXlsxComp(file, preferredSheets) {
   const buf = await file.arrayBuffer(); const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf); let ws = null;
   for (const name of preferredSheets) { ws = wb.getWorksheet(name); if (ws) break; } if (!ws) ws = wb.worksheets[0];
@@ -614,8 +612,10 @@ async function readXlsxComp(file, preferredSheets) {
   const rows = []; ws.eachRow((row, rn) => { if (rn === 1) return; const obj = { __row: rn }; let hasValue = false; row.eachCell({ includeEmpty: false }, (cell, col) => { let v = cell.value; let link = null; if (v && typeof v === 'object' && !(v instanceof Date)) { if (v.hyperlink) link = v.hyperlink; if (v.richText) v = v.richText.map(r => r.text).join(''); else if (v.text !== undefined) v = v.text; else if (v.result !== undefined) v = v.result; } else if (v instanceof Date) { v = `${String(v.getDate()).padStart(2,'0')}.${String(v.getMonth()+1).padStart(2,'0')}.${v.getFullYear()}`; } const h = headers[col]; if (h) { obj[h] = v; if (link) obj[h + '_link'] = link; if (v !== null && v !== undefined && v !== '') hasValue = true; } }); if (hasValue) rows.push(obj); });
   return { headers: headers.filter(Boolean), rows };
 }
+
 $('file-left-comp').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; $('fn-left-comp').textContent = f.name; const data = await readXlsxComp(f, ['data', 'Data', 'Данные']); compareState.leftData = { ...data, type: 'excel' }; updateCompareBtn(); };
 $('file-right-comp').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; $('fn-right-comp').textContent = f.name; const data = await readXlsxComp(f, ['Данные', 'Data', 'data']); compareState.rightData = { ...data, type: 'excel' }; $('status-x-comp').style.color = 'var(--success)'; $('status-x-comp').textContent = `✓ Загружено: ${data.rows.length} строк`; updateCompareBtn(); };
+
 function getColumnMappingComp(headers) {
   const find = (prefix, suffix=null) => headers.find(h => h.toLowerCase().startsWith(prefix.toLowerCase()) && (!suffix || h.includes(suffix)));
   return { 'id': headers.find(h=>h.toLowerCase()==='id'), 'ФО': headers.find(h=>h.toLowerCase()==='фо'), 'объект': headers.find(h=>h.toLowerCase()==='объект'), 'этап': find('Наименование этапа'), 'статус': headers.find(h=>h.toLowerCase()==='статус площади'), 'общая площадь': find('Общая площадь'), 'площадь строительства': find('Площадь объекта строительства'), 'площадь блоков мезонина': find('Площадь блоков мезонина'), 'площадь оперзоны': find('Площадь оперзоны'), 'площадь заморозки': find('Площадь заморозки'), 'статус площадки': find('Статус площадки'), 'РВ': find('Дата получения РВ'), 'категория': headers.find(h=>h.toLowerCase()==='категория объекта'), 'источник': find('Источник данных площади объекта'), 'повреждения': headers.find(h=>h.toLowerCase()==='повреждение блока') };
@@ -624,14 +624,24 @@ function normalizeValueComp(v) { if (v === null || v === undefined) return null;
 function normalizeIdComp(v) { return v == null ? null : String(v).trim(); }
 function normalizeObjectComp(v) { return v == null ? null : String(v).trim().replace(/^БВС\s+/i, '').replace(/\s+БВС$/i, ''); }
 function valuesEqualComp(a, b) { if (a === null || a === undefined || a === '') a = null; if (b === null || b === undefined || b === '') b = null; if (a === null && b === null) return true; if (a === null || b === null) return false; if (typeof a === 'number' && typeof b === 'number') return Math.round(a*100) === Math.round(b*100); return String(a).trim() === String(b).trim(); }
-function extractNormalizedRowsComp(data, type) { const mapping = type === 'excel' ? getColumnMappingComp(data.headers) : null; return data.rows.map(r => { const get = (key, fallbackKey) => type === 'google' ? normalizeValueComp(r[key] || r[fallbackKey]) : normalizeValueComp(r[mapping[key]]); return { __row: r.__row, id: normalizeIdComp(type === 'google' ? r['id'] : r[mapping['id']]), 'ФО': get('ФО'), 'объект': get('объект'), 'объект_norm': normalizeObjectComp(get('объект')), 'этап': get('этап'), 'статус': get('статус'), 'общая площадь': get('общая площадь'), 'площадь строительства': get('площадь строительства'), 'площадь блоков мезонина': get('площадь блоков мезонина'), 'площадь оперзоны': get('площадь оперзоны'), 'площадь заморозки': get('площадь заморозки'), 'статус площадки': get('статус площадки'), 'РВ': get('РВ'), 'категория': get('категория'), 'источник': type === 'google' ? normalizeValueComp(r['источник данных площади'] || r['источник']) : get('источник'), 'повреждения': get('повреждения') }; }); }
+
+function extractNormalizedRowsComp(data, type) {
+  const mapping = type === 'excel' ? getColumnMappingComp(data.headers) : null;
+  return data.rows.map(r => {
+    const get = (key, fallbackKey) => type === 'google' ? normalizeValueComp(r[key] || r[fallbackKey]) : normalizeValueComp(r[mapping[key]]);
+    return { __row: r.__row, id: normalizeIdComp(type === 'google' ? r['id'] : r[mapping['id']]), 'ФО': get('ФО'), 'объект': get('объект'), 'объект_norm': normalizeObjectComp(get('объект')), 'этап': get('этап'), 'статус': get('статус'), 'общая площадь': get('общая площадь'), 'площадь строительства': get('площадь строительства'), 'площадь блоков мезонина': get('площадь блоков мезонина'), 'площадь оперзоны': get('площадь оперзоны'), 'площадь заморозки': get('площадь заморозки'), 'статус площадки': get('статус площадки'), 'РВ': get('РВ'), 'категория': get('категория'), 'источник': type === 'google' ? normalizeValueComp(r['источник данных площади'] || r['источник']) : get('источник'), 'повреждения': get('повреждения') };
+  });
+}
+
 function runComparisonComp() {
-  const left = compareState.leftData, right = compareState.rightData; const gRows = extractNormalizedRowsComp(left, left.type), xRows = extractNormalizedRowsComp(right, right.type);
+  const left = compareState.leftData, right = compareState.rightData;
+  const gRows = extractNormalizedRowsComp(left, left.type), xRows = extractNormalizedRowsComp(right, right.type);
   const FIELDS = [ ['этап','Этап'], ['статус','Статус площади'], ['общая площадь','Общая площадь'], ['площадь строительства','Площадь объекта строительства'], ['площадь блоков мезонина','Площадь блоков мезонина'], ['площадь оперзоны','Площадь оперзоны'], ['площадь заморозки','Площадь заморозки'], ['статус площадки','Статус площадки'], ['РВ','Дата получения РВ'], ['категория','Категория объекта'], ['источник','Источник данных'], ['повреждения','Повреждение блока'] ];
   const pkey = r => `${r.id}|${r['ФО']}|${r['объект_norm']}`, skey = r => `${r['этап'] || ''}|${r['категория'] || ''}`; const gGroups = {}, xGroups = {};
   gRows.forEach(r => (gGroups[pkey(r)] ||= []).push(r)); xRows.forEach(r => (xGroups[pkey(r)] ||= []).push(r));
   const pairs = [], onlyG = [], onlyX = []; const allKeys = new Set([...Object.keys(gGroups), ...Object.keys(xGroups)]);
-  for (const k of allKeys) { const g = gGroups[k] || [], x = xGroups[k] || []; const usedG = new Set(), usedX = new Set();
+  for (const k of allKeys) {
+    const g = gGroups[k] || [], x = xGroups[k] || []; const usedG = new Set(), usedX = new Set();
     for (let i = 0; i < g.length; i++) { for (let j = 0; j < x.length; j++) { if (usedX.has(j)) continue; if (skey(g[i]) === skey(x[j])) { pairs.push([g[i], x[j], 'exact']); usedG.add(i); usedX.add(j); break; } } }
     const rg = g.filter((_, i) => !usedG.has(i)), rx = x.filter((_, j) => !usedX.has(j)); const minLen = Math.min(rg.length, rx.length);
     for (let i = 0; i < minLen; i++) pairs.push([rg[i], rx[i], 'fuzzy']); onlyG.push(...rg.slice(minLen)); onlyX.push(...rx.slice(minLen));
@@ -640,6 +650,7 @@ function runComparisonComp() {
   for (const [gr, xr] of pairs) { for (const [fk, fl] of FIELDS) { if (!valuesEqualComp(gr[fk], xr[fk])) { changes.push({ id: gr.id, fo: gr['ФО'], obj: gr['объект'], stage_old: gr['этап'], stage_new: xr['этап'], field: fl, old: gr[fk], new: xr[fk] }); } } }
   renderCompareResults({ gRows, xRows, pairs, changes, onlyG, onlyX, mode: compareState.mode });
 }
+
 function renderCompareResults(d) {
   currentCompareData = d; $('compare-upload-screen').style.display = 'none'; $('compare-report-screen').style.display = 'block';
   const leftLabel = d.mode === 'g_vs_x' ? 'Google' : 'Excel (Старый)'; const rightLabel = d.mode === 'g_vs_x' ? 'Excel' : 'Excel (Новый)';
@@ -655,6 +666,7 @@ function renderCompareResults(d) {
   fill('t-only_x', d.onlyX); fill('t-only_g', d.onlyG);
   document.querySelectorAll('#compare-content .tab').forEach(t => { t.onclick = () => { document.querySelectorAll('#compare-content .tab').forEach(x => x.classList.remove('active')); document.querySelectorAll('#compare-content .panel').forEach(x => x.classList.add('hidden')); t.classList.add('active'); $('panel-' + t.dataset.tab).classList.remove('hidden'); }; });
 }
+
 async function downloadCompareXlsx() {
   if (!currentCompareData) return; const d = currentCompareData; const wb = new ExcelJS.Workbook();
   const s = wb.addWorksheet('Сводка'); [ ['Параметр', 'Значение'], ['Режим сравнения', d.mode === 'g_vs_x' ? 'Google ↔ Excel' : 'Excel ↔ Excel'], ['Изменений', d.changes.length], ['Только слева', d.onlyG.length], ['Только справа', d.onlyX.length] ].forEach(r => s.addRow(r)); s.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }; s.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } }; s.columns = [{ width: 26 }, { width: 30 }];
@@ -664,6 +676,7 @@ async function downloadCompareXlsx() {
   const og = wb.addWorksheet('Только слева'); og.addRow(['ID', 'ФО', 'Объект', 'Этап', 'Статус', 'Общая', 'Строит.']); og.getRow(1).font = { bold: true }; d.onlyG.forEach(r => { const row = og.addRow([r.id, r['ФО'], r['объект'], r['этап'], r['статус'], r['общая площадь'] ?? '', r['площадь строительства'] ?? '']); row.eachCell(cell => cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } }); });
   const buf = await wb.xlsx.writeBuffer(); const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `report_${new Date().toISOString().slice(0, 10)}.xlsx`; a.click(); URL.revokeObjectURL(url);
 }
+
 $('btn-run-comp').onclick = runComparisonComp; $('btn-back-comp').onclick = () => { $('compare-upload-screen').style.display = 'block'; $('compare-report-screen').style.display = 'none'; }; $('btn-dl-comp').onclick = downloadCompareXlsx;
 
 async function init() {
