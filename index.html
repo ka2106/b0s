@@ -97,7 +97,7 @@ header{
 .bar-label{width:140px;font-size:13px;font-weight:500;color:var(--text-muted);text-align:right;flex-shrink:0;}
 .bar-track{flex:1;height:24px;background:var(--bg);border-radius:4px;overflow:hidden;display:flex;align-items:center;}
 .bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:700;color:#fff;transition:width 0.5s ease-out;min-width: 2px;}
-.bar-value{font-weight:700; font-size:12px; width:100px; text-align:right; font-variant-numeric:tabular-nums;}
+.bar-value{font-weight:700; font-size:12px; width:120px; text-align:right; font-variant-numeric:tabular-nums;}
 
 /* Delivery List */
 .delivery-list{display:flex;flex-direction:column;gap:8px;}
@@ -110,24 +110,34 @@ header{
 .delivery-item.future{border-left-color:var(--warning);}
 .delivery-date{font-weight:700;color:var(--text); width: 80px; flex-shrink:0;}
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
-.delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 100px;}
+.delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
 /* Year Table */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
 .year-table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-sm);}
-.year-table{width:100%; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:10px 8px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); text-align:right;}
-.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; text-align:center; position:sticky; top:0;}
-.year-table th:first-child{text-align:left;}
-.year-table td:first-child{text-align:left; font-weight:600; background:#fff; position:sticky; left:0; z-index:2; border-right:1px solid var(--border);}
-.year-table td:last-child{border-right:none; font-weight:800; background:var(--bg);}
-.year-table th:last-child{background:var(--bg);}
+.year-table{width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums;}
+.year-table th, .year-table td{padding:12px 8px; border-bottom:1px solid var(--border); border-right: none; border-left: none; text-align:center;}
+.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; position:sticky; top:0;}
+.year-table th:first-child{text-align:left; padding-left:16px;}
+.year-table td:first-child{text-align:left; font-weight:500; background:#fff; position:sticky; left:0; z-index:2; padding-left:16px;}
+.year-table td:last-child{text-align:right; font-weight:700; background:var(--bg); padding-right:16px;}
+.year-table th:last-child{text-align:right; background:var(--bg); padding-right:16px;}
 
-/* Elegant Cells */
-.cell-delivered {background-color: #f0fdf4 !important; color: #166534; font-weight: 600;}
-.cell-planned {background-color: #f8fafc !important; color: #475569; font-weight: 600; border-bottom: 2px solid #cbd5e1 !important;}
-.cell-link a {color: inherit; text-decoration: none; border-bottom: 1px dashed currentColor; cursor: pointer;}
+/* Цвета текста без заливки */
+.text-delivered { color: #059669; font-weight: 600; }
+.text-planned { color: #4f46e5; font-weight: 600; }
+
+/* Кастомный тултип */
+.tooltip-wrap { position: relative; display: inline-block; cursor: pointer; }
+.tooltip-wrap .tooltip-text {
+  visibility: hidden; width: max-content; max-width: 250px; background-color: #1e293b; color: #fff;
+  text-align: left; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 10;
+  bottom: 125%; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.2s;
+  font-size: 12px; font-weight: 400; white-space: normal; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+  pointer-events: none;
+}
+.tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; }
 
 /* Table with Sidebar */
 .table-layout{display:flex;gap:20px;align-items:flex-start;}
@@ -155,7 +165,11 @@ table{width:100%;border-collapse:collapse;font-size:12px;}
 th{background:var(--bg);color:var(--text-muted);padding:12px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;}
 td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle;}
 tbody tr:hover td{background:var(--bg);}
-.status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em; min-width: 100px;}
+
+.status-badge{
+  display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;
+  border-radius:6px;font-size:12px;font-weight:500;
+}
 .status-badge.delivered{background:var(--success-bg);color:var(--success);}
 .status-badge.planned{background:var(--info-bg);color:var(--info);}
 .status-badge.danger{background:var(--danger-bg);color:var(--danger);}
@@ -393,7 +407,8 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                   <label class="field-label">Имя листа</label>
                   <input type="text" id="gsheet-name-comp" value="data">
                 </div>
-                <button class="btn btn-primary btn-full" id="btn-load-g-comp" style="margin-bottom:14px;">Загрузить из Google Sheets</button>
+                <button class="btn btn-primary btn-full" id="btn-load-g-comp" style="margin-bottom:10px;">Загрузить из Google Sheets</button>
+                <div id="status-g-comp" style="font-size:12px; color:var(--success); min-height:18px; margin-bottom:10px;"></div>
                 <div class="divider">или загрузите файл</div>
               </div>
               <label class="drop-zone" id="dz-left-comp">
@@ -415,6 +430,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                 <div class="drop-text">Перетащите <strong>.xlsx</strong> или нажмите</div>
                 <div class="drop-filename" id="fn-right-comp"></div>
               </label>
+              <div id="status-x-comp" style="font-size:12px; color:var(--success); min-height:18px; margin-top:10px;"></div>
             </div>
           </div>
           <div style="text-align:center; padding:8px 0;">
@@ -447,7 +463,8 @@ const $ = id => document.getElementById(id);
 const SHEET_ID = '1mDdg8Z1KpH8iDbf9PMnqnEA0dp_FZY1T1ab0RpY0etM';
 const SHEET_NAME = 'data';
 
-const NUM_FMT = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
+// Используем Intl.NumberFormat с minimumFractionDigits: 2, чтобы всегда было 2 знака после запятой
+const NUM_FMT = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmt = v => typeof v === 'number' ? NUM_FMT.format(v) : (v || '');
 const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
@@ -578,7 +595,6 @@ function renderDashboard(data) {
   // Bar Chart - Statuses
   let statusMap = {};
   data.forEach(r => { 
-    // Для "Отказ от строительства" используем площадь заморозки
     const area = (r.status === 'Отказ от строительства') ? r.areaFreeze : r.areaBuild;
     statusMap[r.status] = (statusMap[r.status] || 0) + area; 
   });
@@ -608,12 +624,15 @@ function renderDashboard(data) {
       `;
     }).join('');
 
-  // Bar Chart - Years (all years, no restriction)
+  // Bar Chart - Years (Только до текущего года включительно)
   let yearMap = {};
+  const currentYear = new Date().getFullYear();
   data.forEach(r => {
     if (r.rvDate) {
       const y = r.rvDate.getFullYear();
-      yearMap[y] = (yearMap[y] || 0) + r.areaBuild;
+      if (y <= currentYear) {
+        yearMap[y] = (yearMap[y] || 0) + r.areaBuild;
+      }
     }
   });
 
@@ -643,7 +662,6 @@ function renderDashboard(data) {
   const recent = sortedByDate.filter(r => r.rvDate < now || r.status === 'Завершен').sort((a,b) => b.rvDate - a.rvDate).slice(0, 5);
 
   const renderList = (arr, type) => arr.map(r => {
-    // Extract link for the list item
     const linkMatch = r.rvText.match(/(https?:\/\/[^\s]+)/);
     const dateOnly = r.rvText.match(/\d{2}\.\d{2}\.\d{4}/) ? r.rvText.match(/\d{2}\.\d{2}\.\d{4}/)[0] : '—';
     const dateHtml = linkMatch 
@@ -697,21 +715,33 @@ function initYearTable(data) {
         const val = o.months[m];
         if (val > 0) {
           const items = o.items.filter(i => i.rvDate.getMonth() === m);
-          const titleText = items.map(i => `${i.status} | РВ: ${i.rvText}`).join('\n');
-          const isDelivered = items.every(i => i.status === 'Завершен');
-          const cls = isDelivered ? 'cell-delivered' : 'cell-planned';
           
-          // Находим ссылку, если она есть
+          // Собираем текст для тултипа
+          const tooltipLines = items.map(i => {
+            const linkMatch = i.rvText.match(/(https?:\/\/[^\s]+)/);
+            const dateStr = i.rvText.replace(/(https?:\/\/[^\s]+)/, '').trim() || '—';
+            const linkHtml = linkMatch ? `<a href="${linkMatch[0]}" target="_blank" style="color:#60a5fa; text-decoration:underline;">Ссылка</a>` : '';
+            return `${i.status} | РВ: ${dateStr} ${linkHtml}`;
+          }).join('<br>');
+          
+          const isDelivered = items.every(i => i.status === 'Завершен');
+          const cls = isDelivered ? 'text-delivered' : 'text-planned';
+          
+          // Если есть ссылка - делаем цифру кликабельной
           const linkMatch = items[0].rvText.match(/(https?:\/\/[^\s]+)/);
           const href = linkMatch ? linkMatch[0] : null;
-          
           const content = href 
-            ? `<a href="${href}" target="_blank">${fmt(val)}</a>` 
+            ? `<a href="${href}" target="_blank" style="color:inherit; text-decoration:none;">${fmt(val)}</a>` 
             : fmt(val);
 
-          html += `<td class="${cls} cell-link text-right" title="${titleText}">${content}</td>`;
+          html += `<td>
+            <div class="tooltip-wrap">
+              <span class="${cls}">${content}</span>
+              <div class="tooltip-text">${tooltipLines}</div>
+            </div>
+          </td>`;
         } else {
-          html += `<td class="text-right" style="color:#e2e8f0;">-</td>`;
+          html += `<td></td>`; // Пустая ячейка
         }
       }
       html += `<td class="text-right">${fmt(o.total)}</td></tr>`;
@@ -830,6 +860,7 @@ document.querySelectorAll('input[name="compare-mode"]').forEach((radio, index) =
     
     compareState.leftData = null; compareState.rightData = null;
     $('fn-left-comp').textContent = ''; $('fn-right-comp').textContent = '';
+    $('status-g-comp').textContent = ''; $('status-x-comp').textContent = '';
     updateCompareBtn();
   });
 });
@@ -839,11 +870,19 @@ function updateCompareBtn() { $('btn-run-comp').disabled = !(compareState.leftDa
 $('btn-load-g-comp').onclick = async () => {
   const id = $('gsheet-id-comp').value.trim();
   const name = $('gsheet-name-comp').value.trim() || 'data';
+  const statusEl = $('status-g-comp');
+  statusEl.style.color = 'var(--text-muted)';
+  statusEl.textContent = 'Загрузка...';
+  
   try {
     const data = await loadGoogleSheet(id, name);
     compareState.leftData = { ...data, type: 'google' };
-    alert(`Google: Загружено ${data.rows.length} строк`);
-  } catch (e) { alert('Ошибка: ' + e.message); }
+    statusEl.style.color = 'var(--success)';
+    statusEl.textContent = `✓ Загружено: ${data.rows.length} строк`;
+  } catch (e) {
+    statusEl.style.color = 'var(--danger)';
+    statusEl.textContent = 'Ошибка: ' + e.message;
+  }
   updateCompareBtn();
 };
 
@@ -907,6 +946,11 @@ $('file-right-comp').onchange = async (e) => {
   $('fn-right-comp').textContent = f.name;
   const data = await readXlsxComp(f, ['Данные', 'Data', 'data']);
   compareState.rightData = { ...data, type: 'excel' };
+  
+  const statusEl = $('status-x-comp');
+  statusEl.style.color = 'var(--success)';
+  statusEl.textContent = `✓ Загружено: ${data.rows.length} строк`;
+  
   updateCompareBtn();
 };
 
