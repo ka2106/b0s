@@ -120,7 +120,6 @@ header{
 .year-table th, .year-table td{padding:12px 8px; border-bottom:1px solid var(--border); text-align:center;}
 .year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; position:sticky; top:0;}
 .year-table th:first-child{text-align:left; padding-left:16px;}
-/* Убран белый фон у первого и последнего столбца */
 .year-table td:first-child{text-align:left; font-weight:500; position:sticky; left:0; z-index:2; padding-left:16px;}
 .year-table td:last-child{text-align:right; font-weight:700; padding-right:16px;}
 .year-table th:last-child{text-align:right; background:var(--bg); padding-right:16px;}
@@ -152,11 +151,14 @@ header{
 .filter-group{border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px;}
 .filter-group:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
 .filter-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;}
+.filter-title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.05em;flex-grow:1;}
 .filter-header::after{content:'▼'; font-size:10px; color:var(--text-muted); transition:transform 0.2s;}
 .filter-group.open .filter-header::after{transform:rotate(180deg);}
-.filter-title{font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.05em;}
+
+.filter-actions-wrap{display:flex; gap:8px; margin-right:12px;}
 .filter-actions{font-size:11px;color:var(--accent);cursor:pointer;font-weight:600;}
 .filter-actions:hover{text-decoration:underline;}
+
 .filter-content{display:none; margin-top:10px;}
 .filter-group.open .filter-content{display:block;}
 
@@ -332,11 +334,11 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
-            <!-- Аккордеон ФО -->
-            <div class="filter-group open">
+            <!-- Аккордеон ФО (схлопнут по умолчанию) -->
+            <div class="filter-group">
               <div class="filter-header">
                 <span class="filter-title">ФО</span>
-                <div style="display:flex; gap:8px;" onclick="event.stopPropagation()">
+                <div class="filter-actions-wrap" onclick="event.stopPropagation()">
                   <span class="filter-actions" data-target="fo" data-action="all">Все</span>
                   <span class="filter-actions" data-target="fo" data-action="none">Ничего</span>
                 </div>
@@ -344,10 +346,10 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <div class="filter-content"><div class="checkbox-list" id="filter-fo"></div></div>
             </div>
             <!-- Аккордеон Объект -->
-            <div class="filter-group open">
+            <div class="filter-group">
               <div class="filter-header">
                 <span class="filter-title">Объект</span>
-                <div style="display:flex; gap:8px;" onclick="event.stopPropagation()">
+                <div class="filter-actions-wrap" onclick="event.stopPropagation()">
                   <span class="filter-actions" data-target="obj" data-action="all">Все</span>
                   <span class="filter-actions" data-target="obj" data-action="none">Ничего</span>
                 </div>
@@ -355,10 +357,10 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <div class="filter-content"><div class="checkbox-list" id="filter-obj"></div></div>
             </div>
             <!-- Аккордеон Категория -->
-            <div class="filter-group open">
+            <div class="filter-group">
               <div class="filter-header">
                 <span class="filter-title">Категория</span>
-                <div style="display:flex; gap:8px;" onclick="event.stopPropagation()">
+                <div class="filter-actions-wrap" onclick="event.stopPropagation()">
                   <span class="filter-actions" data-target="category" data-action="all">Все</span>
                   <span class="filter-actions" data-target="category" data-action="none">Ничего</span>
                 </div>
@@ -366,10 +368,10 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <div class="filter-content"><div class="checkbox-list" id="filter-category"></div></div>
             </div>
             <!-- Аккордеон Статус -->
-            <div class="filter-group open">
+            <div class="filter-group">
               <div class="filter-header">
                 <span class="filter-title">Статус</span>
-                <div style="display:flex; gap:8px;" onclick="event.stopPropagation()">
+                <div class="filter-actions-wrap" onclick="event.stopPropagation()">
                   <span class="filter-actions" data-target="status" data-action="all">Все</span>
                   <span class="filter-actions" data-target="status" data-action="none">Ничего</span>
                 </div>
@@ -514,7 +516,6 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 // Accordion Logic
 document.querySelectorAll('.filter-header').forEach(header => {
   header.onclick = (e) => {
-    // Игнорируем клики по кнопкам "Все" / "Ничего"
     if (e.target.classList.contains('filter-actions')) return;
     header.closest('.filter-group').classList.toggle('open');
   };
@@ -549,11 +550,27 @@ function parseGviz(data) {
       
       let v = null;
       let link = null;
-      
-      // Извлекаем скрытую ссылку, если она есть (через Ctrl+K)
-      if (cell && cell.f) {
-        const hrefMatch = cell.f.match(/href="([^"]+)"/);
-        if (hrefMatch) link = hrefMatch[1];
+
+      // Максимально надежный поиск ссылок
+      if (cell) {
+          // 1. Если есть явное поле hyperlink
+          if (cell.hyperlink) link = cell.hyperlink;
+          
+          // 2. Ищем href внутри отформатированного HTML (cell.f)
+          if (!link && cell.f && typeof cell.f === 'string') {
+              const hrefMatch = cell.f.match(/href="([^"]+)"/);
+              if (hrefMatch) link = hrefMatch[1];
+          }
+          
+          // 3. Ищем голый URL внутри HTML или в значении (cell.f / cell.v)
+          if (!link && cell.f && typeof cell.f === 'string') {
+              const rawMatch = cell.f.match(/(https?:\/\/[^\s"<]+)/);
+              if (rawMatch) link = rawMatch[0];
+          }
+          if (!link && cell.v && typeof cell.v === 'string') {
+              const rawMatch = cell.v.match(/(https?:\/\/[^\s"<]+)/);
+              if (rawMatch) link = rawMatch[0];
+          }
       }
 
       if (cell && cell.v !== undefined && cell.v !== null && cell.v !== '') {
@@ -563,7 +580,7 @@ function parseGviz(data) {
           if (m) v = `${String(parseInt(m[3])).padStart(2,'0')}.${String(parseInt(m[2])+1).padStart(2,'0')}.${m[1]}`;
         } else v = raw;
       } else if (cell && cell.f) {
-        const f = String(cell.f).replace(/<[^>]+>/g, '').trim(); // убираем html теги
+        const f = String(cell.f).replace(/<[^>]+>/g, '').trim();
         if (f && !/^-?[\d\s,\.]+$/.test(f)) v = f;
       }
       
@@ -830,7 +847,7 @@ function initFilters(data) {
 
   document.querySelectorAll('.filter-actions').forEach(btn => {
     btn.onclick = (e) => {
-      e.stopPropagation(); // Чтобы не срабатывал аккордеон
+      e.stopPropagation();
       const target = btn.dataset.target;
       const action = btn.dataset.action;
       const checkboxes = document.querySelectorAll(`input[data-filter="${target}"]`);
