@@ -141,7 +141,7 @@ tbody tr:hover td{background:var(--bg);}
 .raw-link:hover{text-decoration:underline;}
 
 /* Map */
-#map { width: 100%; height: 70vh; border-radius: var(--radius); box-shadow: var(--shadow); z-index: 1;}
+#map { width: 100%; height: 75vh; border-radius: var(--radius); box-shadow: var(--shadow); z-index: 1;}
 
 /* COMPARE STYLES */
 .mode-selector{display:flex;position:relative;background:#e2e8f0;border-radius:8px;padding:3px;width:340px;margin:0 auto 24px;box-shadow:inset 0 1px 2px rgba(0,0,0,.05);border:1px solid #cbd5e1;}
@@ -632,14 +632,16 @@ function renderDashboard(data) {
       return `<div class="bar-item"><div class="bar-label">${status}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${statusColors[status] || 'var(--accent)'};"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
 
-  let yearMap = { 'Ранее': 0 };
+  let yearMap = { 'Ранее': 0, '2027+': 0 };
   data.forEach(r => { 
     if (r.rvDate) { 
       const y = r.rvDate.getFullYear(); 
-      if (y < 2024) {
+      if (y < 2023) {
         yearMap['Ранее'] += r.areaBuild;
       } else if (y <= currentYear) {
         yearMap[y] = (yearMap[y] || 0) + r.areaBuild; 
+      } else {
+        yearMap['2027+'] += r.areaBuild;
       }
     } 
   });
@@ -647,6 +649,8 @@ function renderDashboard(data) {
   const sortedYears = Object.keys(yearMap).sort((a,b) => {
     if (a === 'Ранее') return -1;
     if (b === 'Ранее') return 1;
+    if (a === '2027+') return 1;
+    if (b === '2027+') return -1;
     return a - b;
   });
   
@@ -813,8 +817,9 @@ $('btn-export-excel').onclick = async () => {
 
 function initMap() {
   map = L.map('map').setView([61.5240, 90.3180], 3);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+  // Используем светлую подложку CartoDB
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CartoDB'
   }).addTo(map);
   markersLayer = L.layerGroup().addTo(map);
 }
@@ -832,19 +837,23 @@ function updateMap() {
   });
 
   Object.entries(grouped).forEach(([city, d]) => {
-    const radius = Math.max(50000, d.area * 5);
+    // Правильная формула масштабирования: корень из площади * коэффициент
+    const radius = Math.max(10000, Math.sqrt(d.area) * 50);
     const color = d.status === 'Завершен' ? '#10b981' : (d.status === 'В работе' ? '#0ea5e9' : '#ef4444');
     
     L.circle(d.coords, {
       color: color,
       fillColor: color,
-      fillOpacity: 0.5,
-      radius: radius
+      fillOpacity: 0.4,
+      radius: radius,
+      weight: 2
     }).bindPopup(`
-      <b>${city}</b><br>
-      Объектов: ${d.count}<br>
-      Площадь: ${fmt(d.area)} м²<br>
-      <a href="#" onclick="drillDownMap('${city}');return false;">Показать в таблице</a>
+      <div style="font-family:'Inter',sans-serif; font-size:13px; min-width:150px;">
+        <b style="font-size:14px;">${city}</b><br>
+        Объектов: ${d.count}<br>
+        Площадь: ${fmt(d.area)} м²<br>
+        <a href="#" onclick="drillDownMap('${city}');return false;" style="display:inline-block; margin-top:6px; color:var(--accent); font-weight:600; text-decoration:none;">Показать в таблице</a>
+      </div>
     `).addTo(markersLayer);
   });
 }
