@@ -101,9 +101,15 @@ input:checked + .slider:before{transform:translateX(16px);}
 }
 .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; pointer-events: auto; }
 
-.table-layout{display:flex;gap:20px;align-items:flex-start;}
+/* Таблица с сортировкой */
+.table-layout{display:flex;gap:20px;align-items:stretch;}
 @media(max-width:900px){.table-layout{flex-direction:column;}}
-.sidebar{width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;position:sticky;top:24px;}
+
+.sidebar{
+  width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;
+  overflow-y:auto; display:flex; flex-direction:column;
+}
 
 .filter-group{border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px;}
 .filter-group:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
@@ -125,11 +131,12 @@ input:checked + .slider:before{transform:translateX(16px);}
 .checkbox-item input[type="checkbox"]:checked{background:var(--accent);border-color:var(--accent);}
 .checkbox-item input[type="checkbox"]:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid white;border-width:0 2px 2px 0;transform:rotate(45deg);}
 
-.table-container{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;}
+.table-container{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden; display:flex; flex-direction:column;}
 .table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .table-title{font-size:16px;font-weight:700;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
-th{background:var(--bg);color:var(--text-muted);padding:12px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap;}
+th{background:var(--bg);color:var(--text-muted);padding:12px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap; cursor:pointer; user-select:none;}
+th:hover{background:#e2e8f0; color:var(--text);}
 td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle;}
 tbody tr:hover td{background:var(--bg);}
 
@@ -275,7 +282,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
-            <div class="filter-group open">
+            <div class="filter-group">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <div class="filter-title-wrap">
                   <span class="filter-title">ФО</span>
@@ -324,9 +331,22 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                 <button class="btn btn-secondary" id="btn-export-excel">Экспорт в Excel</button>
               </div>
             </div>
-            <div style="overflow-x:auto;">
+            <div style="overflow-x:auto; flex: 1;">
               <table>
-                <thead><tr><th class="text-left">Объект / Этап</th><th class="text-left">Категория</th><th class="text-center">Статус площадки</th><th class="text-right">Мезонин</th><th class="text-right">Оперзона</th><th class="text-right">Заморозка</th><th class="text-right">Строительство</th><th class="text-center">РВ (Дата)</th><th class="text-left">Источник данных</th><th class="text-left">Повреждения</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th class="text-left" onclick="sortTable('obj')">Объект / Этап ↕</th>
+                    <th class="text-left" onclick="sortTable('category')">Категория ↕</th>
+                    <th class="text-center" onclick="sortTable('status')">Статус площадки ↕</th>
+                    <th class="text-right" onclick="sortTable('areaMezzanine')">Мезонин ↕</th>
+                    <th class="text-right" onclick="sortTable('areaOper')">Оперзона ↕</th>
+                    <th class="text-right" onclick="sortTable('areaFreeze')">Заморозка ↕</th>
+                    <th class="text-right" onclick="sortTable('areaBuild')">Строительство ↕</th>
+                    <th class="text-center" onclick="sortTable('rvText')">РВ (Дата) ↕</th>
+                    <th class="text-left" onclick="sortTable('source')">Источник данных ↕</th>
+                    <th class="text-left" onclick="sortTable('damage')">Повреждения ↕</th>
+                  </tr>
+                </thead>
                 <tbody id="table-body"></tbody>
               </table>
             </div>
@@ -387,6 +407,7 @@ const SHEET_NAME = 'data';
 
 const NUM_FMT = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmt = v => typeof v === 'number' ? NUM_FMT.format(v) : (v || '');
+const showNum = v => (v === 0 || v === null || v === undefined) ? '' : fmt(v);
 const esc = s => String(s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const linkify = s => { if (!s) return ''; return String(s).replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" class="raw-link">${url}</a>`); };
 
@@ -394,6 +415,7 @@ let allData = [];
 let rawData = []; 
 let filteredData = []; 
 let filters = { fo: new Set(), obj: new Set(), category: new Set(), status: new Set() };
+let sortState = { col: null, dir: 1 };
 let showBVS = true;
 let map = null;
 let markersLayer = null;
@@ -439,27 +461,6 @@ $('toggle-bvs').onchange = (e) => {
   showBVS = e.target.checked;
   processAllData();
 };
-
-function readURL() {
-  const params = new URLSearchParams(window.location.search);
-  ['fo', 'obj', 'category', 'status'].forEach(k => {
-    if (params.has(k)) {
-      filters[k] = new Set(params.get(k).split(','));
-    } else {
-      filters[k] = null;
-    }
-  });
-}
-function updateURL() {
-  const params = new URLSearchParams();
-  Object.keys(filters).forEach(k => {
-    if (filters[k] !== null && filters[k].size > 0) {
-      params.set(k, Array.from(filters[k]).join(','));
-    }
-  });
-  const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-  window.history.replaceState({}, '', newUrl);
-}
 
 function loadGoogleSheet(id = SHEET_ID, name = SHEET_NAME) {
   return new Promise((resolve, reject) => {
@@ -632,16 +633,16 @@ function renderDashboard(data) {
       return `<div class="bar-item"><div class="bar-label">${status}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${statusColors[status] || 'var(--accent)'};"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
 
-  let yearMap = { 'Ранее': 0, '2027+': 0 };
+  let yearMap = { 'Ранее': 0, 'Далее': 0 };
   data.forEach(r => { 
     if (r.rvDate) { 
       const y = r.rvDate.getFullYear(); 
-      if (y < 2023) {
+      if (y < 2024) {
         yearMap['Ранее'] += r.areaBuild;
       } else if (y <= currentYear) {
         yearMap[y] = (yearMap[y] || 0) + r.areaBuild; 
       } else {
-        yearMap['2027+'] += r.areaBuild;
+        yearMap['Далее'] += r.areaBuild;
       }
     } 
   });
@@ -649,8 +650,8 @@ function renderDashboard(data) {
   const sortedYears = Object.keys(yearMap).sort((a,b) => {
     if (a === 'Ранее') return -1;
     if (b === 'Ранее') return 1;
-    if (a === '2027+') return 1;
-    if (b === '2027+') return -1;
+    if (a === 'Далее') return 1;
+    if (b === 'Далее') return -1;
     return a - b;
   });
   
@@ -735,7 +736,7 @@ function initFilters(data) {
   const renderCheckboxes = (id, items, key) => { 
     $(id).innerHTML = items.map(item => `
       <label class="checkbox-item">
-        <input type="checkbox" data-filter="${key}" value="${item}" ${filters[key] ? (filters[key].has(item) ? 'checked' : '') : 'checked'}>
+        <input type="checkbox" data-filter="${key}" value="${item}" checked>
         <span>${item || '(пусто)'}</span>
       </label>`).join(''); 
   };
@@ -764,12 +765,38 @@ function initFilters(data) {
   });
 }
 
+function sortTable(col) {
+  if (sortState.col === col) {
+    sortState.dir *= -1;
+  } else {
+    sortState.col = col;
+    sortState.dir = 1;
+  }
+  applyFilters();
+}
+
 function applyFilters() {
   filteredData = rawData.filter(r => 
     filters.fo.has(r.fo) && filters.obj.has(r.obj) && filters.category.has(r.category) && filters.status.has(r.status)
   );
+  
+  if (sortState.col) {
+    filteredData.sort((a, b) => {
+      let valA = a[sortState.col];
+      let valB = b[sortState.col];
+      
+      if (valA === null || valA === undefined || valA === '') valA = '';
+      if (valB === null || valB === undefined || valB === '') valB = '';
+      
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return (valA - valB) * sortState.dir;
+      }
+      
+      return String(valA).localeCompare(String(valB)) * sortState.dir;
+    });
+  }
+  
   renderTable();
-  updateURL(); 
   if (map) updateMap();
 }
 
@@ -782,10 +809,10 @@ function renderTable() {
         <td class="text-left"><div style="font-weight:600;color:var(--text)">${r.obj}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.stage}</div></td>
         <td class="text-left">${r.category}</td>
         <td class="text-center"><span class="status-badge ${statusClass}">${r.status}</span></td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums">${fmt(r.areaMezzanine)}</td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums">${fmt(r.areaOper)}</td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums">${fmt(r.areaFreeze)}</td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${fmt(r.areaBuild)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaMezzanine)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaOper)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaFreeze)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaBuild)}</td>
         <td class="text-center">${dateHtml}</td>
         <td class="text-left" style="color:var(--text-muted);font-size:11px;max-width:150px;white-space:normal;">${r.source}</td>
         <td class="text-left" style="color:var(--text-muted);font-size:11px;max-width:200px;white-space:normal;">${r.damage}</td>
@@ -817,7 +844,6 @@ $('btn-export-excel').onclick = async () => {
 
 function initMap() {
   map = L.map('map').setView([61.5240, 90.3180], 3);
-  // Используем светлую подложку CartoDB
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap, © CartoDB'
   }).addTo(map);
@@ -837,7 +863,6 @@ function updateMap() {
   });
 
   Object.entries(grouped).forEach(([city, d]) => {
-    // Правильная формула масштабирования: корень из площади * коэффициент
     const radius = Math.max(10000, Math.sqrt(d.area) * 50);
     const color = d.status === 'Завершен' ? '#10b981' : (d.status === 'В работе' ? '#0ea5e9' : '#ef4444');
     
@@ -1036,8 +1061,10 @@ async function init() {
     const { headers, rows } = await loadGoogleSheet();
     allData = processData(headers, rows);
     
-    readURL();
+    // Инициализируем фильтры, все включены по умолчанию
     initFilters(allData);
+    
+    // Запускаем обработку
     processAllData();
     
   } catch (e) {
