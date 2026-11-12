@@ -58,12 +58,13 @@ input:checked + .slider:before{transform:translateX(16px);}
 .kpi-value{font-size:28px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.2;}
 .kpi-sub{font-size:12px;color:var(--text-muted);margin-top:auto;}
 
+/* Графики (Выровнены по высоте) */
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 @media(max-width:900px){.charts-row{grid-template-columns:1fr;}}
-.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);}
+.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm); display:flex; flex-direction:column;}
 .chart-title{font-size:15px;font-weight:700;margin:0 0 16px 0;}
 
-.bar-chart{display:flex;flex-direction:column;gap:12px;}
+.bar-chart{display:flex;flex-direction:column;gap:12px; flex:1; justify-content:space-around;}
 .bar-item{display:flex;align-items:center;gap:12px;}
 .bar-label{width:140px;font-size:13px;font-weight:500;color:var(--text-muted);text-align:right;flex-shrink:0;}
 .bar-track{flex:1;height:24px;background:var(--bg);border-radius:4px;overflow:hidden;display:flex;align-items:center;}
@@ -101,7 +102,7 @@ input:checked + .slider:before{transform:translateX(16px);}
 }
 .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; pointer-events: auto; }
 
-/* Таблица с сортировкой */
+/* Таблица */
 .table-layout{display:flex;gap:20px;align-items:stretch;}
 @media(max-width:900px){.table-layout{flex-direction:column;}}
 
@@ -137,6 +138,9 @@ input:checked + .slider:before{transform:translateX(16px);}
 table{width:100%;border-collapse:collapse;font-size:12px;}
 th{background:var(--bg);color:var(--text-muted);padding:12px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap; cursor:pointer; user-select:none;}
 th:hover{background:#e2e8f0; color:var(--text);}
+th svg { display:inline-block; vertical-align:middle; margin-left:4px; width:14px; height:14px; opacity:0.4; }
+th svg.active { opacity:1; color:var(--accent); }
+
 td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle;}
 tbody tr:hover td{background:var(--bg);}
 
@@ -335,16 +339,16 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <table>
                 <thead>
                   <tr>
-                    <th class="text-left" onclick="sortTable('obj')">Объект / Этап ↕</th>
-                    <th class="text-left" onclick="sortTable('category')">Категория ↕</th>
-                    <th class="text-center" onclick="sortTable('status')">Статус площадки ↕</th>
-                    <th class="text-right" onclick="sortTable('areaMezzanine')">Мезонин ↕</th>
-                    <th class="text-right" onclick="sortTable('areaOper')">Оперзона ↕</th>
-                    <th class="text-right" onclick="sortTable('areaFreeze')">Заморозка ↕</th>
-                    <th class="text-right" onclick="sortTable('areaBuild')">Строительство ↕</th>
-                    <th class="text-center" onclick="sortTable('rvText')">РВ (Дата) ↕</th>
-                    <th class="text-left" onclick="sortTable('source')">Источник данных ↕</th>
-                    <th class="text-left" onclick="sortTable('damage')">Повреждения ↕</th>
+                    <th class="text-left" onclick="sortTable('obj')">Объект / Этап <span id="sort-obj"></span></th>
+                    <th class="text-left" onclick="sortTable('category')">Категория <span id="sort-category"></span></th>
+                    <th class="text-center" onclick="sortTable('status')">Статус площадки <span id="sort-status"></span></th>
+                    <th class="text-right" onclick="sortTable('areaMezzanine')">Мезонин <span id="sort-areaMezzanine"></span></th>
+                    <th class="text-right" onclick="sortTable('areaOper')">Оперзона <span id="sort-areaOper"></span></th>
+                    <th class="text-right" onclick="sortTable('areaFreeze')">Заморозка <span id="sort-areaFreeze"></span></th>
+                    <th class="text-right" onclick="sortTable('areaBuild')">Строительство <span id="sort-areaBuild"></span></th>
+                    <th class="text-center" onclick="sortTable('rvText')">РВ (Дата) <span id="sort-rvText"></span></th>
+                    <th class="text-left" onclick="sortTable('source')">Источник данных <span id="sort-source"></span></th>
+                    <th class="text-left" onclick="sortTable('damage')">Повреждения <span id="sort-damage"></span></th>
                   </tr>
                 </thead>
                 <tbody id="table-body"></tbody>
@@ -546,21 +550,49 @@ function processData(headers, rows) {
 function processAllData() {
   rawData = showBVS ? allData : allData.filter(r => !r.isBVS);
   
-  if (filters.fo === null) filters.fo = new Set([...new Set(rawData.map(r => r.fo).filter(Boolean))].sort());
-  if (filters.obj === null) filters.obj = new Set([...new Set(rawData.map(r => r.obj).filter(Boolean))].sort());
-  if (filters.category === null) filters.category = new Set([...new Set(rawData.map(r => r.category).filter(Boolean))].sort());
-  if (filters.status === null) filters.status = new Set([...new Set(rawData.map(r => r.status).filter(Boolean))].sort());
+  if (filters.fo.size === 0) filters.fo = new Set([...new Set(rawData.map(r => r.fo).filter(Boolean))].sort());
+  if (filters.obj.size === 0) filters.obj = new Set([...new Set(rawData.map(r => r.obj).filter(Boolean))].sort());
+  if (filters.category.size === 0) filters.category = new Set([...new Set(rawData.map(r => r.category).filter(Boolean))].sort());
+  if (filters.status.size === 0) filters.status = new Set([...new Set(rawData.map(r => r.status).filter(Boolean))].sort());
 
-  document.querySelectorAll('.checkbox-item input').forEach(cb => {
-    const fk = cb.dataset.filter;
-    if (filters[fk]) {
-      cb.checked = filters[fk].has(cb.value);
-    }
-  });
+  renderCheckboxes();
 
   applyFilters();
   renderDashboard(rawData);
   if (map) updateMap();
+}
+
+function renderCheckboxes() {
+  const render = (id, items, key) => { 
+    $(id).innerHTML = items.map(item => `
+      <label class="checkbox-item">
+        <input type="checkbox" data-filter="${key}" value="${item}" ${filters[key].has(item) ? 'checked' : ''}>
+        <span>${item || '(пусто)'}</span>
+      </label>`).join(''); 
+  };
+  render('filter-fo', [...new Set(rawData.map(r => r.fo).filter(Boolean))].sort(), 'fo');
+  render('filter-obj', [...new Set(rawData.map(r => r.obj).filter(Boolean))].sort(), 'obj');
+  render('filter-category', [...new Set(rawData.map(r => r.category).filter(Boolean))].sort(), 'category');
+  render('filter-status', [...new Set(rawData.map(r => r.status).filter(Boolean))].sort(), 'status');
+
+  document.querySelectorAll('.checkbox-item input').forEach(cb => {
+    cb.onchange = () => { 
+      const fk = cb.dataset.filter; 
+      if (cb.checked) filters[fk].add(cb.value); 
+      else filters[fk].delete(cb.value); 
+      applyFilters(); 
+    };
+  });
+  document.querySelectorAll('.filter-actions').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation(); const target = btn.dataset.target; const action = btn.dataset.action;
+      document.querySelectorAll(`input[data-filter="${target}"]`).forEach(cb => { 
+        cb.checked = (action === 'all'); 
+        if (action === 'all') filters[target].add(cb.value); else filters[target].delete(cb.value); 
+      });
+      applyFilters();
+    };
+  });
 }
 
 function drillDown(type) {
@@ -577,11 +609,7 @@ function drillDown(type) {
     filters.status = new Set(['В работе']);
   }
   
-  document.querySelectorAll('.checkbox-item input').forEach(cb => {
-    const fk = cb.dataset.filter;
-    cb.checked = filters[fk].has(cb.value);
-  });
-
+  renderCheckboxes();
   applyFilters();
 }
 
@@ -727,44 +755,6 @@ function initYearTable(data) {
   renderTable(new Date().getFullYear());
 }
 
-function initFilters(data) {
-  const uniqueFo = [...new Set(data.map(r => r.fo).filter(Boolean))].sort();
-  const uniqueObj = [...new Set(data.map(r => r.obj).filter(Boolean))].sort();
-  const uniqueCategory = [...new Set(data.map(r => r.category).filter(Boolean))].sort();
-  const uniqueStatus = [...new Set(data.map(r => r.status).filter(Boolean))].sort();
-  
-  const renderCheckboxes = (id, items, key) => { 
-    $(id).innerHTML = items.map(item => `
-      <label class="checkbox-item">
-        <input type="checkbox" data-filter="${key}" value="${item}" checked>
-        <span>${item || '(пусто)'}</span>
-      </label>`).join(''); 
-  };
-  renderCheckboxes('filter-fo', uniqueFo, 'fo'); 
-  renderCheckboxes('filter-obj', uniqueObj, 'obj'); 
-  renderCheckboxes('filter-category', uniqueCategory, 'category'); 
-  renderCheckboxes('filter-status', uniqueStatus, 'status');
-  
-  document.querySelectorAll('.checkbox-item input').forEach(cb => {
-    cb.onchange = () => { 
-      const fk = cb.dataset.filter; 
-      if (cb.checked) filters[fk].add(cb.value); 
-      else filters[fk].delete(cb.value); 
-      applyFilters(); 
-    };
-  });
-  document.querySelectorAll('.filter-actions').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation(); const target = btn.dataset.target; const action = btn.dataset.action;
-      document.querySelectorAll(`input[data-filter="${target}"]`).forEach(cb => { 
-        cb.checked = (action === 'all'); 
-        if (action === 'all') filters[target].add(cb.value); else filters[target].delete(cb.value); 
-      });
-      applyFilters();
-    };
-  });
-}
-
 function sortTable(col) {
   if (sortState.col === col) {
     sortState.dir *= -1;
@@ -772,7 +762,23 @@ function sortTable(col) {
     sortState.col = col;
     sortState.dir = 1;
   }
+  updateSortIcons();
   applyFilters();
+}
+
+function updateSortIcons() {
+  const cols = ['obj', 'category', 'status', 'areaMezzanine', 'areaOper', 'areaFreeze', 'areaBuild', 'rvText', 'source', 'damage'];
+  cols.forEach(c => {
+    const el = $(`sort-${c}`);
+    if (!el) return;
+    if (sortState.col === c) {
+      el.innerHTML = sortState.dir === 1 
+        ? `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5"/></svg>` 
+        : `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5-5 5 5"/></svg>`;
+    } else {
+      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>`;
+    }
+  });
 }
 
 function applyFilters() {
@@ -843,10 +849,8 @@ $('btn-export-excel').onclick = async () => {
 };
 
 function initMap() {
-  map = L.map('map').setView([61.5240, 90.3180], 3);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap, © CartoDB'
-  }).addTo(map);
+  map = L.map('map', { attributionControl: false }).setView([61.5240, 90.3180], 3);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
   markersLayer = L.layerGroup().addTo(map);
 }
 
@@ -886,9 +890,7 @@ function updateMap() {
 function drillDownMap(city) {
   document.querySelector('.nav-btn[data-tab="table"]').click();
   filters.obj = new Set([city]);
-  document.querySelectorAll('input[data-filter="obj"]').forEach(cb => {
-    cb.checked = filters.obj.has(cb.value);
-  });
+  renderCheckboxes();
   applyFilters();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1062,9 +1064,12 @@ async function init() {
     allData = processData(headers, rows);
     
     // Инициализируем фильтры, все включены по умолчанию
-    initFilters(allData);
+    filters.fo = new Set([...new Set(allData.map(r => r.fo).filter(Boolean))].sort());
+    filters.obj = new Set([...new Set(allData.map(r => r.obj).filter(Boolean))].sort());
+    filters.category = new Set([...new Set(allData.map(r => r.category).filter(Boolean))].sort());
+    filters.status = new Set([...new Set(allData.map(r => r.status).filter(Boolean))].sort());
     
-    // Запускаем обработку
+    updateSortIcons();
     processAllData();
     
   } catch (e) {
