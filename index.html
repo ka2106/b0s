@@ -139,12 +139,23 @@ input:checked + .slider:before{transform:translateX(16px);}
 /* Исправление таблицы (убираем горизонтальную прокрутку) */
 .table-scroll{flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden;}
 table{width:100%;border-collapse:collapse;font-size:12px; table-layout: fixed;}
-th{background:var(--bg);color:var(--text-muted);padding:12px 8px;text-align:left;font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;user-select:none; white-space: normal; word-break: break-word;}
+
+/* ОБНОВЛЕННЫЙ БЛОК ДЛЯ ВЫРАВНИВАНИЯ */
+th{
+  background:var(--bg);color:var(--text-muted);padding:12px 8px;text-align:left;
+  font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;user-select:none; 
+  white-space: normal; word-break: break-word;
+  vertical-align: middle; /* Выравнивание заголовков по центру */
+}
 th:hover{background:#e2e8f0; color:var(--text);}
 th svg { display:inline-block; vertical-align:middle; margin-left:4px; width:14px; height:14px; opacity:0.4; }
 th svg.active { opacity:1; color:var(--accent); }
 
-td{padding:12px 8px;border-bottom:1px solid var(--border);vertical-align:middle; white-space: normal; word-break: break-word; font-size: 12px;}
+td{
+  padding:12px 8px;border-bottom:1px solid var(--border);
+  vertical-align:middle; /* Выравнивание ячеек по центру */
+  white-space: normal; word-break: break-word; font-size: 12px;
+}
 tbody tr:hover td{background:var(--bg);}
 
 /* Фиксированные ширины колонок, чтобы всё влезало */
@@ -158,6 +169,12 @@ th:nth-child(7) { width: 9%; }  /* Строительство */
 th:nth-child(8) { width: 9%; }  /* РВ */
 th:nth-child(9) { width: 14%; } /* Источник */
 th:nth-child(10){ width: 12%; } /* Повреждения */
+
+/* Скрытие 10-го столбца (Повреждения) */
+.table-container.hide-damage th:nth-child(10),
+.table-container.hide-damage td:nth-child(10) {
+  display: none;
+}
 
 .status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 6px;border-radius:6px;font-size:11px;font-weight:500;}
 .status-badge.delivered{background:var(--success-bg);color:var(--success);}
@@ -245,6 +262,16 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
         </div>
         Показывать БВС
       </label>
+      
+      <!-- НОВЫЙ ПЕРЕКЛЮЧАТЕЛЬ ДЛЯ ПОВРЕЖДЕНИЙ -->
+      <label class="switch-wrap">
+        <div class="switch">
+          <input type="checkbox" id="toggle-damage" checked>
+          <span class="slider"></span>
+        </div>
+        Повреждения
+      </label>
+
       <nav class="nav-tabs">
         <button class="nav-btn active" data-tab="dashboard">Дашборд</button>
         <button class="nav-btn" data-tab="table">Таблица</button>
@@ -480,6 +507,16 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 $('toggle-bvs').onchange = (e) => {
   showBVS = e.target.checked;
   processAllData();
+};
+
+// Обработчик нового переключателя "Повреждения"
+$('toggle-damage').onchange = (e) => {
+  const tableContainer = document.querySelector('.table-container');
+  if (e.target.checked) {
+    tableContainer.classList.remove('hide-damage');
+  } else {
+    tableContainer.classList.add('hide-damage');
+  }
 };
 
 function loadGoogleSheet(id = SHEET_ID, name = SHEET_NAME) {
@@ -828,7 +865,12 @@ function renderTable() {
     let statusClass = 'planned'; if (r.status === 'Завершен') statusClass = 'delivered'; if (r.status === 'Утрачен' || r.status === 'Отказ от строительства') statusClass = 'danger';
     const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" class="raw-link">${r.rvText}</a>` : linkify(r.rvText || '—');
     return `<tr>
-        <td class="text-left"><div style="font-weight:600;color:var(--text)">${r.obj}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.stage}</div></td>
+        <td class="text-left">
+          <div style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+            <div style="font-weight:600;color:var(--text)">${r.obj}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.stage}</div>
+          </div>
+        </td>
         <td class="text-left">${r.category}</td>
         <td class="text-center"><span class="status-badge ${statusClass}">${r.status}</span></td>
         <td class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaMezzanine)}</td>
