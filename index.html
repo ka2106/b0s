@@ -57,7 +57,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 
 .delivery-list{display:flex;flex-direction:column;gap:8px;}
 .delivery-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:13px;border-left:3px solid transparent;}
-.delivery-item.past{border-left-color:var(--success);} .delivery-item.future{border-left-color:var(--warning);}
+.delivery-item.past{border-left-color:var(--success);} .delivery-item.future{border-left-color:var(--info);}
 .delivery-date{font-weight:700;color:var(--text); width: 80px; flex-shrink:0;}
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
@@ -94,7 +94,6 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 @media(max-width:900px){.table-layout{flex-direction:column;}}
 .sidebar{width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;position:sticky;top:24px;}
 
-/* Красивые фильтры */
 .filter-group{border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px;}
 .filter-group:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
 .filter-header{display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding:4px 0;}
@@ -212,10 +211,25 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
         <div id="dashboard-loading" style="text-align:center; padding:60px; font-size:16px; color:var(--text-muted);">Загружаю данные...</div>
         <div id="dashboard-content" style="display:none;">
           <div class="dashboard-grid">
-            <div class="kpi-card blue"><div class="kpi-label">Всего объектов</div><div class="kpi-value" id="kpi-objects">0</div></div>
-            <div class="kpi-card green"><div class="kpi-label">Сдано</div><div class="kpi-value" id="kpi-delivered">0</div><div class="kpi-sub" id="kpi-delivered-count">0 объектов</div></div>
-            <div class="kpi-card orange"><div class="kpi-label">В работе</div><div class="kpi-value" id="kpi-planned">0</div><div class="kpi-sub" id="kpi-planned-count">0 объектов</div></div>
-            <div class="kpi-card red"><div class="kpi-label">Заморозка / Отказ</div><div class="kpi-value" id="kpi-freeze">0</div><div class="kpi-sub" id="kpi-freeze-count">0 объектов</div></div>
+            <div class="kpi-card blue">
+              <div class="kpi-label">Всего объектов</div>
+              <div class="kpi-value" id="kpi-objects">0</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Сдано в <span id="kpi-year-label"></span> г.</div>
+              <div class="kpi-value" id="kpi-delivered-year">0</div>
+              <div class="kpi-sub" id="kpi-delivered-sub">0 объектов</div>
+            </div>
+            <div class="kpi-card orange">
+              <div class="kpi-label">Ближайший к сдаче</div>
+              <div class="kpi-value" id="kpi-nearest-name" style="font-size:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
+              <div class="kpi-sub" id="kpi-nearest-date"></div>
+            </div>
+            <div class="kpi-card red">
+              <div class="kpi-label">Заморозка / Отказ</div>
+              <div class="kpi-value" id="kpi-freeze">0</div>
+              <div class="kpi-sub" id="kpi-freeze-count">0 объектов</div>
+            </div>
           </div>
           <div class="charts-row">
             <div class="chart-card"><h3 class="chart-title">Распределение площадей по статусам</h3><div class="bar-chart" id="chart-status"></div></div>
@@ -410,7 +424,6 @@ function processData(headers, rows) {
     const parseA = (k) => parseFloat(String(getVal(k) || '0').replace(/\s/g, '').replace(',', '.')) || 0;
     
     const rvText = getVal('РВ') ? String(getVal('РВ')) : '';
-    // Ищем ссылку в Q (Ссылка РВ) или скрытую в самой ячейке
     let rvLink = getVal('Ссылка РВ') || getVal('РВ_link') || getVal('Ссылка') || getVal('URL') || null;
     
     let cleanRvText = rvText;
@@ -436,32 +449,58 @@ function processData(headers, rows) {
 function renderDashboard(data) {
   $('dashboard-loading').style.display = 'none'; $('dashboard-content').style.display = 'block';
 
+  const currentYear = new Date().getFullYear();
+  $('kpi-year-label').textContent = currentYear;
+
+  // 1. Всего объектов (уникальные)
   const uniqueObjs = new Set(data.map(r => r.obj).filter(Boolean)).size;
-  const delivered = data.filter(r => r.status === 'Завершен');
-  const deliveredArea = delivered.reduce((sum, r) => sum + r.areaBuild, 0);
-  const deliveredObjsCount = new Set(delivered.map(r => r.obj)).size;
-  const planned = data.filter(r => r.status === 'В работе');
-  const plannedArea = planned.reduce((sum, r) => sum + r.areaBuild, 0);
-  const plannedObjsCount = new Set(planned.map(r => r.obj)).size;
+  $('kpi-objects').textContent = uniqueObjs;
+
+  // 2. Сдано в текущем году
+  const deliveredThisYear = data.filter(r => r.status === 'Завершен' && r.rvDate && r.rvDate.getFullYear() === currentYear);
+  const deliveredAreaThisYear = deliveredThisYear.reduce((sum, r) => sum + r.areaBuild, 0);
+  const deliveredObjsThisYear = new Set(deliveredThisYear.map(r => r.obj)).size;
+  $('kpi-delivered-year').textContent = fmt(deliveredAreaThisYear);
+  $('kpi-delivered-sub').textContent = `${deliveredObjsThisYear} объектов`;
+
+  // 3. Ближайший к сдаче (В работе, дата >= сегодня)
+  const now = new Date();
+  const upcoming = [...data].filter(r => r.status === 'В работе' && r.rvDate && r.rvDate >= now).sort((a,b) => a.rvDate - b.rvDate);
+  if (upcoming.length > 0) {
+    const nearest = upcoming[0];
+    $('kpi-nearest-name').textContent = nearest.obj;
+    $('kpi-nearest-date').textContent = `${nearest.rvText} · ${fmt(nearest.areaBuild)} м²`;
+  } else {
+    $('kpi-nearest-name').textContent = '—';
+    $('kpi-nearest-date').textContent = 'Нет запланированных';
+  }
+
+  // 4. Заморозка / Отказ
   const refused = data.filter(r => r.status === 'Отказ от строительства');
   const freezeArea = refused.reduce((sum, r) => sum + r.areaFreeze, 0);
   const refusedObjsCount = new Set(refused.map(r => r.obj)).size;
+  $('kpi-freeze').textContent = fmt(freezeArea);
+  $('kpi-freeze-count').textContent = `${refusedObjsCount} объектов`;
 
-  $('kpi-objects').textContent = uniqueObjs;
-  $('kpi-delivered').textContent = fmt(deliveredArea); $('kpi-delivered-count').textContent = `${deliveredObjsCount} объектов`;
-  $('kpi-planned').textContent = fmt(plannedArea); $('kpi-planned-count').textContent = `${plannedObjsCount} объектов`;
-  $('kpi-freeze').textContent = fmt(freezeArea); $('kpi-freeze-count').textContent = `${refusedObjsCount} объектов`;
-
+  // Bar Chart - Statuses (Strict Colors)
   let statusMap = {};
   data.forEach(r => { statusMap[r.status] = (statusMap[r.status] || 0) + ((r.status === 'Отказ от строительства') ? r.areaFreeze : r.areaBuild); });
   const maxStatusArea = Math.max(...Object.values(statusMap), 1);
-  const statusColors = { 'Завершен': 'var(--success)', 'В работе': 'var(--info)', 'Утрачен': 'var(--danger)', 'Поврежден частично': '#f97316', 'Отказ от строительства': '#64748b' };
+  const statusColors = { 
+    'Завершен': 'var(--success)', 
+    'В работе': 'var(--info)', 
+    'Утрачен': 'var(--danger)', 
+    'Поврежден частично': 'var(--warning)', 
+    'Отказ от строительства': '#64748b' 
+  };
+  
   $('chart-status').innerHTML = Object.entries(statusMap).sort((a,b) => b[1] - a[1]).map(([status, area]) => {
       const pct = (area / maxStatusArea) * 100;
       return `<div class="bar-item"><div class="bar-label">${status}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${statusColors[status] || 'var(--accent)'};"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
 
-  let yearMap = {}; const currentYear = new Date().getFullYear();
+  // Bar Chart - Years
+  let yearMap = {};
   data.forEach(r => { if (r.rvDate) { const y = r.rvDate.getFullYear(); if (y <= currentYear) yearMap[y] = (yearMap[y] || 0) + r.areaBuild; } });
   const sortedYears = Object.keys(yearMap).sort((a,b) => a - b);
   const maxYearArea = Math.max(...Object.values(yearMap), 1);
@@ -473,14 +512,14 @@ function renderDashboard(data) {
   initYearTable(data);
 
   const sortedByDate = [...data].filter(r => r.rvDate).sort((a,b) => a.rvDate - b.rvDate);
-  const now = new Date();
-  const upcoming = sortedByDate.filter(r => r.rvDate >= now && r.status !== 'Завершен').slice(0, 5);
   const recent = sortedByDate.filter(r => r.rvDate < now || r.status === 'Завершен').sort((a,b) => b.rvDate - a.rvDate).slice(0, 5);
+  
   const renderList = (arr, type) => arr.map(r => {
     const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-style:dotted;">${r.rvText}</a>` : r.rvText;
     return `<div class="delivery-item ${type}"><div class="delivery-date">${dateHtml}</div><div class="delivery-obj">${r.obj} <br><span style="font-size:11px; color:#94a3b8;">${r.stage}</span></div><div class="delivery-area">${fmt(r.areaBuild)}</div></div>`;
   }).join('');
-  $('list-upcoming').innerHTML = upcoming.length ? renderList(upcoming, 'future') : '<div style="color:#666;font-size:13px;">Нет данных</div>';
+  
+  $('list-upcoming').innerHTML = upcoming.length ? renderList(upcoming.slice(0, 5), 'future') : '<div style="color:#666;font-size:13px;">Нет данных</div>';
   $('list-recent').innerHTML = recent.length ? renderList(recent, 'past') : '<div style="color:#666;font-size:13px;">Нет данных</div>';
 }
 
@@ -507,18 +546,19 @@ function initYearTable(data) {
         if (val > 0) {
           const items = o.items.filter(i => i.rvDate.getMonth() === m);
           
-          // Убираем дублирование (если Склад и АБЧ сданы в один день с одной ссылкой)
+          // Дедупликация
           const uniqueItems = [];
           const seen = new Set();
           items.forEach(i => {
-            const key = `${i.status}|${i.rvText}|${i.rvLink}`;
+            const key = `${i.stage}|${i.rvText}|${i.rvLink}`;
             if (!seen.has(key)) { seen.add(key); uniqueItems.push(i); }
           });
 
+          // Показываем этап в тултипе
           const tooltipLines = uniqueItems.map(i => {
             const dateStr = i.rvText || '—';
             const linkHtml = i.rvLink ? `<a href="${i.rvLink}" target="_blank" style="color:#60a5fa; text-decoration:underline; font-weight:600; margin-left:6px;">Ссылка</a>` : '';
-            return `<div style="margin-bottom:4px;">${i.status} | РВ: ${dateStr} ${linkHtml}</div>`;
+            return `<div style="margin-bottom:4px;">${i.stage} | РВ: ${dateStr} ${linkHtml}</div>`;
           }).join('');
           
           const isDelivered = items.every(i => i.status === 'Завершен');
@@ -582,7 +622,7 @@ function renderTable() {
   }).join('');
 }
 
-// ================= COMPARE (PERFECT LOGIC RESTORED) =================
+// ================= COMPARE (FIXED) =================
 let compareState = { leftData: null, rightData: null, mode: 'g_vs_x' };
 let currentCompareData = null;
 const modeSlider = $('mode-slider');
@@ -616,10 +656,42 @@ async function readXlsxComp(file, preferredSheets) {
 $('file-left-comp').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; $('fn-left-comp').textContent = f.name; const data = await readXlsxComp(f, ['data', 'Data', 'Данные']); compareState.leftData = { ...data, type: 'excel' }; updateCompareBtn(); };
 $('file-right-comp').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; $('fn-right-comp').textContent = f.name; const data = await readXlsxComp(f, ['Данные', 'Data', 'data']); compareState.rightData = { ...data, type: 'excel' }; $('status-x-comp').style.color = 'var(--success)'; $('status-x-comp').textContent = `✓ Загружено: ${data.rows.length} строк`; updateCompareBtn(); };
 
-function getColumnMappingComp(headers) {
-  const find = (prefix, suffix=null) => headers.find(h => h.toLowerCase().startsWith(prefix.toLowerCase()) && (!suffix || h.includes(suffix)));
-  return { 'id': headers.find(h=>h.toLowerCase()==='id'), 'ФО': headers.find(h=>h.toLowerCase()==='фо'), 'объект': headers.find(h=>h.toLowerCase()==='объект'), 'этап': find('Наименование этапа'), 'статус': headers.find(h=>h.toLowerCase()==='статус площади'), 'общая площадь': find('Общая площадь'), 'площадь строительства': find('Площадь объекта строительства'), 'площадь блоков мезонина': find('Площадь блоков мезонина'), 'площадь оперзоны': find('Площадь оперзоны'), 'площадь заморозки': find('Площадь заморозки'), 'статус площадки': find('Статус площадки'), 'РВ': find('Дата получения РВ'), 'категория': headers.find(h=>h.toLowerCase()==='категория объекта'), 'источник': find('Источник данных площади объекта'), 'повреждения': headers.find(h=>h.toLowerCase()==='повреждение блока') };
+// ФИКС: Ищем самую свежую дату в заголовках Excel
+function findLatestSuffix(headers) {
+  const text = headers.join(' | ');
+  const matches = [...text.matchAll(/\((\d{2})\.(\d{2})\.(\d{4})\)/g)];
+  if (!matches.length) return null;
+  const sorted = matches.map(m => ({ full: m[0], ts: new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime() })).sort((a, b) => b.ts - a.ts);
+  return sorted[0].full;
 }
+
+function getColumnMappingComp(headers) {
+  const suffix = findLatestSuffix(headers);
+  
+  const findCol = (prefix) => {
+    if (!suffix) return headers.find(h => h.toLowerCase().startsWith(prefix.toLowerCase()));
+    return headers.find(h => h.toLowerCase().startsWith(prefix.toLowerCase()) && h.includes(suffix));
+  };
+
+  return { 
+    'id': headers.find(h=>h.toLowerCase()==='id'), 
+    'ФО': headers.find(h=>h.toLowerCase()==='фо'), 
+    'объект': headers.find(h=>h.toLowerCase()==='объект'), 
+    'этап': findCol('Наименование этапа'), 
+    'статус': headers.find(h=>h.toLowerCase()==='статус площади'), 
+    'общая площадь': findCol('Общая площадь'), 
+    'площадь строительства': findCol('Площадь объекта строительства'), 
+    'площадь блоков мезонина': headers.find(h=>h.toLowerCase().startsWith('площадь блоков мезонина')), 
+    'площадь оперзоны': headers.find(h=>h.toLowerCase().startsWith('площадь оперзоны')), 
+    'площадь заморозки': findCol('Площадь заморозки'), 
+    'статус площадки': findCol('Статус площадки'), 
+    'РВ': findCol('Дата получения РВ'), 
+    'категория': headers.find(h=>h.toLowerCase()==='категория объекта'), 
+    'источник': findCol('Источник данных площади объекта'), 
+    'повреждения': headers.find(h=>h.toLowerCase()==='повреждение блока') 
+  };
+}
+
 function normalizeValueComp(v) { if (v === null || v === undefined) return null; if (v instanceof Date) return `${String(v.getDate()).padStart(2,'0')}.${String(v.getMonth()+1).padStart(2,'0')}.${v.getFullYear()}`; if (typeof v === 'number') return v; if (typeof v === 'string') { const s = v.replace(/[\u200B-\u200D\uFEFF]/g, '').trim(); const d = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if (d) return `${d[3]}.${d[2]}.${d[1]}`; return s; } return String(v); }
 function normalizeIdComp(v) { return v == null ? null : String(v).trim(); }
 function normalizeObjectComp(v) { return v == null ? null : String(v).trim().replace(/^БВС\s+/i, '').replace(/\s+БВС$/i, ''); }
