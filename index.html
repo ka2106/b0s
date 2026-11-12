@@ -657,8 +657,8 @@ function findCol(headers, prefix, suffix = null) {
     const hnl = hn.toLowerCase();
     if (!hnl.startsWith(p)) continue;
     if (suffix === null) {
-      if (!/\(\d{2}\.\d{2}\.\d{4}\)/.test(hn)) return hn;
-    } else if (hn.includes(suffix)) return hn;
+      if (!/\(\d{2}\.\d{2}\.\d{4}\)/.test(hn)) return h;
+    } else if (hn.includes(suffix)) return h;
   }
   return null;
 }
