@@ -38,7 +38,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 .kpi-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;}
 .kpi-card.blue::before{background:var(--accent);} .kpi-card.green::before{background:var(--success);}
-.kpi-card.orange::before{background:var(--warning);} .kpi-card.red::before{background:var(--danger);}
+.kpi-card.orange::before{background:var(--warning);} .kpi-card.purple::before{background:#8b5cf6;}
 .kpi-label{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
 .kpi-value{font-size:28px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.2;}
 .kpi-sub{font-size:12px;color:var(--text-muted);margin-top:auto;}
@@ -76,19 +76,16 @@ header{background:var(--surface);border-bottom:1px solid var(--border);height:64
 .text-delivered { color: #059669; font-weight: 600; }
 .text-planned { color: #4f46e5; font-weight: 600; }
 
-/* Исправленный тултип (не исчезает при наведении) */
 .tooltip-wrap { position: relative; display: inline-block; cursor: pointer; }
-.tooltip-wrap::before { content: ''; position: absolute; bottom: 100%; left: 0; width: 100%; height: 15px; } /* Невидимый мостик */
+.tooltip-wrap::before { content: ''; position: absolute; bottom: 100%; left: 0; width: 100%; height: 15px; }
 .tooltip-wrap .tooltip-text {
   visibility: hidden; opacity: 0; pointer-events: none;
-  width: max-content; max-width: 320px; background-color: #1e293b; color: #fff;
+  width: max-content; max-width: 400px; background-color: #1e293b; color: #fff;
   text-align: left; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 100;
   bottom: 150%; left: 50%; transform: translateX(-50%); transition: opacity 0.2s;
-  font-size: 12px; font-weight: 400; white-space: normal; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+  font-size: 12px; font-weight: 400; white-space: nowrap; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
 }
-.tooltip-wrap:hover .tooltip-text {
-  visibility: visible; opacity: 1; pointer-events: auto; /* Позволяет кликать по ссылкам */
-}
+.tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; pointer-events: auto; }
 
 .table-layout{display:flex;gap:20px;align-items:flex-start;}
 @media(max-width:900px){.table-layout{flex-direction:column;}}
@@ -221,14 +218,14 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <div class="kpi-sub" id="kpi-delivered-sub">0 объектов</div>
             </div>
             <div class="kpi-card orange">
-              <div class="kpi-label">Ближайший к сдаче</div>
-              <div class="kpi-value" id="kpi-nearest-name" style="font-size:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
-              <div class="kpi-sub" id="kpi-nearest-date"></div>
+              <div class="kpi-label">Осталось сдать</div>
+              <div class="kpi-value" id="kpi-remaining">0</div>
+              <div class="kpi-sub" id="kpi-remaining-sub">0 объектов</div>
             </div>
-            <div class="kpi-card red">
-              <div class="kpi-label">Заморозка / Отказ</div>
-              <div class="kpi-value" id="kpi-freeze">0</div>
-              <div class="kpi-sub" id="kpi-freeze-count">0 объектов</div>
+            <div class="kpi-card purple">
+              <div class="kpi-label">Ближайший к сдаче</div>
+              <div class="kpi-value" id="kpi-nearest-name" style="font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
+              <div class="kpi-sub" id="kpi-nearest-date"></div>
             </div>
           </div>
           <div class="charts-row">
@@ -452,7 +449,7 @@ function renderDashboard(data) {
   const currentYear = new Date().getFullYear();
   $('kpi-year-label').textContent = currentYear;
 
-  // 1. Всего объектов (уникальные)
+  // 1. Всего объектов
   const uniqueObjs = new Set(data.map(r => r.obj).filter(Boolean)).size;
   $('kpi-objects').textContent = uniqueObjs;
 
@@ -463,26 +460,26 @@ function renderDashboard(data) {
   $('kpi-delivered-year').textContent = fmt(deliveredAreaThisYear);
   $('kpi-delivered-sub').textContent = `${deliveredObjsThisYear} объектов`;
 
-  // 3. Ближайший к сдаче (В работе, дата >= сегодня)
+  // 3. Осталось сдать (План текущего года)
+  const remainingThisYear = data.filter(r => r.status === 'В работе' && r.rvDate && r.rvDate.getFullYear() === currentYear);
+  const remainingAreaThisYear = remainingThisYear.reduce((sum, r) => sum + r.areaBuild, 0);
+  const remainingObjsThisYear = new Set(remainingThisYear.map(r => r.obj)).size;
+  $('kpi-remaining').textContent = fmt(remainingAreaThisYear);
+  $('kpi-remaining-sub').textContent = `${remainingObjsThisYear} объектов`;
+
+  // 4. Ближайший к сдаче (с указанием этапа)
   const now = new Date();
   const upcoming = [...data].filter(r => r.status === 'В работе' && r.rvDate && r.rvDate >= now).sort((a,b) => a.rvDate - b.rvDate);
   if (upcoming.length > 0) {
     const nearest = upcoming[0];
     $('kpi-nearest-name').textContent = nearest.obj;
-    $('kpi-nearest-date').textContent = `${nearest.rvText} · ${fmt(nearest.areaBuild)} м²`;
+    $('kpi-nearest-date').textContent = `${nearest.rvText} · ${nearest.stage} · ${fmt(nearest.areaBuild)} м²`;
   } else {
     $('kpi-nearest-name').textContent = '—';
     $('kpi-nearest-date').textContent = 'Нет запланированных';
   }
 
-  // 4. Заморозка / Отказ
-  const refused = data.filter(r => r.status === 'Отказ от строительства');
-  const freezeArea = refused.reduce((sum, r) => sum + r.areaFreeze, 0);
-  const refusedObjsCount = new Set(refused.map(r => r.obj)).size;
-  $('kpi-freeze').textContent = fmt(freezeArea);
-  $('kpi-freeze-count').textContent = `${refusedObjsCount} объектов`;
-
-  // Bar Chart - Statuses (Strict Colors)
+  // Bar Chart - Statuses
   let statusMap = {};
   data.forEach(r => { statusMap[r.status] = (statusMap[r.status] || 0) + ((r.status === 'Отказ от строительства') ? r.areaFreeze : r.areaBuild); });
   const maxStatusArea = Math.max(...Object.values(statusMap), 1);
@@ -546,7 +543,6 @@ function initYearTable(data) {
         if (val > 0) {
           const items = o.items.filter(i => i.rvDate.getMonth() === m);
           
-          // Дедупликация
           const uniqueItems = [];
           const seen = new Set();
           items.forEach(i => {
@@ -554,14 +550,13 @@ function initYearTable(data) {
             if (!seen.has(key)) { seen.add(key); uniqueItems.push(i); }
           });
 
-          // Показываем этап в тултипе
           const tooltipLines = uniqueItems.map(i => {
             const dateStr = i.rvText || '—';
             const linkHtml = i.rvLink ? `<a href="${i.rvLink}" target="_blank" style="color:#60a5fa; text-decoration:underline; font-weight:600; margin-left:6px;">Ссылка</a>` : '';
             return `<div style="margin-bottom:4px;">${i.stage} | РВ: ${dateStr} ${linkHtml}</div>`;
           }).join('');
           
-          const isDelivered = items.every(i => i.status === 'Завершен');
+          const isDelivered = items.every(i => ['Завершен', 'Утрачен', 'Поврежден частично'].includes(String(i.status).trim()));
           const cls = isDelivered ? 'text-delivered' : 'text-planned';
           const href = items[0].rvLink;
           const content = href ? `<a href="${href}" target="_blank" style="color:inherit; text-decoration:none;">${fmt(val)}</a>` : fmt(val);
@@ -656,7 +651,6 @@ async function readXlsxComp(file, preferredSheets) {
 $('file-left-comp').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; $('fn-left-comp').textContent = f.name; const data = await readXlsxComp(f, ['data', 'Data', 'Данные']); compareState.leftData = { ...data, type: 'excel' }; updateCompareBtn(); };
 $('file-right-comp').onchange = async (e) => { const f = e.target.files[0]; if (!f) return; $('fn-right-comp').textContent = f.name; const data = await readXlsxComp(f, ['Данные', 'Data', 'data']); compareState.rightData = { ...data, type: 'excel' }; $('status-x-comp').style.color = 'var(--success)'; $('status-x-comp').textContent = `✓ Загружено: ${data.rows.length} строк`; updateCompareBtn(); };
 
-// ФИКС: Ищем самую свежую дату в заголовках Excel
 function findLatestSuffix(headers) {
   const text = headers.join(' | ');
   const matches = [...text.matchAll(/\((\d{2})\.(\d{2})\.(\d{4})\)/g)];
@@ -667,12 +661,10 @@ function findLatestSuffix(headers) {
 
 function getColumnMappingComp(headers) {
   const suffix = findLatestSuffix(headers);
-  
   const findCol = (prefix) => {
     if (!suffix) return headers.find(h => h.toLowerCase().startsWith(prefix.toLowerCase()));
     return headers.find(h => h.toLowerCase().startsWith(prefix.toLowerCase()) && h.includes(suffix));
   };
-
   return { 
     'id': headers.find(h=>h.toLowerCase()==='id'), 
     'ФО': headers.find(h=>h.toLowerCase()==='фо'), 
@@ -692,10 +684,47 @@ function getColumnMappingComp(headers) {
   };
 }
 
-function normalizeValueComp(v) { if (v === null || v === undefined) return null; if (v instanceof Date) return `${String(v.getDate()).padStart(2,'0')}.${String(v.getMonth()+1).padStart(2,'0')}.${v.getFullYear()}`; if (typeof v === 'number') return v; if (typeof v === 'string') { const s = v.replace(/[\u200B-\u200D\uFEFF]/g, '').trim(); const d = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if (d) return `${d[3]}.${d[2]}.${d[1]}`; return s; } return String(v); }
-function normalizeIdComp(v) { return v == null ? null : String(v).trim(); }
-function normalizeObjectComp(v) { return v == null ? null : String(v).trim().replace(/^БВС\s+/i, '').replace(/\s+БВС$/i, ''); }
-function valuesEqualComp(a, b) { if (a === null || a === undefined || a === '') a = null; if (b === null || b === undefined || b === '') b = null; if (a === null && b === null) return true; if (a === null || b === null) return false; if (typeof a === 'number' && typeof b === 'number') return Math.round(a*100) === Math.round(b*100); return String(a).trim() === String(b).trim(); }
+function normalizeValueComp(v) {
+  if (v === null || v === undefined) return null;
+  if (v instanceof Date) return `${String(v.getDate()).padStart(2,'0')}.${String(v.getMonth()+1).padStart(2,'0')}.${v.getFullYear()}`;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const s = v.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+    const d = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (d) return `${d[3]}.${d[2]}.${d[1]}`;
+    return s;
+  }
+  return String(v);
+}
+function normalizeIdComp(v) {
+  if (v == null) return 'нет ID';
+  if (typeof v === 'number') return Number.isInteger(v) ? String(v) : String(Math.trunc(v));
+  let s = String(v).trim();
+  if (s === '' || s.toLowerCase() === 'нет id') return 'нет ID';
+  return s;
+}
+function normalizeObjectComp(v) {
+  if (v == null) return '';
+  return String(v).trim().replace(/^БВС\s+/i, '').replace(/\s+БВС$/i, '').toLowerCase();
+}
+function parseNum(v) {
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    let s = v.replace(/\s/g, '').replace(',', '.');
+    if (s === '' || s === '-' || s === '—') return null;
+    let n = Number(s);
+    return isNaN(n) ? null : n;
+  }
+  return null;
+}
+function valuesEqualComp(a, b) {
+  let na = parseNum(a), nb = parseNum(b);
+  if (na !== null && nb !== null) return Math.abs(na - nb) < 0.01; // Точность до копеек
+  let sa = String(a || '').trim(), sb = String(b || '').trim();
+  if (sa === '-' || sa === '') sa = '';
+  if (sb === '-' || sb === '') sb = '';
+  return sa === sb;
+}
 
 function extractNormalizedRowsComp(data, type) {
   const mapping = type === 'excel' ? getColumnMappingComp(data.headers) : null;
