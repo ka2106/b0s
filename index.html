@@ -78,17 +78,15 @@ input:checked + .slider:before{transform:translateX(16px);}
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
-/* Таблица месяцев на дашборде */
+/* Таблица месяцев на дашборде (как в оригинале) */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
-.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface); overflow-x: auto;}
-.year-table{width:100%; min-width: 900px; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:10px 8px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
-.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; position: sticky; top: 0; z-index: 2;}
-.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:150px; overflow:hidden; text-overflow:ellipsis; position: sticky; left: 0; background: var(--surface); z-index: 1;}
-.year-table th:first-child { background: var(--bg); z-index: 3; }
-.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:100px; position: sticky; right: 0; background: var(--surface); z-index: 1; box-shadow: -2px 0 5px rgba(0,0,0,0.05);}
-.year-table th:last-child { background: var(--bg); z-index: 3; }
+.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
+.year-table{width:100%; table-layout: fixed; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
+.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
+.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
+.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:18%; overflow:hidden; text-overflow:ellipsis;}
+.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:10%;}
 
 .text-delivered { color: #059669; font-weight: 600; }
 .text-planned { color: #4f46e5; font-weight: 600; }
@@ -137,15 +135,14 @@ input:checked + .slider:before{transform:translateX(16px);}
 .table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; flex-wrap: wrap; gap: 12px;}
 .table-title{font-size:16px;font-weight:700;}
 
-/* Исправление основной таблицы (без горизонтальной прокрутки) */
+/* Основная таблица (без горизонтальной прокрутки) */
 .table-scroll{flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden;}
 table{width:100%;border-collapse:collapse;font-size:12px; table-layout: fixed;}
 
 th{
   background:var(--bg);color:var(--text-muted);padding:12px 6px;text-align:left;
   font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;user-select:none; 
-  white-space: normal; /* Запрет переноса заголовков */
-  word-break: break-word;
+  white-space: nowrap; /* Запрет переноса заголовков */
   vertical-align: middle; 
 }
 th:hover{background:#e2e8f0; color:var(--text);}
@@ -159,8 +156,8 @@ td{
 }
 tbody tr:hover td{background:var(--bg);}
 
-/* Ширины колонок в сумме дают 100%, чтобы не было прокрутки */
-th:nth-child(1) { width: 18%; } /* Объект */
+/* Ширины колонок в сумме 100% */
+th:nth-child(1) { width: 16%; } /* Объект */
 th:nth-child(2) { width: 8%; }  /* Категория */
 th:nth-child(3) { width: 10%; } /* Статус */
 th:nth-child(4) { width: 7%; }  /* Мезонин */
@@ -168,9 +165,10 @@ th:nth-child(5) { width: 7%; }  /* Оперзона */
 th:nth-child(6) { width: 7%; }  /* Заморозка */
 th:nth-child(7) { width: 8%; }  /* Строительство */
 th:nth-child(8) { width: 9%; }  /* РВ */
-th:nth-child(9) { width: 11%; } /* Источник */
-th:nth-child(10){ width: 15%; } /* Повреждения */
+th:nth-child(9) { width: 14%; } /* Источник */
+th:nth-child(10){ width: 14%; } /* Повреждения */
 
+/* Скрытие колонки повреждений */
 .table-container.hide-damage th:nth-child(10),
 .table-container.hide-damage td:nth-child(10) {
   display: none;
@@ -361,15 +359,16 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
             </div>
           </aside>
           
-          <div class="table-container">
+          <!-- Класс hide-damage добавлен изначально, так как тумблер выключен -->
+          <div class="table-container hide-damage">
             <div class="table-header">
               <span class="table-title">Реестр объектов</span>
               <div style="display:flex; align-items:center; gap:16px;">
                 
-                <!-- ТУМБЛЕР ПОВРЕЖДЕНИЙ -->
+                <!-- ТУМБЛЕР ПОВРЕЖДЕНИЙ (без атрибута checked) -->
                 <label class="switch-wrap" style="margin:0;">
                   <div class="switch">
-                    <input type="checkbox" id="toggle-damage" checked>
+                    <input type="checkbox" id="toggle-damage">
                     <span class="slider"></span>
                   </div>
                   Повреждения
@@ -861,7 +860,7 @@ function applyFilters() {
   }
   
   renderTable();
-  // Убрано обновление карты отсюда, чтобы фильтры не влияли на карту
+  // Карта не обновляется здесь, чтобы фильтры таблицы на неё не влияли
 }
 
 function renderTable() {
@@ -928,7 +927,7 @@ function updateMap() {
   markersLayer.removeAll();
   const grouped = {};
   
-  // Теперь карта использует rawData (все объекты, с учетом тумблера БВС), а не filteredData
+  // Карта берет данные из rawData (независимо от фильтров таблицы)
   rawData.forEach(r => {
     if (!cityCoords[r.obj]) return;
     if (!grouped[r.obj]) grouped[r.obj] = { coords: cityCoords[r.obj], area: 0, count: 0, status: r.status };
