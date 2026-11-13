@@ -77,15 +77,15 @@ input:checked + .slider:before{transform:translateX(16px);}
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
-/* Таблица месяцев на дашборде (ТОЧНО КАК В РАБОЧЕМ ВАРИАНТЕ) */
+/* Таблица месяцев на дашборде (БЕЗ ПРОКРУТКИ) */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
-.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
+.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface); overflow:hidden;}
 .year-table{width:100%; table-layout: fixed; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
-.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
-.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:18%; overflow:hidden; text-overflow:ellipsis;}
-.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:10%;}
+.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; word-wrap: break-word;}
+.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; white-space: normal;}
+.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:18%; overflow:hidden; text-overflow:ellipsis; white-space: nowrap;}
+.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:10%; white-space: nowrap;}
 
 .text-delivered { color: #059669; font-weight: 600; }
 .text-planned { color: #4f46e5; font-weight: 600; }
@@ -126,41 +126,52 @@ input:checked + .slider:before{transform:translateX(16px);}
 .checkbox-item input[type="checkbox"]:checked{background:var(--accent);border-color:var(--accent);}
 .checkbox-item input[type="checkbox"]:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid white;border-width:0 2px 2px 0;transform:rotate(45deg);}
 
-.table-container{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;}
+.table-container{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden; display:flex; flex-direction:column; min-width: 0;}
 .table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .table-title{font-size:16px;font-weight:700;}
 
-/* Основная таблица */
-table{width:100%;border-collapse:collapse;font-size:12px;}
+/* ОСНОВНАЯ ТАБЛИЦА (БЕЗ ПРОКРУТКИ) */
+.table-scroll{flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden;}
+table{width:100%;border-collapse:collapse;font-size:12px; table-layout: fixed;}
 
-/* Центрирование по вертикали и отступы */
 th{
-  padding:12px 8px; 
-  text-align:left; 
-  font-weight:600; 
-  border-bottom:1px solid var(--border); 
-  white-space:nowrap; 
-  background:var(--bg); 
-  color:var(--text-muted); 
-  cursor:pointer; 
-  user-select:none;
-  vertical-align: middle;
+  background:var(--bg);color:var(--text-muted);padding:12px 6px;text-align:left;
+  font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;user-select:none; 
+  white-space: normal; word-break: break-word;
+  vertical-align: middle; 
 }
-th:first-child, td:first-child { padding-left: 16px; }
+th:hover{background:#e2e8f0; color:var(--text);}
+th svg { display:inline-block; vertical-align:middle; margin-left:4px; width:14px; height:14px; transition: transform 0.2s; }
+
 td{
-  padding:12px 8px;
-  border-bottom:1px solid var(--border);
-  vertical-align: middle !important; /* Принудительное центрирование */
-  line-height: 1.4;
+  padding:12px 6px;border-bottom:1px solid var(--border);
+  vertical-align:middle !important; 
+  white-space: normal; word-break: break-word; font-size: 12px;
 }
 tbody tr:hover td{background:var(--bg);}
+
+/* Выравнивание первой колонки */
+th:first-child, td:first-child {
+  padding-left: 16px;
+}
+
+/* Ширины колонок (в сумме ровно 100%) */
+th:nth-child(1) { width: 16%; } /* Объект */
+th:nth-child(2) { width: 8%; }  /* Категория */
+th:nth-child(3) { width: 10%; } /* Статус */
+th:nth-child(4) { width: 11%; } /* Строительство */
+th:nth-child(5) { width: 7%; }  /* Мезонин */
+th:nth-child(6) { width: 7%; }  /* Оперзона */
+th:nth-child(7) { width: 9%; }  /* Заморозка */
+th:nth-child(8) { width: 9%; }  /* РВ */
+th:nth-child(9) { width: 12%; } /* Источник */
+th:nth-child(10){ width: 11%; } /* Повреждения */
 
 /* Логика скрытия/замены колонок */
 .table-container th:nth-child(10),
 .table-container td:nth-child(10) {
   display: none;
 }
-
 .table-container.show-damage th:nth-child(9),
 .table-container.show-damage td:nth-child(9) {
   display: none;
@@ -312,7 +323,6 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
-            <!-- Убрали класс open по умолчанию -->
             <div class="filter-group">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <div class="filter-title-wrap">
@@ -372,7 +382,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                 <button class="btn btn-secondary" id="btn-export-excel">Экспорт в Excel</button>
               </div>
             </div>
-            <div style="overflow-x:auto;">
+            <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
@@ -866,7 +876,7 @@ function applyFilters() {
   }
 
   renderTable();
-  // Карта обновляется независимо от фильтров таблицы (через rawData)
+  // Карта не обновляется здесь, чтобы фильтры таблицы на неё не влияли
 }
 
 function renderTable() {
