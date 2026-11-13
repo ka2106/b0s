@@ -77,16 +77,15 @@ input:checked + .slider:before{transform:translateX(16px);}
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
-/* ИСПРАВЛЕННАЯ ТАБЛИЦА МЕСЯЦЕВ (АВТО-ШИРИНА, МАЛЕНЬКИЙ ШРИФТ) */
+/* ИСПРАВЛЕННАЯ ТАБЛИЦА МЕСЯЦЕВ (auto-layout, без наложений) */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
-.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface); overflow: hidden;}
-.year-table{width:100%; border-collapse:collapse; font-size:11px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:8px 2px; border-bottom:1px solid var(--border); text-align:center;}
-.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; white-space: normal; word-break: break-word; line-height: 1.1;}
-.year-table td{white-space: nowrap;}
-.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:8px; min-width: 100px; width:15%; overflow:hidden; text-overflow:ellipsis; white-space: nowrap;}
-.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:8px; white-space: nowrap; width:10%;}
+.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
+.year-table{width:100%; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums; table-layout: auto;}
+.year-table th, .year-table td{padding:10px 6px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
+.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
+.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px;}
+.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px;}
 
 .text-delivered { color: #059669; font-weight: 600; }
 .text-planned { color: #4f46e5; font-weight: 600; }
@@ -326,7 +325,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
-            <!-- Все фильтры свернуты -->
+            <!-- Фильтры изначально свернуты -->
             <div class="filter-group">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <div class="filter-title-wrap">
@@ -700,7 +699,6 @@ function renderDashboard(data) {
       return `<div class="bar-item"><div class="bar-label">${status}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${statusColors[status] || 'var(--accent)'};"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
 
-  // Возвращена правильная группировка годов
   let yearMap = { 'Ранее': 0, 'Далее': 0 };
   data.forEach(r => { 
     if (r.rvDate) { 
@@ -944,6 +942,7 @@ function updateMap() {
   markersLayer.removeAll();
   const grouped = {};
   
+  // Карта берет данные из rawData (независимо от фильтров таблицы)
   rawData.forEach(r => {
     if (!cityCoords[r.obj]) return;
     if (!grouped[r.obj]) grouped[r.obj] = { coords: cityCoords[r.obj], area: 0, count: 0, status: r.status };
