@@ -77,7 +77,7 @@ input:checked + .slider:before{transform:translateX(16px);}
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
-/* Таблица месяцев на дашборде (ВАШ РАБОЧИЙ ВАРИАНТ) */
+/* Таблица месяцев на дашборде */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
 .year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
@@ -130,23 +130,20 @@ input:checked + .slider:before{transform:translateX(16px);}
 .table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .table-title{font-size:16px;font-weight:700;}
 
-/* Основная таблица (ВАШ РАБОЧИЙ ВАРИАНТ, добавлена логика скрытия) */
+/* Основная таблица */
 table{width:100%;border-collapse:collapse;font-size:12px;}
 
-/* Добавляем отступ слева для заголовков и ячеек, чтобы не прилипало к краю */
 th{padding:12px 8px; text-align:left; font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; background:var(--bg); color:var(--text-muted); cursor:pointer; user-select:none;}
 th:first-child, td:first-child { padding-left: 16px; }
 td{padding:12px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
 tbody tr:hover td{background:var(--bg);}
 
 /* Логика скрытия/замены колонок */
-/* По умолчанию скрываем 10-ю колонку (Повреждения) */
 .table-container th:nth-child(10),
 .table-container td:nth-child(10) {
   display: none;
 }
 
-/* Если включен класс show-damage, скрываем 9-ю (Источник) и показываем 10-ю (Повреждения) */
 .table-container.show-damage th:nth-child(9),
 .table-container.show-damage td:nth-child(9) {
   display: none;
@@ -581,10 +578,10 @@ function processData(headers, rows) {
 function processAllData() {
   rawData = showBVS ? allData : allData.filter(r => !r.isBVS);
   
-  if (filters.fo === null) filters.fo = new Set([...new Set(rawData.map(r => r.fo).filter(Boolean))].sort());
-  if (filters.obj === null) filters.obj = new Set([...new Set(rawData.map(r => r.obj).filter(Boolean))].sort());
-  if (filters.category === null) filters.category = new Set([...new Set(rawData.map(r => r.category).filter(Boolean))].sort());
-  if (filters.status === null) filters.status = new Set([...new Set(rawData.map(r => r.status).filter(Boolean))].sort());
+  if (filters.fo.size === 0) filters.fo = new Set([...new Set(rawData.map(r => r.fo).filter(Boolean))].sort());
+  if (filters.obj.size === 0) filters.obj = new Set([...new Set(rawData.map(r => r.obj).filter(Boolean))].sort());
+  if (filters.category.size === 0) filters.category = new Set([...new Set(rawData.map(r => r.category).filter(Boolean))].sort());
+  if (filters.status.size === 0) filters.status = new Set([...new Set(rawData.map(r => r.status).filter(Boolean))].sort());
 
   document.querySelectorAll('.checkbox-item input').forEach(cb => {
     const fk = cb.dataset.filter;
@@ -818,10 +815,10 @@ function updateSortIcons() {
     if (!el) return;
     if (sortState.col === c) {
       el.innerHTML = sortState.dir === 1 
-        ? `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(180deg); opacity: 1;"><polyline points="6 9 12 15 18 9"></polyline></svg>` 
-        : `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 1;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        ? `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(180deg); opacity: 1; vertical-align: middle; width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>` 
+        : `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 1; vertical-align: middle; width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     } else {
-      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.2;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.2; vertical-align: middle; width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     }
   });
 }
@@ -848,7 +845,6 @@ function applyFilters() {
   }
 
   renderTable();
-  updateURL(); 
   if (map) updateMap();
 }
 
@@ -896,7 +892,6 @@ $('btn-export-excel').onclick = async () => {
 
 function initMap() {
   map = L.map('map').setView([61.5240, 90.3180], 3);
-  // Используем светлую подложку CartoDB
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap, © CartoDB'
   }).addTo(map);
@@ -916,7 +911,6 @@ function updateMap() {
   });
 
   Object.entries(grouped).forEach(([city, d]) => {
-    // Правильная формула масштабирования: корень из площади * коэффициент
     const radius = Math.max(10000, Math.sqrt(d.area) * 50);
     const color = d.status === 'Завершен' ? '#10b981' : (d.status === 'В работе' ? '#0ea5e9' : '#ef4444');
     
@@ -1115,7 +1109,6 @@ async function init() {
     const { headers, rows } = await loadGoogleSheet();
     allData = processData(headers, rows);
     
-    readURL();
     initFilters(allData);
     updateSortIcons(); // Инициализируем иконки сортировки
     processAllData();
