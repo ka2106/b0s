@@ -64,7 +64,7 @@ input:checked + .slider:before{transform:translateX(16px);}
 .chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm); display: flex; flex-direction: column;}
 .chart-title{font-size:15px;font-weight:700;margin:0 0 16px 0;}
 
-.bar-chart{display:flex;flex-direction:column;gap:12px; flex: 1; justify-content: space-between;}
+.bar-chart{display:flex;flex-direction:column;gap:12px; flex: 1; justify-content: center;}
 .bar-item{display:flex;align-items:center;gap:12px;}
 .bar-label{width:140px;font-size:13px;font-weight:500;color:var(--text-muted);text-align:right;flex-shrink:0;}
 .bar-track{flex:1;height:24px;background:var(--bg);border-radius:4px;overflow:hidden;display:flex;align-items:center;}
@@ -74,20 +74,21 @@ input:checked + .slider:before{transform:translateX(16px);}
 .delivery-list{display:flex;flex-direction:column;gap:8px; flex: 1; justify-content: flex-start;}
 .delivery-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:13px;border-left:3px solid transparent;}
 .delivery-item.past{border-left-color:var(--success);} .delivery-item.future{border-left-color:var(--info);}
-.delivery-date{font-weight:700;color:var(--success); width: 80px; flex-shrink:0;}
+.delivery-date{font-weight:700; width: 80px; flex-shrink:0;}
+.delivery-item.future .delivery-date { color: var(--text); } /* Черный цвет для будущих */
+.delivery-item.past .delivery-date { color: var(--success); } /* Зеленый для сданных */
 .delivery-obj{flex:1;margin:0 12px; display: flex; flex-direction: column;}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
 /* ТАБЛИЦА МЕСЯЦЕВ */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
-.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
-.year-table{width:100%; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums; table-layout: fixed;}
-.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
+.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface); overflow-x: auto;}
+.year-table{width:100%; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums; table-layout: auto; min-width: 900px;}
+.year-table th, .year-table td{padding:10px 6px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
 .year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
-.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:16%; overflow:hidden; text-overflow:ellipsis;}
-.year-table th:last-child, .year-table td:last-child{text-align:right; font-weight:700; padding-right:12px; width:9%;}
-.year-table th:not(:first-child):not(:last-child) { width: 6.25%; }
+.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:150px;}
+.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:100px;}
 
 .text-delivered { color: var(--success); font-weight: 600; }
 .text-planned { color: var(--accent); font-weight: 600; }
@@ -110,10 +111,7 @@ input:checked + .slider:before{transform:translateX(16px);}
 .sidebar{
   width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;
-  position: sticky;
-  top: 24px;
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
+  position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto;
 }
 
 .filter-group{border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px;}
@@ -141,74 +139,34 @@ input:checked + .slider:before{transform:translateX(16px);}
 .table-title{font-size:16px;font-weight:700;}
 
 /* ОСНОВНАЯ ТАБЛИЦА */
-.table-scroll{flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden;}
-
-/* Делаем шапку "липкой" */
-table{width:100%;border-collapse:collapse;font-size:12px; table-layout: fixed;}
-thead { position: sticky; top: 0; z-index: 5; background: var(--bg); }
+.table-scroll{flex: 1; width: 100%; overflow-y: auto; overflow-x: auto;}
+table{width:100%;border-collapse:collapse;font-size:12px; table-layout: auto; min-width: 1000px;}
 
 th{
   background:var(--bg);color:var(--text-muted);padding:10px 6px;text-align:left;
   font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;user-select:none; 
-  white-space: nowrap; /* Запрещаем перенос в шапке */
-  overflow: hidden; text-overflow: ellipsis;
-  vertical-align: middle; 
-  font-size: 11px; /* Чуть уменьшили шрифт шапки */
-  text-transform: uppercase; letter-spacing: 0.02em;
+  white-space: normal; word-break: break-word; vertical-align: middle; font-size: 11px; text-transform: uppercase;
 }
 th:hover{background:#e2e8f0; color:var(--text);}
 th svg { display:inline-block; vertical-align:middle; margin-left:4px; width:12px; height:12px; transition: transform 0.2s; }
 
 td{
-  padding:12px 6px;border-bottom:1px solid var(--border);
-  vertical-align:middle !important; 
-  white-space: normal; word-break: break-word; font-size: 12px;
+  padding:10px 6px;border-bottom:1px solid var(--border);vertical-align:middle !important; 
+  white-space: nowrap; font-size: 12px;
 }
 tbody tr:hover td{background:var(--bg);}
 
-th:first-child, td:first-child { padding-left: 16px; }
-
-/* Ширины колонок (идеальная математика для десктопа) */
-th:nth-child(1) { width: 16%; } /* Объект */
-th:nth-child(2) { width: 8%; }  /* Категория */
-th:nth-child(3) { width: 10%; } /* Статус */
-th:nth-child(4) { width: 11%; } /* Стройка */
-th:nth-child(5) { width: 7%; }  /* Мезонин */
-th:nth-child(6) { width: 7%; }  /* Оперзона */
-th:nth-child(7) { width: 9%; }  /* Заморозка */
-th:nth-child(8) { width: 9%; }  /* РВ */
-th:nth-child(9) { width: 23%; } /* Источник */
-th:nth-child(10){ width: 23%; } /* Повреждения */
-
-.table-container th:nth-child(10), .table-container td:nth-child(10) { display: none; }
-.table-container.show-damage th:nth-child(9), .table-container.show-damage td:nth-child(9) { display: none; }
-.table-container.show-damage th:nth-child(10), .table-container.show-damage td:nth-child(10) { display: table-cell; }
-
-/* --- АДАПТИВНОСТЬ КОЛОНОК --- */
-/* Если экран меньше 1400px, скрываем "Источник" (или Повреждения, если они включены) */
-@media(max-width: 1400px) {
-  th:nth-child(9), td:nth-child(9) { display: none !important; }
-  .table-container.show-damage th:nth-child(10), .table-container.show-damage td:nth-child(10) { display: none !important; }
-  
-  /* Перераспределяем ширину */
-  th:nth-child(1) { width: 20%; }
-  th:nth-child(4) { width: 15%; }
+th:first-child, td:first-child { 
+  padding-left: 16px; position: sticky; left: 0; background: var(--surface); z-index: 2; border-right: 1px solid var(--border);
 }
+th:first-child { background: var(--bg); z-index: 3; }
 
-/* Если экран меньше 1200px, скрываем еще и оперзону с мезонином */
-@media(max-width: 1200px) {
-  th:nth-child(5), td:nth-child(5),
-  th:nth-child(6), td:nth-child(6) { display: none !important; }
-  
-  th:nth-child(1) { width: 25%; }
-  th:nth-child(3) { width: 15%; }
-  th:nth-child(4) { width: 15%; }
-  th:nth-child(7) { width: 15%; }
-  th:nth-child(8) { width: 15%; }
-}
+/* Скрытие колонок */
+.table-container.hide-source th:nth-child(9), .table-container.hide-source td:nth-child(9) { display: none; }
+.table-container.hide-damage th:nth-child(10), .table-container.hide-damage td:nth-child(10) { display: none; }
 
 /* Цвета статусов */
-.status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;}
+.status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500; white-space: nowrap;}
 .status-badge.delivered{background:var(--success-bg);color:var(--success);}
 .status-badge.planned{background:var(--info-bg);color:var(--info);}
 .status-badge.danger{background:var(--danger-bg);color:var(--danger);}
@@ -218,39 +176,27 @@ th:nth-child(10){ width: 23%; } /* Повреждения */
 .raw-link{color:var(--success);text-decoration:none;font-weight:600;}
 .raw-link:hover{text-decoration:underline;}
 
-/* --- МОБИЛЬНАЯ АДАПТАЦИЯ (Карточки) --- */
+/* Сводная таблица */
+.summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.summary-table th { background: var(--bg); color: var(--text-muted); font-weight: 600; text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
+.summary-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.summary-table tr:hover td { background: var(--bg); }
+
+/* Мобильная адаптация */
 @media(max-width: 768px) {
   .main-content { padding: 16px; }
   .table-layout { flex-direction: column; }
   .sidebar { width: 100%; position: static; max-height: none; margin-bottom: 16px; }
-  
   thead tr { position: absolute; top: -9999px; left: -9999px; }
-  table, tbody, tr, td { display: block; width: 100%; }
-  
+  table, tbody, tr, td { display: block; width: 100%; min-width: auto; }
   .table-container { border: none; box-shadow: none; background: transparent; }
   .table-scroll { overflow: visible; }
-  
-  tr { 
-    margin-bottom: 16px; border: 1px solid var(--border); border-radius: var(--radius); 
-    background: var(--surface); box-shadow: var(--shadow-sm); padding: 12px; 
-  }
-  
-  td { 
-    display: flex !important; justify-content: space-between; align-items: center;
-    border-bottom: 1px solid var(--bg); padding: 8px 0; text-align: right !important; font-size: 13px;
-  }
+  tr { margin-bottom: 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow-sm); padding: 12px; }
+  td { display: flex !important; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bg); padding: 8px 0; text-align: right !important; font-size: 13px; white-space: normal; position: static; border-right: none; }
   td:last-child { border-bottom: none; }
-  
-  td::before { 
-    content: attr(data-label); font-weight: 600; color: var(--text-muted); 
-    font-size: 12px; text-align: left; margin-right: 16px;
-  }
-  
+  td::before { content: attr(data-label); font-weight: 600; color: var(--text-muted); font-size: 12px; text-align: left; margin-right: 16px; }
   td:empty { display: none !important; }
-  td:nth-child(1) { 
-    padding-left: 0; text-align: left !important; display: block !important; 
-    border-bottom: 2px solid var(--border); margin-bottom: 8px; padding-bottom: 12px; padding-top: 0;
-  }
+  td:nth-child(1) { padding-left: 0; text-align: left !important; display: block !important; border-bottom: 2px solid var(--border); margin-bottom: 8px; padding-bottom: 12px; padding-top: 0; }
   td:nth-child(1)::before { display: none; }
 }
 
@@ -335,6 +281,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       </label>
       <nav class="nav-tabs">
         <button class="nav-btn active" data-tab="dashboard">Дашборд</button>
+        <button class="nav-btn" data-tab="summary">Сводка</button>
         <button class="nav-btn" data-tab="table">Таблица</button>
         <button class="nav-btn" data-tab="map">Карта</button>
         <button class="nav-btn" data-tab="compare">Сравнение</button>
@@ -381,6 +328,20 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
           <div class="charts-row">
             <div class="chart-card"><h3 class="chart-title">Ближайшие к сдаче объекты</h3><div class="delivery-list" id="list-upcoming"></div></div>
             <div class="chart-card"><h3 class="chart-title">Последние сданные объекты</h3><div class="delivery-list" id="list-recent"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUMMARY -->
+      <div id="tab-summary" class="tab-content" style="display:none;">
+        <div class="table-container" style="border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+          <div class="table-header">
+            <span class="table-title">Сводка по объектам (без учета этапов)</span>
+          </div>
+          <div class="table-scroll" style="padding: 16px;">
+            <table class="summary-table" id="summary-table-body">
+              <!-- Заполняется в JS -->
+            </table>
           </div>
         </div>
       </div>
@@ -435,15 +396,14 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
             <div class="table-header">
               <span class="table-title">Реестр объектов</span>
               <div style="display:flex; align-items:center; gap:16px;">
-                
                 <label class="switch-wrap" style="margin:0;">
-                  <div class="switch">
-                    <input type="checkbox" id="toggle-damage">
-                    <span class="slider"></span>
-                  </div>
+                  <div class="switch"><input type="checkbox" id="toggle-source" checked><span class="slider"></span></div>
+                  Источник
+                </label>
+                <label class="switch-wrap" style="margin:0;">
+                  <div class="switch"><input type="checkbox" id="toggle-damage"><span class="slider"></span></div>
                   Повреждения
                 </label>
-
                 <button class="btn btn-secondary" id="btn-export-excel">Экспорт в Excel</button>
               </div>
             </div>
@@ -451,16 +411,16 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <table>
                 <thead>
                   <tr>
-                    <th class="text-left" onclick="sortTable('obj')" title="Объект / Этап">Объект / Этап <span id="sort-obj"></span></th>
-                    <th class="text-left" onclick="sortTable('category')" title="Категория">Категория <span id="sort-category"></span></th>
-                    <th class="text-center" onclick="sortTable('status')" title="Статус">Статус <span id="sort-status"></span></th>
-                    <th class="text-right" onclick="sortTable('areaBuild')" title="Стройка">Стройка <span id="sort-areaBuild"></span></th>
-                    <th class="text-right" onclick="sortTable('areaMezzanine')" title="Мезонин">Мезонин <span id="sort-areaMezzanine"></span></th>
-                    <th class="text-right" onclick="sortTable('areaOper')" title="Оперзона">Оперзона <span id="sort-areaOper"></span></th>
-                    <th class="text-right" onclick="sortTable('areaFreeze')" title="Заморозка">Заморозка <span id="sort-areaFreeze"></span></th>
-                    <th class="text-center" onclick="sortTable('rvText')" title="РВ (Дата)">РВ (Дата) <span id="sort-rvText"></span></th>
-                    <th class="text-left" onclick="sortTable('source')" title="Источник данных">Источник <span id="sort-source"></span></th>
-                    <th class="text-left" onclick="sortTable('damage')" title="Повреждения">Повреждения <span id="sort-damage"></span></th>
+                    <th class="text-left" onclick="sortTable('obj')">Объект / Этап <span id="sort-obj"></span></th>
+                    <th class="text-left" onclick="sortTable('category')">Категория <span id="sort-category"></span></th>
+                    <th class="text-center" onclick="sortTable('status')">Статус <span id="sort-status"></span></th>
+                    <th class="text-right" onclick="sortTable('areaBuild')">Стройка <span id="sort-areaBuild"></span></th>
+                    <th class="text-right" onclick="sortTable('areaMezzanine')">Мезонин <span id="sort-areaMezzanine"></span></th>
+                    <th class="text-right" onclick="sortTable('areaOper')">Оперзона <span id="sort-areaOper"></span></th>
+                    <th class="text-right" onclick="sortTable('areaFreeze')">Заморозка <span id="sort-areaFreeze"></span></th>
+                    <th class="text-center" onclick="sortTable('rvText')">РВ (Дата) <span id="sort-rvText"></span></th>
+                    <th class="text-left" onclick="sortTable('source')">Источник данных <span id="sort-source"></span></th>
+                    <th class="text-left" onclick="sortTable('damage')">Повреждения <span id="sort-damage"></span></th>
                   </tr>
                 </thead>
                 <tbody id="table-body"></tbody>
@@ -566,12 +526,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     $('tab-' + btn.dataset.tab).style.display = 'block';
     
     if (btn.dataset.tab === 'map') {
-      if (!map) {
-        initMap();
-      } else {
-        map.container.fitToViewport();
-        updateMap();
-      }
+      if (!map) initMap();
+      else { map.container.fitToViewport(); updateMap(); }
+    }
+    if (btn.dataset.tab === 'summary') {
+      renderSummaryTable();
     }
   };
 });
@@ -583,11 +542,14 @@ $('toggle-bvs').onchange = (e) => {
 
 $('toggle-damage').onchange = (e) => {
   const tableContainer = document.getElementById('main-table-container');
-  if (e.target.checked) {
-    tableContainer.classList.add('show-damage');
-  } else {
-    tableContainer.classList.remove('show-damage');
-  }
+  if (e.target.checked) tableContainer.classList.remove('hide-damage');
+  else tableContainer.classList.add('hide-damage');
+};
+
+$('toggle-source').onchange = (e) => {
+  const tableContainer = document.getElementById('main-table-container');
+  if (e.target.checked) tableContainer.classList.remove('hide-source');
+  else tableContainer.classList.add('hide-source');
 };
 
 function loadGoogleSheet(id = SHEET_ID, name = SHEET_NAME) {
@@ -661,11 +623,15 @@ function processData(headers, rows) {
 
     let rawStatus = getVal('статус площадки') || 'Не указан';
     let status = rawStatus === 'Отказ от строительства' ? 'Отказ' : rawStatus;
+    if (status === 'Завершен') status = 'Завершено';
     if (status === 'Поврежден частично') status = 'Поврежден';
+
+    let category = getVal('категория') || '';
+    if (category === 'Вспомогательные объекты') category = 'Прочее';
 
     return {
       id: getVal('id') || '—', fo: getVal('ФО') || '', obj: getVal('объект') || '', stage: getVal('этап') || '',
-      status: status, category: getVal('категория') || '',
+      status: status, category: category,
       areaMezzanine: parseA('площадь блоков мезонина'), areaOper: parseA('площадь оперзоны'),
       areaFreeze: parseA('площадь заморозки'), areaBuild: parseA('площадь строительства'),
       source: getVal('источник данных площади') || '', damage: getVal('повреждения') || '',
@@ -685,9 +651,7 @@ function processAllData() {
 
   document.querySelectorAll('.checkbox-item input').forEach(cb => {
     const fk = cb.dataset.filter;
-    if (filters[fk]) {
-      cb.checked = filters[fk].has(cb.value);
-    }
+    if (filters[fk]) cb.checked = filters[fk].has(cb.value);
   });
 
   applyFilters();
@@ -695,25 +659,56 @@ function processAllData() {
   if (map) updateMap();
 }
 
+function renderSummaryTable() {
+  // Считаем объекты уникально по имени
+  const objMap = {};
+  rawData.forEach(r => {
+    if (!objMap[r.obj]) objMap[r.obj] = { obj: r.obj, stages: new Set(), hasABCH: false, statuses: new Set(), area: 0, category: r.category };
+    if (r.stage) objMap[r.obj].stages.add(r.stage);
+    if (r.stage && r.stage.includes('АБЧ') || r.category.includes('АБЧ')) objMap[r.obj].hasABCH = true;
+    if (r.status) objMap[r.obj].statuses.add(r.status);
+    objMap[r.obj].area += r.areaBuild;
+  });
+
+  const sorted = Object.values(objMap).sort((a,b) => a.obj.localeCompare(b.obj, 'ru'));
+  
+  let html = `<thead><tr>
+    <th>Объект</th>
+    <th>Категория</th>
+    <th>Кол-во этапов</th>
+    <th>АБЧ</th>
+    <th>Статусы</th>
+    <th class="text-right">Общая площадь (Стройка)</th>
+  </tr></thead><tbody>`;
+
+  sorted.forEach(o => {
+    html += `<tr>
+      <td style="font-weight:600;">${o.obj}</td>
+      <td>${o.category}</td>
+      <td class="text-center">${o.stages.size || 1}</td>
+      <td class="text-center">${o.hasABCH ? 'Да' : '—'}</td>
+      <td>${Array.from(o.statuses).join(', ')}</td>
+      <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${fmt(o.area)}</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  
+  $('summary-table-body').innerHTML = html;
+}
+
 function drillDown(type) {
   document.querySelector('.nav-btn[data-tab="table"]').click();
-  
   filters.fo = new Set([...new Set(rawData.map(r => r.fo).filter(Boolean))]);
   filters.obj = new Set([...new Set(rawData.map(r => r.obj).filter(Boolean))]);
   filters.category = new Set([...new Set(rawData.map(r => r.category).filter(Boolean))]);
   filters.status = new Set([...new Set(rawData.map(r => r.status).filter(Boolean))]);
 
-  if (type === 'delivered') {
-    filters.status = new Set(['Завершен']);
-  } else if (type === 'remaining') {
-    filters.status = new Set(['В работе']);
-  }
+  if (type === 'delivered') filters.status = new Set(['Завершено']);
+  else if (type === 'remaining') filters.status = new Set(['В работе']);
   
   document.querySelectorAll('.checkbox-item input').forEach(cb => {
-    const fk = cb.dataset.filter;
-    cb.checked = filters[fk].has(cb.value);
+    cb.checked = filters[cb.dataset.filter].has(cb.value);
   });
-
   applyFilters();
 }
 
@@ -726,7 +721,7 @@ function renderDashboard(data) {
   const uniqueObjs = new Set(data.map(r => r.obj).filter(Boolean)).size;
   $('kpi-objects').textContent = uniqueObjs;
 
-  const deliveredThisYear = data.filter(r => r.status === 'Завершен' && r.rvDate && r.rvDate.getFullYear() === currentYear);
+  const deliveredThisYear = data.filter(r => r.status === 'Завершено' && r.rvDate && r.rvDate.getFullYear() === currentYear);
   const deliveredAreaThisYear = deliveredThisYear.reduce((sum, r) => sum + r.areaBuild, 0);
   const deliveredObjsThisYear = new Set(deliveredThisYear.map(r => r.obj)).size;
   $('kpi-delivered-year').textContent = fmt(deliveredAreaThisYear);
@@ -750,19 +745,21 @@ function renderDashboard(data) {
   }
 
   let statusMap = {};
-  data.forEach(r => { 
-    statusMap[r.status] = (statusMap[r.status] || 0) + ((r.status === 'Отказ') ? r.areaFreeze : r.areaBuild); 
-  });
+  data.forEach(r => { statusMap[r.status] = (statusMap[r.status] || 0) + ((r.status === 'Отказ') ? r.areaFreeze : r.areaBuild); });
   const maxStatusArea = Math.max(...Object.values(statusMap), 1);
   const statusColors = { 
-    'Завершен': 'var(--success)', 
+    'Завершено': 'var(--success)', 
     'В работе': 'var(--info)', 
     'Утрачен': 'var(--danger)', 
     'Поврежден': 'var(--warning)', 
     'Отказ': '#64748b' 
   };
   
-  $('chart-status').innerHTML = Object.entries(statusMap).sort((a,b) => b[1] - a[1]).map(([status, area]) => {
+  // Строгий порядок статусов
+  const strictOrder = ['Завершено', 'В работе', 'Утрачен', 'Поврежден', 'Отказ'];
+  
+  $('chart-status').innerHTML = strictOrder.filter(st => statusMap[st] > 0).map(status => {
+      const area = statusMap[status];
       const pct = (area / maxStatusArea) * 100;
       return `<div class="bar-item"><div class="bar-label">${status}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${statusColors[status] || 'var(--accent)'};"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
@@ -771,21 +768,15 @@ function renderDashboard(data) {
   data.forEach(r => { 
     if (r.rvDate) { 
       const y = r.rvDate.getFullYear(); 
-      if (y < 2024) {
-        yearMap['Ранее'] += r.areaBuild;
-      } else if (y <= currentYear) {
-        yearMap[y] = (yearMap[y] || 0) + r.areaBuild; 
-      } else {
-        yearMap['Далее'] += r.areaBuild;
-      }
+      if (y < 2024) yearMap['Ранее'] += r.areaBuild;
+      else if (y <= currentYear) yearMap[y] = (yearMap[y] || 0) + r.areaBuild; 
+      else yearMap['Далее'] += r.areaBuild;
     } 
   });
   
   const sortedYears = Object.keys(yearMap).sort((a,b) => {
-    if (a === 'Ранее') return -1;
-    if (b === 'Ранее') return 1;
-    if (a === 'Далее') return 1;
-    if (b === 'Далее') return -1;
+    if (a === 'Ранее') return -1; if (b === 'Ранее') return 1;
+    if (a === 'Далее') return 1; if (b === 'Далее') return -1;
     return a - b;
   });
   
@@ -798,7 +789,7 @@ function renderDashboard(data) {
   initYearTable(data);
 
   const sortedByDate = [...data].filter(r => r.rvDate).sort((a,b) => a.rvDate - b.rvDate);
-  const recent = sortedByDate.filter(r => r.rvDate < now || r.status === 'Завершен').sort((a,b) => b.rvDate - a.rvDate).slice(0, 5);
+  const recent = sortedByDate.filter(r => r.rvDate < now || r.status === 'Завершено').sort((a,b) => b.rvDate - a.rvDate).slice(0, 5);
   
   const renderList = (arr, type) => arr.map(r => {
     const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-style:dotted;">${r.rvText}</a>` : r.rvText;
@@ -829,7 +820,9 @@ function initYearTable(data) {
       if (!objMap[r.obj]) objMap[r.obj] = { obj: r.obj, months: Array(12).fill(0), total: 0, items: [] };
       const month = r.rvDate.getMonth(); objMap[r.obj].months[month] += r.areaBuild; objMap[r.obj].total += r.areaBuild; objMap[r.obj].items.push(r);
     });
-    const sortedObjs = Object.values(objMap).sort((a,b) => b.total - a.total);
+    
+    // СОРТИРОВКА ПО АЛФАВИТУ
+    const sortedObjs = Object.values(objMap).sort((a,b) => a.obj.localeCompare(b.obj, 'ru'));
     let html = `<tr><th class="text-left">Сдача площадей, ${year} год</th>${monthsRu.map(m => `<th class="text-center">${m}</th>`).join('')}<th class="text-right">всего:</th></tr>`;
     
     sortedObjs.forEach(o => {
@@ -852,7 +845,7 @@ function initYearTable(data) {
             return `<div style="margin-bottom:4px;">${i.stage} | РВ: ${dateStr} ${linkHtml}</div>`;
           }).join('');
           
-          const isDelivered = items.every(i => ['Завершен', 'Утрачен', 'Поврежден'].includes(String(i.status).trim()));
+          const isDelivered = items.every(i => ['Завершено', 'Утрачен', 'Поврежден'].includes(String(i.status).trim()));
           const cls = isDelivered ? 'text-delivered' : 'text-planned';
           const href = items[0].rvLink;
           const content = href ? `<a href="${href}" target="_blank" style="color:inherit; text-decoration:none;">${fmt(val)}</a>` : fmt(val);
@@ -907,12 +900,8 @@ function initFilters(data) {
 }
 
 function sortTable(col) {
-  if (sortState.col === col) {
-    sortState.dir *= -1;
-  } else {
-    sortState.col = col;
-    sortState.dir = 1;
-  }
+  if (sortState.col === col) sortState.dir *= -1;
+  else { sortState.col = col; sortState.dir = 1; }
   updateSortIcons();
   applyFilters();
 }
@@ -939,16 +928,10 @@ function applyFilters() {
   
   if (sortState.col) {
     filteredData.sort((a, b) => {
-      let valA = a[sortState.col];
-      let valB = b[sortState.col];
-      
+      let valA = a[sortState.col]; let valB = b[sortState.col];
       if (valA === null || valA === undefined || valA === '') valA = '';
       if (valB === null || valB === undefined || valB === '') valB = '';
-      
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return (valA - valB) * sortState.dir;
-      }
-      
+      if (typeof valA === 'number' && typeof valB === 'number') return (valA - valB) * sortState.dir;
       return String(valA).localeCompare(String(valB)) * sortState.dir;
     });
   }
@@ -959,15 +942,29 @@ function applyFilters() {
 function renderTable() {
   $('table-body').innerHTML = filteredData.map(r => {
     let statusClass = 'planned'; 
-    if (r.status === 'Завершен') statusClass = 'delivered'; 
+    if (r.status === 'Завершено') statusClass = 'delivered'; 
     if (r.status === 'Утрачен') statusClass = 'danger'; 
     if (r.status === 'Поврежден') statusClass = 'warning'; 
     if (r.status === 'Отказ') statusClass = 'gray';
     
     const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" class="raw-link">${r.rvText}</a>` : linkify(r.rvText || '—');
     
+    // Убираем дублирование названия объекта в этапе
+    let displayStage = r.stage;
+    if (r.stage && r.obj) {
+      const escapedObj = r.obj.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escapedObj, 'i');
+      displayStage = r.stage.replace(regex, '').replace(/^[\s\-\(\)]+|[\s\-\(\)]+$/g, '').trim();
+      if (displayStage === 'АБЧ' || displayStage === 'Абч') displayStage = '(АБЧ)';
+      else if (displayStage === 'БВС' || displayStage === 'Бвс') displayStage = '(БВС)';
+    }
+    if (displayStage === r.obj) displayStage = '';
+
     return `<tr>
-        <td data-label="Объект / Этап" class="text-left"><div style="font-weight:600;color:var(--text)">${r.obj}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.stage}</div></td>
+        <td data-label="Объект / Этап" class="text-left">
+          <div style="font-weight:600;color:var(--text)">${r.obj}</div>
+          ${displayStage ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${displayStage}</div>` : ''}
+        </td>
         <td data-label="Категория" class="text-left">${r.category}</td>
         <td data-label="Статус" class="text-center"><span class="status-badge ${statusClass}">${r.status}</span></td>
         <td data-label="Стройка" class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaBuild)}</td>
@@ -975,8 +972,8 @@ function renderTable() {
         <td data-label="Оперзона" class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaOper)}</td>
         <td data-label="Заморозка" class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaFreeze)}</td>
         <td data-label="РВ (Дата)" class="text-center">${dateHtml}</td>
-        <td data-label="Источник данных" class="text-left" style="color:var(--text-muted);font-size:11px;max-width:150px;white-space:normal;">${r.source}</td>
-        <td data-label="Повреждения" class="text-left" style="color:var(--text-muted);font-size:11px;max-width:200px;white-space:normal;">${r.damage}</td>
+        <td data-label="Источник данных" class="text-left" style="color:var(--text-muted);font-size:11px;">${r.source}</td>
+        <td data-label="Повреждения" class="text-left" style="color:var(--text-muted);font-size:11px;">${r.damage}</td>
       </tr>`;
   }).join('');
 }
@@ -1003,7 +1000,7 @@ $('btn-export-excel').onclick = async () => {
   URL.revokeObjectURL(url);
 };
 
-// Инициализация Яндекс.Карт
+// MAP
 function initMap() {
   ymaps.ready(() => {
     map = new ymaps.Map("map", {
@@ -1011,7 +1008,13 @@ function initMap() {
       zoom: 3,
       controls: ['zoomControl', 'fullscreenControl']
     });
-    markersLayer = new ymaps.GeoObjectCollection();
+    markersLayer = new ymaps.Clusterer({
+      preset: 'islands#invertedVioletClusterIcons',
+      groupByCoordinates: false,
+      clusterDisableClickZoom: true,
+      clusterHideIconOnBalloonOpen: false,
+      geoObjectHideIconOnBalloonOpen: false
+    });
     map.geoObjects.add(markersLayer);
     updateMap();
   });
@@ -1024,44 +1027,47 @@ function updateMap() {
   
   rawData.forEach(r => {
     if (!cityCoords[r.obj]) return;
-    if (!grouped[r.obj]) grouped[r.obj] = { coords: cityCoords[r.obj], area: 0, count: 0, status: r.status };
+    if (!grouped[r.obj]) grouped[r.obj] = { coords: cityCoords[r.obj], area: 0, count: 0, statuses: new Set(), stages: new Set() };
     grouped[r.obj].area += r.areaBuild;
-    grouped[r.obj].count++;
+    grouped[r.obj].stages.add(r.stage);
+    if (r.status) grouped[r.obj].statuses.add(r.status);
   });
 
+  const placemarks = [];
   Object.entries(grouped).forEach(([city, d]) => {
-    const radius = Math.max(40000, Math.sqrt(d.area) * 150);
+    // Определяем цвет по преобладающему статусу (или первому)
+    let mainStatus = Array.from(d.statuses)[0];
+    if (d.statuses.has('В работе')) mainStatus = 'В работе'; // Приоритет в работе
     
-    let fillColor = 'rgba(239, 68, 68, 0.6)'; 
-    let strokeColor = '#ef4444';
-    if (d.status === 'Завершен') { fillColor = 'rgba(16, 185, 129, 0.6)'; strokeColor = '#10b981'; }
-    else if (d.status === 'В работе') { fillColor = 'rgba(14, 165, 233, 0.6)'; strokeColor = '#0ea5e9'; }
+    let iconColor = '#ef4444'; // Утрачен (красный)
+    if (mainStatus === 'Завершено') iconColor = '#10b981'; // Зеленый
+    else if (mainStatus === 'В работе') iconColor = '#0ea5e9'; // Синий
+    else if (mainStatus === 'Поврежден') iconColor = '#f59e0b'; // Оранжевый
+    else if (mainStatus === 'Отказ') iconColor = '#64748b'; // Серый
     
-    const circle = new ymaps.Circle([d.coords, radius], {
+    const pm = new ymaps.Placemark(d.coords, {
       hintContent: city,
       balloonContentHeader: `<b style="font-size:14px;">${city}</b>`,
       balloonContentBody: `
         <div style="font-family:'Inter',sans-serif; font-size:13px; min-width:150px;">
-          Объектов: ${d.count}<br>
+          Объектов (этапов): ${d.stages.size}<br>
           Площадь: ${fmt(d.area)} м²<br>
           <a href="#" onclick="drillDownMap('${city}');return false;" style="display:inline-block; margin-top:6px; color:var(--accent); font-weight:600; text-decoration:none;">Показать в таблице</a>
         </div>
       `
     }, {
-      fillColor: fillColor,
-      strokeColor: strokeColor,
-      strokeWidth: 2
+      preset: 'islands#circleIcon',
+      iconColor: iconColor
     });
-    markersLayer.add(circle);
+    placemarks.push(pm);
   });
+  markersLayer.add(placemarks);
 }
 
 function drillDownMap(city) {
   document.querySelector('.nav-btn[data-tab="table"]').click();
   filters.obj = new Set([city]);
-  document.querySelectorAll('input[data-filter="obj"]').forEach(cb => {
-    cb.checked = filters.obj.has(cb.value);
-  });
+  document.querySelectorAll('input[data-filter="obj"]').forEach(cb => { cb.checked = filters.obj.has(cb.value); });
   applyFilters();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1156,6 +1162,10 @@ function normalizeObjectComp(v) {
   if (v == null) return '';
   return String(v).trim().replace(/^БВС\s+/i, '').replace(/\s+БВС$/i, '').toLowerCase();
 }
+function normalizeStageComp(v) {
+  if (v == null) return '';
+  return String(v).trim().replace(/[\(\)]/g, '').replace(/\s+/g, ' ').toLowerCase();
+}
 function parseNum(v) {
   if (typeof v === 'number') return v;
   if (typeof v === 'string') {
@@ -1179,7 +1189,7 @@ function extractNormalizedRowsComp(data, type) {
   const mapping = type === 'excel' ? getColumnMappingComp(data.headers) : null;
   return data.rows.map(r => {
     const get = (key, fallbackKey) => type === 'google' ? normalizeValueComp(r[key] || r[fallbackKey]) : normalizeValueComp(r[mapping[key]]);
-    return { __row: r.__row, id: normalizeIdComp(type === 'google' ? r['id'] : r[mapping['id']]), 'ФО': get('ФО'), 'объект': get('объект'), 'объект_norm': normalizeObjectComp(get('объект')), 'этап': get('этап'), 'статус': get('статус'), 'общая площадь': get('общая площадь'), 'площадь строительства': get('площадь строительства'), 'площадь блоков мезонина': get('площадь блоков мезонина'), 'площадь оперзоны': get('площадь оперзоны'), 'площадь заморозки': get('площадь заморозки'), 'статус площадки': get('статус площадки'), 'РВ': get('РВ'), 'категория': get('категория'), 'источник': type === 'google' ? normalizeValueComp(r['источник данных площади'] || r['источник']) : get('источник'), 'повреждения': get('повреждения') };
+    return { __row: r.__row, id: normalizeIdComp(type === 'google' ? r['id'] : r[mapping['id']]), 'ФО': get('ФО'), 'объект': get('объект'), 'объект_norm': normalizeObjectComp(get('объект')), 'этап': get('этап'), 'этап_norm': normalizeStageComp(get('этап')), 'статус': get('статус'), 'общая площадь': get('общая площадь'), 'площадь строительства': get('площадь строительства'), 'площадь блоков мезонина': get('площадь блоков мезонина'), 'площадь оперзоны': get('площадь оперзоны'), 'площадь заморозки': get('площадь заморозки'), 'статус площадки': get('статус площадки'), 'РВ': get('РВ'), 'категория': get('категория'), 'источник': type === 'google' ? normalizeValueComp(r['источник данных площади'] || r['источник']) : get('источник'), 'повреждения': get('повреждения') };
   });
 }
 
@@ -1187,15 +1197,21 @@ function runComparisonComp() {
   const left = compareState.leftData, right = compareState.rightData;
   const gRows = extractNormalizedRowsComp(left, left.type), xRows = extractNormalizedRowsComp(right, right.type);
   const FIELDS = [ ['этап','Этап'], ['статус','Статус площади'], ['общая площадь','Общая площадь'], ['площадь строительства','Площадь объекта строительства'], ['площадь блоков мезонина','Площадь блоков мезонина'], ['площадь оперзоны','Площадь оперзоны'], ['площадь заморозки','Площадь заморозки'], ['статус площадки','Статус площадки'], ['РВ','Дата получения РВ'], ['категория','Категория объекта'], ['источник','Источник данных'], ['повреждения','Повреждение блока'] ];
-  const pkey = r => `${r.id}|${r['ФО']}|${r['объект_norm']}`, skey = r => `${r['этап'] || ''}|${r['категория'] || ''}`; const gGroups = {}, xGroups = {};
+  
+  const pkey = r => `${r.id}|${r['ФО']}|${r['объект_norm']}`;
+  const skey = r => `${r['этап_norm']}|${r['категория']}`; // Используем нормализованный этап
+  
+  const gGroups = {}, xGroups = {};
   gRows.forEach(r => (gGroups[pkey(r)] ||= []).push(r)); xRows.forEach(r => (xGroups[pkey(r)] ||= []).push(r));
   const pairs = [], onlyG = [], onlyX = []; const allKeys = new Set([...Object.keys(gGroups), ...Object.keys(xGroups)]);
+  
   for (const k of allKeys) {
     const g = gGroups[k] || [], x = xGroups[k] || []; const usedG = new Set(), usedX = new Set();
     for (let i = 0; i < g.length; i++) { for (let j = 0; j < x.length; j++) { if (usedX.has(j)) continue; if (skey(g[i]) === skey(x[j])) { pairs.push([g[i], x[j], 'exact']); usedG.add(i); usedX.add(j); break; } } }
     const rg = g.filter((_, i) => !usedG.has(i)), rx = x.filter((_, j) => !usedX.has(j)); const minLen = Math.min(rg.length, rx.length);
     for (let i = 0; i < minLen; i++) pairs.push([rg[i], rx[i], 'fuzzy']); onlyG.push(...rg.slice(minLen)); onlyX.push(...rx.slice(minLen));
   }
+  
   const changes = [];
   for (const [gr, xr] of pairs) { for (const [fk, fl] of FIELDS) { if (!valuesEqualComp(gr[fk], xr[fk])) { changes.push({ id: gr.id, fo: gr['ФО'], obj: gr['объект'], stage_old: gr['этап'], stage_new: xr['этап'], field: fl, old: gr[fk], new: xr[fk] }); } } }
   renderCompareResults({ gRows, xRows, pairs, changes, onlyG, onlyX, mode: compareState.mode });
@@ -1233,11 +1249,9 @@ async function init() {
   try {
     const { headers, rows } = await loadGoogleSheet();
     allData = processData(headers, rows);
-    
     initFilters(allData);
     updateSortIcons();
     processAllData();
-    
   } catch (e) {
     $('dashboard-loading').innerHTML = `<span style="color:var(--danger)">Ошибка загрузки: ${e.message}</span>`;
   }
