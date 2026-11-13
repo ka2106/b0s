@@ -81,13 +81,12 @@ input:checked + .slider:before{transform:translateX(16px);}
 /* Таблица месяцев на дашборде */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
-.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
-/* Убираем table-layout: fixed, чтобы текст не накладывался */
+.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface); overflow-x: auto;}
 .year-table{width:100%; table-layout: auto; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; white-space: normal; word-break: break-word;}
-.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; white-space: nowrap;}
-.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; min-width: 120px;}
-.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; min-width: 100px;}
+.year-table th, .year-table td{padding:10px 8px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
+.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
+.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:18%; overflow:hidden; text-overflow:ellipsis;}
+.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:10%;}
 
 .text-delivered { color: #059669; font-weight: 600; }
 .text-planned { color: #4f46e5; font-weight: 600; }
@@ -161,7 +160,7 @@ th:first-child, td:first-child {
   padding-left: 16px;
 }
 
-/* Ширины колонок (новый порядок) */
+/* Ширины колонок */
 th:nth-child(1) { width: 18%; } /* Объект */
 th:nth-child(2) { width: 10%; } /* Категория */
 th:nth-child(3) { width: 10%; } /* Статус */
@@ -174,13 +173,11 @@ th:nth-child(9) { width: 9%; }  /* Источник */
 th:nth-child(10){ width: 9%; }  /* Повреждения */
 
 /* Логика скрытия/замены колонок */
-/* По умолчанию скрываем 10-ю колонку (Повреждения) */
 .table-container th:nth-child(10),
 .table-container td:nth-child(10) {
   display: none;
 }
 
-/* Если включен класс show-damage, скрываем 9-ю (Источник) и показываем 10-ю (Повреждения) */
 .table-container.show-damage th:nth-child(9),
 .table-container.show-damage td:nth-child(9) {
   display: none;
