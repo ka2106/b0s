@@ -7,9 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<!-- Подключение Яндекс.Карт -->
-<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
   --bg:#f1f5f9; --surface:#ffffff; --border:#e2e8f0; --text:#0f172a; --text-muted:#64748b;
@@ -58,13 +58,12 @@ input:checked + .slider:before{transform:translateX(16px);}
 .kpi-value{font-size:28px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.2;}
 .kpi-sub{font-size:12px;color:var(--text-muted);margin-top:auto;}
 
-/* Графики */
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 @media(max-width:900px){.charts-row{grid-template-columns:1fr;}}
-.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm); display:flex; flex-direction:column;}
+.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);}
 .chart-title{font-size:15px;font-weight:700;margin:0 0 16px 0;}
 
-.bar-chart{display:flex;flex-direction:column;gap:12px; flex:1; justify-content:space-around;}
+.bar-chart{display:flex;flex-direction:column;gap:12px;}
 .bar-item{display:flex;align-items:center;gap:12px;}
 .bar-label{width:140px;font-size:13px;font-weight:500;color:var(--text-muted);text-align:right;flex-shrink:0;}
 .bar-track{flex:1;height:24px;background:var(--bg);border-radius:4px;overflow:hidden;display:flex;align-items:center;}
@@ -78,12 +77,12 @@ input:checked + .slider:before{transform:translateX(16px);}
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
-/* Таблица месяцев на дашборде */
+/* Таблица месяцев на дашборде (ВАШ РАБОЧИЙ ВАРИАНТ) */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
-.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface); overflow-x: auto;}
-.year-table{width:100%; table-layout: auto; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:10px 8px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
+.year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
+.year-table{width:100%; table-layout: fixed; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
+.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
 .year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
 .year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:18%; overflow:hidden; text-overflow:ellipsis;}
 .year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:10%;}
@@ -103,14 +102,10 @@ input:checked + .slider:before{transform:translateX(16px);}
 }
 .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; pointer-events: auto; }
 
-/* Таблица реестра */
-.table-layout{display:flex;gap:20px;align-items:stretch;}
+.table-layout{display:flex;gap:20px;align-items:flex-start;}
 @media(max-width:900px){.table-layout{flex-direction:column;}}
-.sidebar{
-  width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;
-  overflow-y:auto; display:flex; flex-direction:column;
-}
+.sidebar{width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;position:sticky;top:24px;}
+
 .filter-group{border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px;}
 .filter-group:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
 .filter-header{display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; padding:4px 0;}
@@ -131,53 +126,27 @@ input:checked + .slider:before{transform:translateX(16px);}
 .checkbox-item input[type="checkbox"]:checked{background:var(--accent);border-color:var(--accent);}
 .checkbox-item input[type="checkbox"]:checked::after{content:'';position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid white;border-width:0 2px 2px 0;transform:rotate(45deg);}
 
-.table-container{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden; display:flex; flex-direction:column; min-width: 0;}
-.table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; flex-wrap: wrap; gap: 12px;}
+.table-container{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;}
+.table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .table-title{font-size:16px;font-weight:700;}
 
-/* Основная таблица */
-.table-scroll{flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden;}
-table{width:100%;border-collapse:collapse;font-size:12px; table-layout: fixed;}
+/* Основная таблица (ВАШ РАБОЧИЙ ВАРИАНТ, добавлена логика скрытия) */
+table{width:100%;border-collapse:collapse;font-size:12px;}
 
-th{
-  background:var(--bg);color:var(--text-muted);padding:12px 6px;text-align:left;
-  font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;user-select:none; 
-  white-space: nowrap;
-  vertical-align: middle; 
-}
-th:hover{background:#e2e8f0; color:var(--text);}
-th svg { display:inline-block; vertical-align:middle; margin-left:4px; width:14px; height:14px; transition: transform 0.2s; }
-
-td{
-  padding:12px 6px;border-bottom:1px solid var(--border);
-  vertical-align:middle !important; 
-  white-space: normal; word-break: break-word; font-size: 12px;
-}
+/* Добавляем отступ слева для заголовков и ячеек, чтобы не прилипало к краю */
+th{padding:12px 8px; text-align:left; font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; background:var(--bg); color:var(--text-muted); cursor:pointer; user-select:none;}
+th:first-child, td:first-child { padding-left: 16px; }
+td{padding:12px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
 tbody tr:hover td{background:var(--bg);}
 
-/* Выравнивание первой колонки */
-th:first-child, td:first-child {
-  padding-left: 16px;
-}
-
-/* Ширины колонок */
-th:nth-child(1) { width: 18%; } /* Объект */
-th:nth-child(2) { width: 10%; } /* Категория */
-th:nth-child(3) { width: 10%; } /* Статус */
-th:nth-child(4) { width: 11%; } /* Строительство */
-th:nth-child(5) { width: 7%; }  /* Мезонин */
-th:nth-child(6) { width: 7%; }  /* Оперзона */
-th:nth-child(7) { width: 9%; }  /* Заморозка */
-th:nth-child(8) { width: 10%; } /* РВ */
-th:nth-child(9) { width: 9%; }  /* Источник */
-th:nth-child(10){ width: 9%; }  /* Повреждения */
-
 /* Логика скрытия/замены колонок */
+/* По умолчанию скрываем 10-ю колонку (Повреждения) */
 .table-container th:nth-child(10),
 .table-container td:nth-child(10) {
   display: none;
 }
 
+/* Если включен класс show-damage, скрываем 9-ю (Источник) и показываем 10-ю (Повреждения) */
 .table-container.show-damage th:nth-child(9),
 .table-container.show-damage td:nth-child(9) {
   display: none;
@@ -187,7 +156,7 @@ th:nth-child(10){ width: 9%; }  /* Повреждения */
   display: table-cell;
 }
 
-.status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 6px;border-radius:6px;font-size:11px;font-weight:500;}
+.status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;}
 .status-badge.delivered{background:var(--success-bg);color:var(--success);}
 .status-badge.planned{background:var(--info-bg);color:var(--info);}
 .status-badge.danger{background:var(--danger-bg);color:var(--danger);}
@@ -273,7 +242,6 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
         </div>
         Показывать БВС
       </label>
-      
       <nav class="nav-tabs">
         <button class="nav-btn active" data-tab="dashboard">Дашборд</button>
         <button class="nav-btn" data-tab="table">Таблица</button>
@@ -330,7 +298,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
-            <div class="filter-group">
+            <div class="filter-group open">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <div class="filter-title-wrap">
                   <span class="filter-title">ФО</span>
@@ -389,7 +357,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                 <button class="btn btn-secondary" id="btn-export-excel">Экспорт в Excel</button>
               </div>
             </div>
-            <div class="table-scroll">
+            <div style="overflow-x:auto;">
               <table>
                 <thead>
                   <tr>
@@ -508,12 +476,9 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     $('tab-' + btn.dataset.tab).style.display = 'block';
     
     if (btn.dataset.tab === 'map') {
-      if (!map) {
-        initMap();
-      } else {
-        map.container.fitToViewport();
-        updateMap();
-      }
+      if (!map) initMap();
+      else map.invalidateSize();
+      updateMap();
     }
   };
 });
@@ -523,7 +488,6 @@ $('toggle-bvs').onchange = (e) => {
   processAllData();
 };
 
-// Обработчик тумблера повреждений
 $('toggle-damage').onchange = (e) => {
   const tableContainer = document.getElementById('main-table-container');
   if (e.target.checked) {
@@ -617,49 +581,21 @@ function processData(headers, rows) {
 function processAllData() {
   rawData = showBVS ? allData : allData.filter(r => !r.isBVS);
   
-  if (filters.fo.size === 0) filters.fo = new Set([...new Set(rawData.map(r => r.fo).filter(Boolean))].sort());
-  if (filters.obj.size === 0) filters.obj = new Set([...new Set(rawData.map(r => r.obj).filter(Boolean))].sort());
-  if (filters.category.size === 0) filters.category = new Set([...new Set(rawData.map(r => r.category).filter(Boolean))].sort());
-  if (filters.status.size === 0) filters.status = new Set([...new Set(rawData.map(r => r.status).filter(Boolean))].sort());
+  if (filters.fo === null) filters.fo = new Set([...new Set(rawData.map(r => r.fo).filter(Boolean))].sort());
+  if (filters.obj === null) filters.obj = new Set([...new Set(rawData.map(r => r.obj).filter(Boolean))].sort());
+  if (filters.category === null) filters.category = new Set([...new Set(rawData.map(r => r.category).filter(Boolean))].sort());
+  if (filters.status === null) filters.status = new Set([...new Set(rawData.map(r => r.status).filter(Boolean))].sort());
 
-  renderCheckboxes();
+  document.querySelectorAll('.checkbox-item input').forEach(cb => {
+    const fk = cb.dataset.filter;
+    if (filters[fk]) {
+      cb.checked = filters[fk].has(cb.value);
+    }
+  });
 
   applyFilters();
   renderDashboard(rawData);
   if (map) updateMap();
-}
-
-function renderCheckboxes() {
-  const render = (id, items, key) => { 
-    $(id).innerHTML = items.map(item => `
-      <label class="checkbox-item">
-        <input type="checkbox" data-filter="${key}" value="${item}" ${filters[key].has(item) ? 'checked' : ''}>
-        <span>${item || '(пусто)'}</span>
-      </label>`).join(''); 
-  };
-  render('filter-fo', [...new Set(rawData.map(r => r.fo).filter(Boolean))].sort(), 'fo');
-  render('filter-obj', [...new Set(rawData.map(r => r.obj).filter(Boolean))].sort(), 'obj');
-  render('filter-category', [...new Set(rawData.map(r => r.category).filter(Boolean))].sort(), 'category');
-  render('filter-status', [...new Set(rawData.map(r => r.status).filter(Boolean))].sort(), 'status');
-
-  document.querySelectorAll('.checkbox-item input').forEach(cb => {
-    cb.onchange = () => { 
-      const fk = cb.dataset.filter; 
-      if (cb.checked) filters[fk].add(cb.value); 
-      else filters[fk].delete(cb.value); 
-      applyFilters(); 
-    };
-  });
-  document.querySelectorAll('.filter-actions').forEach(btn => {
-    btn.onclick = (e) => {
-      e.stopPropagation(); const target = btn.dataset.target; const action = btn.dataset.action;
-      document.querySelectorAll(`input[data-filter="${target}"]`).forEach(cb => { 
-        cb.checked = (action === 'all'); 
-        if (action === 'all') filters[target].add(cb.value); else filters[target].delete(cb.value); 
-      });
-      applyFilters();
-    };
-  });
 }
 
 function drillDown(type) {
@@ -676,7 +612,11 @@ function drillDown(type) {
     filters.status = new Set(['В работе']);
   }
   
-  renderCheckboxes();
+  document.querySelectorAll('.checkbox-item input').forEach(cb => {
+    const fk = cb.dataset.filter;
+    cb.checked = filters[fk].has(cb.value);
+  });
+
   applyFilters();
 }
 
@@ -728,16 +668,16 @@ function renderDashboard(data) {
       return `<div class="bar-item"><div class="bar-label">${status}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${statusColors[status] || 'var(--accent)'};"></div></div><div class="bar-value">${fmt(area)}</div></div>`;
   }).join('');
 
-  let yearMap = { 'Ранее': 0, 'Далее': 0 };
+  let yearMap = { 'Ранее': 0, '2027+': 0 };
   data.forEach(r => { 
     if (r.rvDate) { 
       const y = r.rvDate.getFullYear(); 
-      if (y < 2024) {
+      if (y < 2023) {
         yearMap['Ранее'] += r.areaBuild;
       } else if (y <= currentYear) {
         yearMap[y] = (yearMap[y] || 0) + r.areaBuild; 
       } else {
-        yearMap['Далее'] += r.areaBuild;
+        yearMap['2027+'] += r.areaBuild;
       }
     } 
   });
@@ -745,8 +685,8 @@ function renderDashboard(data) {
   const sortedYears = Object.keys(yearMap).sort((a,b) => {
     if (a === 'Ранее') return -1;
     if (b === 'Ранее') return 1;
-    if (a === 'Далее') return 1;
-    if (b === 'Далее') return -1;
+    if (a === '2027+') return 1;
+    if (b === '2027+') return -1;
     return a - b;
   });
   
@@ -822,6 +762,44 @@ function initYearTable(data) {
   renderTable(new Date().getFullYear());
 }
 
+function initFilters(data) {
+  const uniqueFo = [...new Set(data.map(r => r.fo).filter(Boolean))].sort();
+  const uniqueObj = [...new Set(data.map(r => r.obj).filter(Boolean))].sort();
+  const uniqueCategory = [...new Set(data.map(r => r.category).filter(Boolean))].sort();
+  const uniqueStatus = [...new Set(data.map(r => r.status).filter(Boolean))].sort();
+  
+  const renderCheckboxes = (id, items, key) => { 
+    $(id).innerHTML = items.map(item => `
+      <label class="checkbox-item">
+        <input type="checkbox" data-filter="${key}" value="${item}" ${filters[key] ? (filters[key].has(item) ? 'checked' : '') : 'checked'}>
+        <span>${item || '(пусто)'}</span>
+      </label>`).join(''); 
+  };
+  renderCheckboxes('filter-fo', uniqueFo, 'fo'); 
+  renderCheckboxes('filter-obj', uniqueObj, 'obj'); 
+  renderCheckboxes('filter-category', uniqueCategory, 'category'); 
+  renderCheckboxes('filter-status', uniqueStatus, 'status');
+  
+  document.querySelectorAll('.checkbox-item input').forEach(cb => {
+    cb.onchange = () => { 
+      const fk = cb.dataset.filter; 
+      if (cb.checked) filters[fk].add(cb.value); 
+      else filters[fk].delete(cb.value); 
+      applyFilters(); 
+    };
+  });
+  document.querySelectorAll('.filter-actions').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation(); const target = btn.dataset.target; const action = btn.dataset.action;
+      document.querySelectorAll(`input[data-filter="${target}"]`).forEach(cb => { 
+        cb.checked = (action === 'all'); 
+        if (action === 'all') filters[target].add(cb.value); else filters[target].delete(cb.value); 
+      });
+      applyFilters();
+    };
+  });
+}
+
 function sortTable(col) {
   if (sortState.col === col) {
     sortState.dir *= -1;
@@ -868,8 +846,10 @@ function applyFilters() {
       return String(valA).localeCompare(String(valB)) * sortState.dir;
     });
   }
-  
+
   renderTable();
+  updateURL(); 
+  if (map) updateMap();
 }
 
 function renderTable() {
@@ -878,19 +858,16 @@ function renderTable() {
     let statusClass = 'planned'; if (r.status === 'Завершен') statusClass = 'delivered'; if (r.status === 'Утрачен' || r.status === 'Отказ от строительства') statusClass = 'danger';
     const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" class="raw-link">${r.rvText}</a>` : linkify(r.rvText || '—');
     return `<tr>
-        <td class="text-left">
-          <div style="font-weight:600;color:var(--text)">${r.obj}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.stage}</div>
-        </td>
+        <td class="text-left"><div style="font-weight:600;color:var(--text)">${r.obj}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.stage}</div></td>
         <td class="text-left">${r.category}</td>
         <td class="text-center"><span class="status-badge ${statusClass}">${r.status}</span></td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaBuild)}</td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaMezzanine)}</td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaOper)}</td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaFreeze)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${fmt(r.areaBuild)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums">${fmt(r.areaMezzanine)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums">${fmt(r.areaOper)}</td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${fmt(r.areaFreeze)}</td>
         <td class="text-center">${dateHtml}</td>
-        <td class="text-left" style="color:var(--text-muted);">${r.source}</td>
-        <td class="text-left" style="color:var(--text-muted);">${r.damage}</td>
+        <td class="text-left" style="color:var(--text-muted);font-size:11px;max-width:150px;white-space:normal;">${r.source}</td>
+        <td class="text-left" style="color:var(--text-muted);font-size:11px;max-width:200px;white-space:normal;">${r.damage}</td>
       </tr>`;
   }).join('');
 }
@@ -917,26 +894,21 @@ $('btn-export-excel').onclick = async () => {
   URL.revokeObjectURL(url);
 };
 
-// Инициализация Яндекс.Карт
 function initMap() {
-  ymaps.ready(() => {
-    map = new ymaps.Map("map", {
-      center: [61.5240, 90.3180],
-      zoom: 3,
-      controls: ['zoomControl', 'fullscreenControl']
-    });
-    markersLayer = new ymaps.GeoObjectCollection();
-    map.geoObjects.add(markersLayer);
-    updateMap(); 
-  });
+  map = L.map('map').setView([61.5240, 90.3180], 3);
+  // Используем светлую подложку CartoDB
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CartoDB'
+  }).addTo(map);
+  markersLayer = L.layerGroup().addTo(map);
 }
 
 function updateMap() {
-  if (!map || !markersLayer) return;
-  markersLayer.removeAll();
+  if (!map) return;
+  markersLayer.clearLayers();
   const grouped = {};
   
-  rawData.forEach(r => {
+  filteredData.forEach(r => {
     if (!cityCoords[r.obj]) return;
     if (!grouped[r.obj]) grouped[r.obj] = { coords: cityCoords[r.obj], area: 0, count: 0, status: r.status };
     grouped[r.obj].area += r.areaBuild;
@@ -944,36 +916,33 @@ function updateMap() {
   });
 
   Object.entries(grouped).forEach(([city, d]) => {
-    const radius = Math.max(40000, Math.sqrt(d.area) * 150);
+    // Правильная формула масштабирования: корень из площади * коэффициент
+    const radius = Math.max(10000, Math.sqrt(d.area) * 50);
+    const color = d.status === 'Завершен' ? '#10b981' : (d.status === 'В работе' ? '#0ea5e9' : '#ef4444');
     
-    let fillColor = 'rgba(239, 68, 68, 0.6)'; 
-    let strokeColor = '#ef4444';
-    if (d.status === 'Завершен') { fillColor = 'rgba(16, 185, 129, 0.6)'; strokeColor = '#10b981'; }
-    else if (d.status === 'В работе') { fillColor = 'rgba(14, 165, 233, 0.6)'; strokeColor = '#0ea5e9'; }
-    
-    const circle = new ymaps.Circle([d.coords, radius], {
-      hintContent: city,
-      balloonContentHeader: `<b style="font-size:14px;">${city}</b>`,
-      balloonContentBody: `
-        <div style="font-family:'Inter',sans-serif; font-size:13px; min-width:150px;">
-          Объектов: ${d.count}<br>
-          Площадь: ${fmt(d.area)} м²<br>
-          <a href="#" onclick="drillDownMap('${city}');return false;" style="display:inline-block; margin-top:6px; color:#4f46e5; font-weight:600; text-decoration:none;">Показать в таблице</a>
-        </div>
-      `
-    }, {
-      fillColor: fillColor,
-      strokeColor: strokeColor,
-      strokeWidth: 2
-    });
-    markersLayer.add(circle);
+    L.circle(d.coords, {
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.4,
+      radius: radius,
+      weight: 2
+    }).bindPopup(`
+      <div style="font-family:'Inter',sans-serif; font-size:13px; min-width:150px;">
+        <b style="font-size:14px;">${city}</b><br>
+        Объектов: ${d.count}<br>
+        Площадь: ${fmt(d.area)} м²<br>
+        <a href="#" onclick="drillDownMap('${city}');return false;" style="display:inline-block; margin-top:6px; color:var(--accent); font-weight:600; text-decoration:none;">Показать в таблице</a>
+      </div>
+    `).addTo(markersLayer);
   });
 }
 
 function drillDownMap(city) {
   document.querySelector('.nav-btn[data-tab="table"]').click();
   filters.obj = new Set([city]);
-  renderCheckboxes();
+  document.querySelectorAll('input[data-filter="obj"]').forEach(cb => {
+    cb.checked = filters.obj.has(cb.value);
+  });
   applyFilters();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1146,12 +1115,9 @@ async function init() {
     const { headers, rows } = await loadGoogleSheet();
     allData = processData(headers, rows);
     
-    filters.fo = new Set([...new Set(allData.map(r => r.fo).filter(Boolean))].sort());
-    filters.obj = new Set([...new Set(allData.map(r => r.obj).filter(Boolean))].sort());
-    filters.category = new Set([...new Set(allData.map(r => r.category).filter(Boolean))].sort());
-    filters.status = new Set([...new Set(allData.map(r => r.status).filter(Boolean))].sort());
-    
-    updateSortIcons();
+    readURL();
+    initFilters(allData);
+    updateSortIcons(); // Инициализируем иконки сортировки
     processAllData();
     
   } catch (e) {
