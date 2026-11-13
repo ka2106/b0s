@@ -7,9 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Подключение Яндекс.Карт -->
+<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU"></script>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
   --bg:#f1f5f9; --surface:#ffffff; --border:#e2e8f0; --text:#0f172a; --text-muted:#64748b;
@@ -77,7 +77,7 @@ input:checked + .slider:before{transform:translateX(16px);}
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
-/* Таблица месяцев на дашборде */
+/* Таблица месяцев на дашборде (ТОЧНО КАК В РАБОЧЕМ ВАРИАНТЕ) */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
 .year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
@@ -133,9 +133,26 @@ input:checked + .slider:before{transform:translateX(16px);}
 /* Основная таблица */
 table{width:100%;border-collapse:collapse;font-size:12px;}
 
-th{padding:12px 8px; text-align:left; font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; background:var(--bg); color:var(--text-muted); cursor:pointer; user-select:none;}
+/* Центрирование по вертикали и отступы */
+th{
+  padding:12px 8px; 
+  text-align:left; 
+  font-weight:600; 
+  border-bottom:1px solid var(--border); 
+  white-space:nowrap; 
+  background:var(--bg); 
+  color:var(--text-muted); 
+  cursor:pointer; 
+  user-select:none;
+  vertical-align: middle;
+}
 th:first-child, td:first-child { padding-left: 16px; }
-td{padding:12px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+td{
+  padding:12px 8px;
+  border-bottom:1px solid var(--border);
+  vertical-align: middle !important; /* Принудительное центрирование */
+  line-height: 1.4;
+}
 tbody tr:hover td{background:var(--bg);}
 
 /* Логика скрытия/замены колонок */
@@ -295,7 +312,8 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
       <div id="tab-table" class="tab-content" style="display:none;">
         <div class="table-layout">
           <aside class="sidebar">
-            <div class="filter-group open">
+            <!-- Убрали класс open по умолчанию -->
+            <div class="filter-group">
               <div class="filter-header" onclick="this.closest('.filter-group').classList.toggle('open')">
                 <div class="filter-title-wrap">
                   <span class="filter-title">ФО</span>
@@ -473,9 +491,12 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     $('tab-' + btn.dataset.tab).style.display = 'block';
     
     if (btn.dataset.tab === 'map') {
-      if (!map) initMap();
-      else map.invalidateSize();
-      updateMap();
+      if (!map) {
+        initMap();
+      } else {
+        map.container.fitToViewport();
+        updateMap();
+      }
     }
   };
 });
@@ -845,7 +866,7 @@ function applyFilters() {
   }
 
   renderTable();
-  if (map) updateMap();
+  // Карта обновляется независимо от фильтров таблицы (через rawData)
 }
 
 function renderTable() {
@@ -890,20 +911,27 @@ $('btn-export-excel').onclick = async () => {
   URL.revokeObjectURL(url);
 };
 
+// Инициализация Яндекс.Карт
 function initMap() {
-  map = L.map('map').setView([61.5240, 90.3180], 3);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap, © CartoDB'
-  }).addTo(map);
-  markersLayer = L.layerGroup().addTo(map);
+  ymaps.ready(() => {
+    map = new ymaps.Map("map", {
+      center: [61.5240, 90.3180],
+      zoom: 3,
+      controls: ['zoomControl', 'fullscreenControl']
+    });
+    markersLayer = new ymaps.GeoObjectCollection();
+    map.geoObjects.add(markersLayer);
+    updateMap();
+  });
 }
 
 function updateMap() {
-  if (!map) return;
-  markersLayer.clearLayers();
+  if (!map || !markersLayer) return;
+  markersLayer.removeAll();
   const grouped = {};
   
-  filteredData.forEach(r => {
+  // Карта не зависит от фильтров таблицы, использует rawData
+  rawData.forEach(r => {
     if (!cityCoords[r.obj]) return;
     if (!grouped[r.obj]) grouped[r.obj] = { coords: cityCoords[r.obj], area: 0, count: 0, status: r.status };
     grouped[r.obj].area += r.areaBuild;
@@ -911,23 +939,29 @@ function updateMap() {
   });
 
   Object.entries(grouped).forEach(([city, d]) => {
-    const radius = Math.max(10000, Math.sqrt(d.area) * 50);
-    const color = d.status === 'Завершен' ? '#10b981' : (d.status === 'В работе' ? '#0ea5e9' : '#ef4444');
+    const radius = Math.max(40000, Math.sqrt(d.area) * 150);
     
-    L.circle(d.coords, {
-      color: color,
-      fillColor: color,
-      fillOpacity: 0.4,
-      radius: radius,
-      weight: 2
-    }).bindPopup(`
-      <div style="font-family:'Inter',sans-serif; font-size:13px; min-width:150px;">
-        <b style="font-size:14px;">${city}</b><br>
-        Объектов: ${d.count}<br>
-        Площадь: ${fmt(d.area)} м²<br>
-        <a href="#" onclick="drillDownMap('${city}');return false;" style="display:inline-block; margin-top:6px; color:var(--accent); font-weight:600; text-decoration:none;">Показать в таблице</a>
-      </div>
-    `).addTo(markersLayer);
+    let fillColor = 'rgba(239, 68, 68, 0.6)'; 
+    let strokeColor = '#ef4444';
+    if (d.status === 'Завершен') { fillColor = 'rgba(16, 185, 129, 0.6)'; strokeColor = '#10b981'; }
+    else if (d.status === 'В работе') { fillColor = 'rgba(14, 165, 233, 0.6)'; strokeColor = '#0ea5e9'; }
+    
+    const circle = new ymaps.Circle([d.coords, radius], {
+      hintContent: city,
+      balloonContentHeader: `<b style="font-size:14px;">${city}</b>`,
+      balloonContentBody: `
+        <div style="font-family:'Inter',sans-serif; font-size:13px; min-width:150px;">
+          Объектов: ${d.count}<br>
+          Площадь: ${fmt(d.area)} м²<br>
+          <a href="#" onclick="drillDownMap('${city}');return false;" style="display:inline-block; margin-top:6px; color:var(--accent); font-weight:600; text-decoration:none;">Показать в таблице</a>
+        </div>
+      `
+    }, {
+      fillColor: fillColor,
+      strokeColor: strokeColor,
+      strokeWidth: 2
+    });
+    markersLayer.add(circle);
   });
 }
 
@@ -1110,7 +1144,7 @@ async function init() {
     allData = processData(headers, rows);
     
     initFilters(allData);
-    updateSortIcons(); // Инициализируем иконки сортировки
+    updateSortIcons();
     processAllData();
     
   } catch (e) {
