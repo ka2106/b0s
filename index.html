@@ -78,7 +78,7 @@ input:checked + .slider:before{transform:translateX(16px);}
 .delivery-obj{flex:1;margin:0 12px; display: flex; flex-direction: column;}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
-/* ТАБЛИЦА МЕСЯЦЕВ (фикс ширины колонок) */
+/* ТАБЛИЦА МЕСЯЦЕВ */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
 .year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
@@ -87,7 +87,6 @@ input:checked + .slider:before{transform:translateX(16px);}
 .year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
 .year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:16%; overflow:hidden; text-overflow:ellipsis;}
 .year-table th:last-child, .year-table td:last-child{text-align:right; font-weight:700; padding-right:12px; width:9%;}
-/* Ровно по 6.25% на каждый месяц (100 - 16 - 9 = 75 / 12 = 6.25) */
 .year-table th:not(:first-child):not(:last-child) { width: 6.25%; }
 
 .text-delivered { color: var(--success); font-weight: 600; }
@@ -105,11 +104,9 @@ input:checked + .slider:before{transform:translateX(16px);}
 }
 .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; pointer-events: auto; }
 
-/* РАЗДЕЛ ТАБЛИЦЫ (Сайдбар теперь "липкий") */
-.table-layout{display:flex;gap:20px;align-items:flex-start; flex-wrap: nowrap;}
-/* Порог для мобильных теперь 768px, чтобы на ноутбуках фильтры не уезжали вниз */
+/* РАЗДЕЛ ТАБЛИЦЫ */
+.table-layout{display:flex;gap:20px;align-items:flex-start;}
 @media(max-width:768px){.table-layout{flex-direction:column;}}
-
 .sidebar{
   width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;
@@ -145,16 +142,22 @@ input:checked + .slider:before{transform:translateX(16px);}
 
 /* ОСНОВНАЯ ТАБЛИЦА */
 .table-scroll{flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden;}
+
+/* Делаем шапку "липкой" */
 table{width:100%;border-collapse:collapse;font-size:12px; table-layout: fixed;}
+thead { position: sticky; top: 0; z-index: 5; background: var(--bg); }
 
 th{
-  background:var(--bg);color:var(--text-muted);padding:12px 6px;text-align:left;
+  background:var(--bg);color:var(--text-muted);padding:10px 6px;text-align:left;
   font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;user-select:none; 
-  white-space: normal; word-break: break-word;
+  white-space: nowrap; /* Запрещаем перенос в шапке */
+  overflow: hidden; text-overflow: ellipsis;
   vertical-align: middle; 
+  font-size: 11px; /* Чуть уменьшили шрифт шапки */
+  text-transform: uppercase; letter-spacing: 0.02em;
 }
 th:hover{background:#e2e8f0; color:var(--text);}
-th svg { display:inline-block; vertical-align:middle; margin-left:4px; width:14px; height:14px; transition: transform 0.2s; }
+th svg { display:inline-block; vertical-align:middle; margin-left:4px; width:12px; height:12px; transition: transform 0.2s; }
 
 td{
   padding:12px 6px;border-bottom:1px solid var(--border);
@@ -165,7 +168,7 @@ tbody tr:hover td{background:var(--bg);}
 
 th:first-child, td:first-child { padding-left: 16px; }
 
-/* Ширины колонок */
+/* Ширины колонок (идеальная математика для десктопа) */
 th:nth-child(1) { width: 16%; } /* Объект */
 th:nth-child(2) { width: 8%; }  /* Категория */
 th:nth-child(3) { width: 10%; } /* Статус */
@@ -180,6 +183,29 @@ th:nth-child(10){ width: 23%; } /* Повреждения */
 .table-container th:nth-child(10), .table-container td:nth-child(10) { display: none; }
 .table-container.show-damage th:nth-child(9), .table-container.show-damage td:nth-child(9) { display: none; }
 .table-container.show-damage th:nth-child(10), .table-container.show-damage td:nth-child(10) { display: table-cell; }
+
+/* --- АДАПТИВНОСТЬ КОЛОНОК --- */
+/* Если экран меньше 1400px, скрываем "Источник" (или Повреждения, если они включены) */
+@media(max-width: 1400px) {
+  th:nth-child(9), td:nth-child(9) { display: none !important; }
+  .table-container.show-damage th:nth-child(10), .table-container.show-damage td:nth-child(10) { display: none !important; }
+  
+  /* Перераспределяем ширину */
+  th:nth-child(1) { width: 20%; }
+  th:nth-child(4) { width: 15%; }
+}
+
+/* Если экран меньше 1200px, скрываем еще и оперзону с мезонином */
+@media(max-width: 1200px) {
+  th:nth-child(5), td:nth-child(5),
+  th:nth-child(6), td:nth-child(6) { display: none !important; }
+  
+  th:nth-child(1) { width: 25%; }
+  th:nth-child(3) { width: 15%; }
+  th:nth-child(4) { width: 15%; }
+  th:nth-child(7) { width: 15%; }
+  th:nth-child(8) { width: 15%; }
+}
 
 /* Цвета статусов */
 .status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:500;}
@@ -210,7 +236,7 @@ th:nth-child(10){ width: 23%; } /* Повреждения */
   }
   
   td { 
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex !important; justify-content: space-between; align-items: center;
     border-bottom: 1px solid var(--bg); padding: 8px 0; text-align: right !important; font-size: 13px;
   }
   td:last-child { border-bottom: none; }
@@ -220,9 +246,9 @@ th:nth-child(10){ width: 23%; } /* Повреждения */
     font-size: 12px; text-align: left; margin-right: 16px;
   }
   
-  td:empty { display: none; }
+  td:empty { display: none !important; }
   td:nth-child(1) { 
-    padding-left: 0; text-align: left !important; display: block; 
+    padding-left: 0; text-align: left !important; display: block !important; 
     border-bottom: 2px solid var(--border); margin-bottom: 8px; padding-bottom: 12px; padding-top: 0;
   }
   td:nth-child(1)::before { display: none; }
@@ -425,16 +451,16 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
               <table>
                 <thead>
                   <tr>
-                    <th class="text-left" onclick="sortTable('obj')">Объект / Этап <span id="sort-obj"></span></th>
-                    <th class="text-left" onclick="sortTable('category')">Категория <span id="sort-category"></span></th>
-                    <th class="text-center" onclick="sortTable('status')">Статус <span id="sort-status"></span></th>
-                    <th class="text-right" onclick="sortTable('areaBuild')">Стройка <span id="sort-areaBuild"></span></th>
-                    <th class="text-right" onclick="sortTable('areaMezzanine')">Мезонин <span id="sort-areaMezzanine"></span></th>
-                    <th class="text-right" onclick="sortTable('areaOper')">Оперзона <span id="sort-areaOper"></span></th>
-                    <th class="text-right" onclick="sortTable('areaFreeze')">Заморозка <span id="sort-areaFreeze"></span></th>
-                    <th class="text-center" onclick="sortTable('rvText')">РВ (Дата) <span id="sort-rvText"></span></th>
-                    <th class="text-left" onclick="sortTable('source')">Источник данных <span id="sort-source"></span></th>
-                    <th class="text-left" onclick="sortTable('damage')">Повреждения <span id="sort-damage"></span></th>
+                    <th class="text-left" onclick="sortTable('obj')" title="Объект / Этап">Объект / Этап <span id="sort-obj"></span></th>
+                    <th class="text-left" onclick="sortTable('category')" title="Категория">Категория <span id="sort-category"></span></th>
+                    <th class="text-center" onclick="sortTable('status')" title="Статус">Статус <span id="sort-status"></span></th>
+                    <th class="text-right" onclick="sortTable('areaBuild')" title="Стройка">Стройка <span id="sort-areaBuild"></span></th>
+                    <th class="text-right" onclick="sortTable('areaMezzanine')" title="Мезонин">Мезонин <span id="sort-areaMezzanine"></span></th>
+                    <th class="text-right" onclick="sortTable('areaOper')" title="Оперзона">Оперзона <span id="sort-areaOper"></span></th>
+                    <th class="text-right" onclick="sortTable('areaFreeze')" title="Заморозка">Заморозка <span id="sort-areaFreeze"></span></th>
+                    <th class="text-center" onclick="sortTable('rvText')" title="РВ (Дата)">РВ (Дата) <span id="sort-rvText"></span></th>
+                    <th class="text-left" onclick="sortTable('source')" title="Источник данных">Источник <span id="sort-source"></span></th>
+                    <th class="text-left" onclick="sortTable('damage')" title="Повреждения">Повреждения <span id="sort-damage"></span></th>
                   </tr>
                 </thead>
                 <tbody id="table-body"></tbody>
@@ -898,10 +924,10 @@ function updateSortIcons() {
     if (!el) return;
     if (sortState.col === c) {
       el.innerHTML = sortState.dir === 1 
-        ? `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(180deg); opacity: 1; vertical-align: middle; width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>` 
-        : `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 1; vertical-align: middle; width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        ? `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(180deg); opacity: 1; vertical-align: middle; width: 12px; height: 12px;"><polyline points="6 9 12 15 18 9"></polyline></svg>` 
+        : `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 1; vertical-align: middle; width: 12px; height: 12px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     } else {
-      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.2; vertical-align: middle; width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.2; vertical-align: middle; width: 12px; height: 12px;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     }
   });
 }
