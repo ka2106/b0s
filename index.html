@@ -78,15 +78,16 @@ input:checked + .slider:before{transform:translateX(16px);}
 .delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
-/* Таблица месяцев на дашборде (как в оригинале) */
+/* Таблица месяцев на дашборде */
 .year-controls{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
 .year-select{padding:6px 12px; border-radius:6px; border:1px solid var(--border); font-family:inherit; font-weight:600; color:var(--text); background:#fff; cursor:pointer;}
 .year-table-wrap{width:100%; border:1px solid var(--border); border-radius:var(--radius-sm); background: var(--surface);}
-.year-table{width:100%; table-layout: fixed; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
-.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; white-space: nowrap;}
-.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600;}
-.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; width:18%; overflow:hidden; text-overflow:ellipsis;}
-.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; width:10%;}
+/* Убираем table-layout: fixed, чтобы текст не накладывался */
+.year-table{width:100%; table-layout: auto; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums;}
+.year-table th, .year-table td{padding:10px 4px; border-bottom:1px solid var(--border); text-align:center; white-space: normal; word-break: break-word;}
+.year-table th{background:var(--bg); color:var(--text-muted); font-weight:600; white-space: nowrap;}
+.year-table th:first-child, .year-table td:first-child{text-align:left; padding-left:12px; min-width: 120px;}
+.year-table td:last-child, .year-table th:last-child{text-align:right; font-weight:700; padding-right:12px; min-width: 100px;}
 
 .text-delivered { color: #059669; font-weight: 600; }
 .text-planned { color: #4f46e5; font-weight: 600; }
@@ -135,43 +136,58 @@ input:checked + .slider:before{transform:translateX(16px);}
 .table-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; flex-wrap: wrap; gap: 12px;}
 .table-title{font-size:16px;font-weight:700;}
 
-/* Основная таблица (без горизонтальной прокрутки) */
+/* Основная таблица */
 .table-scroll{flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden;}
 table{width:100%;border-collapse:collapse;font-size:12px; table-layout: fixed;}
 
 th{
   background:var(--bg);color:var(--text-muted);padding:12px 6px;text-align:left;
   font-weight:600;border-bottom:1px solid var(--border);cursor:pointer;user-select:none; 
-  white-space: nowrap; /* Запрет переноса заголовков */
+  white-space: nowrap;
   vertical-align: middle; 
 }
 th:hover{background:#e2e8f0; color:var(--text);}
-th svg { display:inline-block; vertical-align:middle; margin-left:4px; width:14px; height:14px; opacity:0.4; }
-th svg.active { opacity:1; color:var(--accent); }
+th svg { display:inline-block; vertical-align:middle; margin-left:4px; width:14px; height:14px; transition: transform 0.2s; }
 
 td{
   padding:12px 6px;border-bottom:1px solid var(--border);
-  vertical-align:middle !important; /* Принудительное выравнивание по центру */
+  vertical-align:middle !important; 
   white-space: normal; word-break: break-word; font-size: 12px;
 }
 tbody tr:hover td{background:var(--bg);}
 
-/* Ширины колонок в сумме 100% */
-th:nth-child(1) { width: 16%; } /* Объект */
-th:nth-child(2) { width: 8%; }  /* Категория */
-th:nth-child(3) { width: 10%; } /* Статус */
-th:nth-child(4) { width: 7%; }  /* Мезонин */
-th:nth-child(5) { width: 7%; }  /* Оперзона */
-th:nth-child(6) { width: 7%; }  /* Заморозка */
-th:nth-child(7) { width: 8%; }  /* Строительство */
-th:nth-child(8) { width: 9%; }  /* РВ */
-th:nth-child(9) { width: 14%; } /* Источник */
-th:nth-child(10){ width: 14%; } /* Повреждения */
+/* Выравнивание первой колонки */
+th:first-child, td:first-child {
+  padding-left: 16px;
+}
 
-/* Скрытие колонки повреждений */
-.table-container.hide-damage th:nth-child(10),
-.table-container.hide-damage td:nth-child(10) {
+/* Ширины колонок (новый порядок) */
+th:nth-child(1) { width: 18%; } /* Объект */
+th:nth-child(2) { width: 10%; } /* Категория */
+th:nth-child(3) { width: 10%; } /* Статус */
+th:nth-child(4) { width: 11%; } /* Строительство */
+th:nth-child(5) { width: 7%; }  /* Мезонин */
+th:nth-child(6) { width: 7%; }  /* Оперзона */
+th:nth-child(7) { width: 9%; }  /* Заморозка */
+th:nth-child(8) { width: 10%; } /* РВ */
+th:nth-child(9) { width: 9%; }  /* Источник */
+th:nth-child(10){ width: 9%; }  /* Повреждения */
+
+/* Логика скрытия/замены колонок */
+/* По умолчанию скрываем 10-ю колонку (Повреждения) */
+.table-container th:nth-child(10),
+.table-container td:nth-child(10) {
   display: none;
+}
+
+/* Если включен класс show-damage, скрываем 9-ю (Источник) и показываем 10-ю (Повреждения) */
+.table-container.show-damage th:nth-child(9),
+.table-container.show-damage td:nth-child(9) {
+  display: none;
+}
+.table-container.show-damage th:nth-child(10),
+.table-container.show-damage td:nth-child(10) {
+  display: table-cell;
 }
 
 .status-badge{display:inline-flex;align-items:center;justify-content:center;padding:4px 6px;border-radius:6px;font-size:11px;font-weight:500;}
@@ -359,13 +375,11 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
             </div>
           </aside>
           
-          <!-- Класс hide-damage добавлен изначально, так как тумблер выключен -->
-          <div class="table-container hide-damage">
+          <div class="table-container" id="main-table-container">
             <div class="table-header">
               <span class="table-title">Реестр объектов</span>
               <div style="display:flex; align-items:center; gap:16px;">
                 
-                <!-- ТУМБЛЕР ПОВРЕЖДЕНИЙ (без атрибута checked) -->
                 <label class="switch-wrap" style="margin:0;">
                   <div class="switch">
                     <input type="checkbox" id="toggle-damage">
@@ -378,7 +392,6 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                 <button class="btn btn-secondary" id="btn-export-excel">Экспорт в Excel</button>
               </div>
             </div>
-            <!-- Обертка для таблицы с фиксированной высотой -->
             <div class="table-scroll">
               <table>
                 <thead>
@@ -386,10 +399,10 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                     <th class="text-left" onclick="sortTable('obj')">Объект / Этап <span id="sort-obj"></span></th>
                     <th class="text-left" onclick="sortTable('category')">Категория <span id="sort-category"></span></th>
                     <th class="text-center" onclick="sortTable('status')">Статус <span id="sort-status"></span></th>
+                    <th class="text-right" onclick="sortTable('areaBuild')">Строительство <span id="sort-areaBuild"></span></th>
                     <th class="text-right" onclick="sortTable('areaMezzanine')">Мезонин <span id="sort-areaMezzanine"></span></th>
                     <th class="text-right" onclick="sortTable('areaOper')">Оперзона <span id="sort-areaOper"></span></th>
                     <th class="text-right" onclick="sortTable('areaFreeze')">Заморозка <span id="sort-areaFreeze"></span></th>
-                    <th class="text-right" onclick="sortTable('areaBuild')">Строительство <span id="sort-areaBuild"></span></th>
                     <th class="text-center" onclick="sortTable('rvText')">РВ (Дата) <span id="sort-rvText"></span></th>
                     <th class="text-left" onclick="sortTable('source')">Источник данных <span id="sort-source"></span></th>
                     <th class="text-left" onclick="sortTable('damage')">Повреждения <span id="sort-damage"></span></th>
@@ -515,11 +528,11 @@ $('toggle-bvs').onchange = (e) => {
 
 // Обработчик тумблера повреждений
 $('toggle-damage').onchange = (e) => {
-  const tableContainer = document.querySelector('.table-container');
+  const tableContainer = document.getElementById('main-table-container');
   if (e.target.checked) {
-    tableContainer.classList.remove('hide-damage');
+    tableContainer.classList.add('show-damage');
   } else {
-    tableContainer.classList.add('hide-damage');
+    tableContainer.classList.remove('show-damage');
   }
 };
 
@@ -824,16 +837,16 @@ function sortTable(col) {
 }
 
 function updateSortIcons() {
-  const cols = ['obj', 'category', 'status', 'areaMezzanine', 'areaOper', 'areaFreeze', 'areaBuild', 'rvText', 'source', 'damage'];
+  const cols = ['obj', 'category', 'status', 'areaBuild', 'areaMezzanine', 'areaOper', 'areaFreeze', 'rvText', 'source', 'damage'];
   cols.forEach(c => {
     const el = $(`sort-${c}`);
     if (!el) return;
     if (sortState.col === c) {
       el.innerHTML = sortState.dir === 1 
-        ? `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5"/></svg>` 
-        : `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5-5 5 5"/></svg>`;
+        ? `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(180deg); opacity: 1;"><polyline points="6 9 12 15 18 9"></polyline></svg>` 
+        : `<svg class="active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 1;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     } else {
-      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>`;
+      el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.2;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     }
   });
 }
@@ -860,7 +873,6 @@ function applyFilters() {
   }
   
   renderTable();
-  // Карта не обновляется здесь, чтобы фильтры таблицы на неё не влияли
 }
 
 function renderTable() {
@@ -875,10 +887,10 @@ function renderTable() {
         </td>
         <td class="text-left">${r.category}</td>
         <td class="text-center"><span class="status-badge ${statusClass}">${r.status}</span></td>
+        <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaBuild)}</td>
         <td class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaMezzanine)}</td>
         <td class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaOper)}</td>
         <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaFreeze)}</td>
-        <td class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaBuild)}</td>
         <td class="text-center">${dateHtml}</td>
         <td class="text-left" style="color:var(--text-muted);">${r.source}</td>
         <td class="text-left" style="color:var(--text-muted);">${r.damage}</td>
@@ -927,7 +939,6 @@ function updateMap() {
   markersLayer.removeAll();
   const grouped = {};
   
-  // Карта берет данные из rawData (независимо от фильтров таблицы)
   rawData.forEach(r => {
     if (!cityCoords[r.obj]) return;
     if (!grouped[r.obj]) grouped[r.obj] = { coords: cityCoords[r.obj], area: 0, count: 0, status: r.status };
