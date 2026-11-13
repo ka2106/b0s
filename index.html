@@ -60,21 +60,21 @@ input:checked + .slider:before{transform:translateX(16px);}
 
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 @media(max-width:900px){.charts-row{grid-template-columns:1fr;}}
-.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);}
+.chart-card{background:var(--surface);padding:20px;border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm); display: flex; flex-direction: column; height: 100%;}
 .chart-title{font-size:15px;font-weight:700;margin:0 0 16px 0;}
 
-.bar-chart{display:flex;flex-direction:column;gap:12px;}
+.bar-chart{display:flex;flex-direction:column;gap:12px; flex: 1;}
 .bar-item{display:flex;align-items:center;gap:12px;}
 .bar-label{width:140px;font-size:13px;font-weight:500;color:var(--text-muted);text-align:right;flex-shrink:0;}
 .bar-track{flex:1;height:24px;background:var(--bg);border-radius:4px;overflow:hidden;display:flex;align-items:center;}
 .bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:700;color:#fff;transition:width 0.5s ease-out;min-width: 2px;}
 .bar-value{font-weight:700; font-size:12px; width:120px; text-align:right; font-variant-numeric:tabular-nums;}
 
-.delivery-list{display:flex;flex-direction:column;gap:8px;}
+.delivery-list{display:flex;flex-direction:column;gap:8px; flex: 1; justify-content: flex-start;}
 .delivery-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);font-size:13px;border-left:3px solid transparent;}
 .delivery-item.past{border-left-color:var(--success);} .delivery-item.future{border-left-color:var(--info);}
 .delivery-date{font-weight:700;color:var(--text); width: 80px; flex-shrink:0;}
-.delivery-obj{flex:1;margin:0 12px;font-weight:500;color:var(--text-muted);}
+.delivery-obj{flex:1;margin:0 12px; display: flex; flex-direction: column;}
 .delivery-area{font-weight:700;font-variant-numeric:tabular-nums; text-align:right; width: 120px;}
 
 /* ИСПРАВЛЕННАЯ ТАБЛИЦА МЕСЯЦЕВ (auto-layout, без наложений) */
@@ -102,10 +102,10 @@ input:checked + .slider:before{transform:translateX(16px);}
 }
 .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; pointer-events: auto; }
 
-/* РАЗДЕЛ ТАБЛИЦЫ (Одинаковая высота фильтров и таблицы) */
-.table-layout{display:flex;gap:20px;align-items:stretch;}
+/* РАЗДЕЛ ТАБЛИЦЫ (Фильтры больше не тянутся вниз) */
+.table-layout{display:flex;gap:20px;align-items:flex-start;}
 @media(max-width:900px){.table-layout{flex-direction:column;}}
-.sidebar{width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px; display: flex; flex-direction: column;}
+.sidebar{width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;}
 
 .filter-group{border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px;}
 .filter-group:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
@@ -120,7 +120,7 @@ input:checked + .slider:before{transform:translateX(16px);}
 .filter-content{display:none; margin-top:10px;}
 .filter-group.open .filter-content{display:block;}
 
-.checkbox-list{display:flex;flex-direction:column;gap:6px; flex: 1; overflow-y:auto;}
+.checkbox-list{display:flex;flex-direction:column;gap:6px; max-height: 200px; overflow-y: auto;}
 .checkbox-item{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-muted);transition:color 0.15s;}
 .checkbox-item:hover{color:var(--text);}
 .checkbox-item input[type="checkbox"]{appearance:none;width:16px;height:16px;border:1.5px solid var(--border);border-radius:4px;cursor:pointer;position:relative;background:#fff;transition:all .15s;}
@@ -381,7 +381,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                   Повреждения
                 </label>
 
-                <span style="font-size:12px;color:var(--text-muted)" id="table-count">0 строк</span>
+                <!-- Убрана надпись "185 строк" -->
                 <button class="btn btn-secondary" id="btn-export-excel">Экспорт в Excel</button>
               </div>
             </div>
@@ -734,7 +734,14 @@ function renderDashboard(data) {
   
   const renderList = (arr, type) => arr.map(r => {
     const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" style="color:inherit; text-decoration:underline; text-decoration-style:dotted;">${r.rvText}</a>` : r.rvText;
-    return `<div class="delivery-item ${type}"><div class="delivery-date">${dateHtml}</div><div class="delivery-obj">${r.obj} <br><span style="font-size:11px; color:#94a3b8;">${r.stage}</span></div><div class="delivery-area">${fmt(r.areaBuild)}</div></div>`;
+    return `<div class="delivery-item ${type}">
+              <div class="delivery-date">${dateHtml}</div>
+              <div class="delivery-obj">
+                <div style="font-weight:600;color:var(--text);font-size:13px;">${r.obj}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.stage}</div>
+              </div>
+              <div class="delivery-area">${fmt(r.areaBuild)}</div>
+            </div>`;
   }).join('');
   
   $('list-upcoming').innerHTML = upcoming.length ? renderList(upcoming.slice(0, 5), 'future') : '<div style="color:#666;font-size:13px;">Нет данных</div>';
@@ -882,7 +889,7 @@ function applyFilters() {
 }
 
 function renderTable() {
-  $('table-count').textContent = `${filteredData.length} строк`;
+  // $('table-count').textContent = `${filteredData.length} строк`; // Убрано
   $('table-body').innerHTML = filteredData.map(r => {
     let statusClass = 'planned'; if (r.status === 'Завершен') statusClass = 'delivered'; if (r.status === 'Утрачен' || r.status === 'Отказ от строительства') statusClass = 'danger';
     const dateHtml = r.rvLink ? `<a href="${r.rvLink}" target="_blank" class="raw-link">${r.rvText}</a>` : linkify(r.rvText || '—');
@@ -942,7 +949,6 @@ function updateMap() {
   markersLayer.removeAll();
   const grouped = {};
   
-  // Карта берет данные из rawData (независимо от фильтров таблицы)
   rawData.forEach(r => {
     if (!cityCoords[r.obj]) return;
     if (!grouped[r.obj]) grouped[r.obj] = { coords: cityCoords[r.obj], area: 0, count: 0, status: r.status };
