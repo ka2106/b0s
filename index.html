@@ -105,9 +105,11 @@ input:checked + .slider:before{transform:translateX(16px);}
 }
 .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; pointer-events: auto; }
 
-/* РАЗДЕЛ ТАБЛИЦЫ */
-.table-layout{display:flex;gap:20px;align-items:flex-start;}
-@media(max-width:1024px){.table-layout{flex-direction:column;}}
+/* РАЗДЕЛ ТАБЛИЦЫ (Сайдбар теперь "липкий") */
+.table-layout{display:flex;gap:20px;align-items:flex-start; flex-wrap: nowrap;}
+/* Порог для мобильных теперь 768px, чтобы на ноутбуках фильтры не уезжали вниз */
+@media(max-width:768px){.table-layout{flex-direction:column;}}
+
 .sidebar{
   width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
   border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:20px;
@@ -167,7 +169,7 @@ th:first-child, td:first-child { padding-left: 16px; }
 th:nth-child(1) { width: 16%; } /* Объект */
 th:nth-child(2) { width: 8%; }  /* Категория */
 th:nth-child(3) { width: 10%; } /* Статус */
-th:nth-child(4) { width: 11%; } /* Строительство */
+th:nth-child(4) { width: 11%; } /* Стройка */
 th:nth-child(5) { width: 7%; }  /* Мезонин */
 th:nth-child(6) { width: 7%; }  /* Оперзона */
 th:nth-child(7) { width: 9%; }  /* Заморозка */
@@ -190,7 +192,7 @@ th:nth-child(10){ width: 23%; } /* Повреждения */
 .raw-link{color:var(--success);text-decoration:none;font-weight:600;}
 .raw-link:hover{text-decoration:underline;}
 
-/* --- МОБИЛЬНАЯ АДАПТАЦИЯ --- */
+/* --- МОБИЛЬНАЯ АДАПТАЦИЯ (Карточки) --- */
 @media(max-width: 768px) {
   .main-content { padding: 16px; }
   .table-layout { flex-direction: column; }
@@ -426,7 +428,7 @@ td.muted-text {color: var(--text-muted) !important;font-style: italic;}
                     <th class="text-left" onclick="sortTable('obj')">Объект / Этап <span id="sort-obj"></span></th>
                     <th class="text-left" onclick="sortTable('category')">Категория <span id="sort-category"></span></th>
                     <th class="text-center" onclick="sortTable('status')">Статус <span id="sort-status"></span></th>
-                    <th class="text-right" onclick="sortTable('areaBuild')">Строительство <span id="sort-areaBuild"></span></th>
+                    <th class="text-right" onclick="sortTable('areaBuild')">Стройка <span id="sort-areaBuild"></span></th>
                     <th class="text-right" onclick="sortTable('areaMezzanine')">Мезонин <span id="sort-areaMezzanine"></span></th>
                     <th class="text-right" onclick="sortTable('areaOper')">Оперзона <span id="sort-areaOper"></span></th>
                     <th class="text-right" onclick="sortTable('areaFreeze')">Заморозка <span id="sort-areaFreeze"></span></th>
@@ -942,7 +944,7 @@ function renderTable() {
         <td data-label="Объект / Этап" class="text-left"><div style="font-weight:600;color:var(--text)">${r.obj}</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.stage}</div></td>
         <td data-label="Категория" class="text-left">${r.category}</td>
         <td data-label="Статус" class="text-center"><span class="status-badge ${statusClass}">${r.status}</span></td>
-        <td data-label="Строительство" class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaBuild)}</td>
+        <td data-label="Стройка" class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaBuild)}</td>
         <td data-label="Мезонин" class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaMezzanine)}</td>
         <td data-label="Оперзона" class="text-right" style="font-variant-numeric:tabular-nums">${showNum(r.areaOper)}</td>
         <td data-label="Заморозка" class="text-right" style="font-variant-numeric:tabular-nums;font-weight:600;">${showNum(r.areaFreeze)}</td>
@@ -957,7 +959,7 @@ $('btn-export-excel').onclick = async () => {
   if (!filteredData.length) return alert('Нет данных для экспорта');
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Выборка');
-  ws.addRow(['Объект', 'Этап', 'Категория', 'Статус площадки', 'Мезонин', 'Оперзона', 'Заморозка', 'Строительство', 'РВ', 'Источник', 'Повреждения']);
+  ws.addRow(['Объект', 'Этап', 'Категория', 'Статус площадки', 'Мезонин', 'Оперзона', 'Заморозка', 'Стройка', 'РВ', 'Источник', 'Повреждения']);
   ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
   ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
   
