@@ -1413,6 +1413,11 @@ td.muted-text {
 .map-missing {
   color: var(--warning);
 }
+.map-force {
+  margin-top: 10px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
 .map-pie {
   width: 24px;
   height: 24px;

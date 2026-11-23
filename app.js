@@ -12,7 +12,10 @@
     sheetName: "data",
     // Ключ API Яндекс.Карт: https://developer.tech.yandex.ru/services/
     // Без ключа вкладка «Карта» показывает инструкцию вместо пустой карты.
-    mapsApiKey: "",
+    mapsApiKey: (window.BOS_CONFIG && window.BOS_CONFIG.mapsApiKey) || "",
+    // Бесплатный тариф JS API считает загрузки карты; при достижении лимита
+    // автозагрузка останавливается (счётчик локальный, см. README-рекомендации).
+    mapsDailyLimit: 100,
     stateKey: "bos_analytics_state",
     cacheKey: "bos_analytics_cache",
     cacheTtlMs: 10 * 60 * 1000,
@@ -33,7 +36,13 @@
     typeof v === "number" && Number.isFinite(v) ? NUM_FMT.format(v) : v || "";
   const showNum = (v) => (typeof v === "number" && v !== 0 ? fmt(v) : "");
 
-  const ESC_MAP = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+  const ESC_MAP = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (m) => ESC_MAP[m]);
 
   const safeUrl = (u) => {
@@ -79,7 +88,9 @@
   const parseNumStrict = (v) => {
     if (typeof v === "number") return Number.isFinite(v) ? v : NaN;
     if (v === null || v === undefined) return null;
-    const s = String(v).replace(/[\s\u00A0]/g, "").replace(",", ".");
+    const s = String(v)
+      .replace(/[\s\u00A0]/g, "")
+      .replace(",", ".");
     if (s === "" || s === "-" || s === "—") return null;
     const n = Number(s);
     return Number.isFinite(n) ? n : NaN;
@@ -105,7 +116,13 @@
   // ---------------------------------------------------------------------------
   // Статусы
   // ---------------------------------------------------------------------------
-  const STATUS_ORDER = ["Завершено", "В работе", "Утрачен", "Поврежден", "Отказ"];
+  const STATUS_ORDER = [
+    "Завершено",
+    "В работе",
+    "Утрачен",
+    "Поврежден",
+    "Отказ",
+  ];
   const STATUS_CONF = {
     Завершено: { color: "var(--success)", hex: "#10b981", badge: "delivered" },
     "В работе": { color: "var(--info)", hex: "#0ea5e9", badge: "planned" },
@@ -143,10 +160,36 @@
     { key: "obj", label: "Объект / Этап", class: "text-left", width: 34 },
     { key: "category", label: "Категория", class: "text-left", width: 20 },
     { key: "status", label: "Статус", class: "text-center", width: 16 },
-    { key: "areaBuild", label: "Стройка", class: "text-right", numeric: true, bold: true, width: 16 },
-    { key: "areaMezzanine", label: "Мезонин", class: "text-right", numeric: true, width: 16 },
-    { key: "areaOper", label: "Оперзона", class: "text-right", numeric: true, width: 16 },
-    { key: "areaFreeze", label: "Заморозка", class: "text-right", numeric: true, bold: true, width: 16 },
+    {
+      key: "areaBuild",
+      label: "Стройка",
+      class: "text-right",
+      numeric: true,
+      bold: true,
+      width: 16,
+    },
+    {
+      key: "areaMezzanine",
+      label: "Мезонин",
+      class: "text-right",
+      numeric: true,
+      width: 16,
+    },
+    {
+      key: "areaOper",
+      label: "Оперзона",
+      class: "text-right",
+      numeric: true,
+      width: 16,
+    },
+    {
+      key: "areaFreeze",
+      label: "Заморозка",
+      class: "text-right",
+      numeric: true,
+      bold: true,
+      width: 16,
+    },
     { key: "rvText", label: "РВ (Дата)", class: "text-center", width: 18 },
     { key: "source", label: "Источник данных", class: "text-left", width: 24 },
     { key: "damage", label: "Повреждения", class: "text-left", width: 22 },
@@ -170,7 +213,12 @@
     rawData: [],
     filteredData: [],
     filters: { fo: null, obj: null, category: null, status: null },
-    seen: { fo: new Set(), obj: new Set(), category: new Set(), status: new Set() },
+    seen: {
+      fo: new Set(),
+      obj: new Set(),
+      category: new Set(),
+      status: new Set(),
+    },
     sort: { col: null, dir: 1 },
     showBVS: true,
     selectedYear: new Date().getFullYear(),
@@ -179,6 +227,7 @@
     map: null,
     markersLayer: null,
     mapLoading: null,
+    mapForceLoad: false,
     compare: { left: null, right: null, mode: "g_vs_x", result: null },
   };
 
@@ -216,7 +265,10 @@
       if (!saved) return;
       const s = JSON.parse(saved);
       if (typeof s.showBVS === "boolean") state.showBVS = s.showBVS;
-      if (Array.isArray(s.columns) && s.columns.every((c) => typeof c === "string")) {
+      if (
+        Array.isArray(s.columns) &&
+        s.columns.every((c) => typeof c === "string")
+      ) {
         const known = COLUMN_DEFS.map((d) => d.key);
         const ordered = s.columns.filter((k) => known.includes(k));
         if (Array.isArray(s.visible)) {
@@ -224,7 +276,10 @@
           state.visible = new Set(s.visible.filter((k) => known.includes(k)));
         } else {
           state.visible = new Set(ordered);
-          state.columnOrder = [...ordered, ...known.filter((k) => !ordered.includes(k))];
+          state.columnOrder = [
+            ...ordered,
+            ...known.filter((k) => !ordered.includes(k)),
+          ];
         }
       }
       if (s.filters) {
@@ -253,11 +308,14 @@
   function orderedColumnDefs() {
     const keys = [
       ...state.columnOrder,
-      ...COLUMN_DEFS.map((d) => d.key).filter((k) => !state.columnOrder.includes(k)),
+      ...COLUMN_DEFS.map((d) => d.key).filter(
+        (k) => !state.columnOrder.includes(k),
+      ),
     ];
     return keys.map((k) => defsByKey.get(k)).filter(Boolean);
   }
-  const visibleColumnDefs = () => orderedColumnDefs().filter((d) => state.visible.has(d.key));
+  const visibleColumnDefs = () =>
+    orderedColumnDefs().filter((d) => state.visible.has(d.key));
 
   function renderColumnsManager() {
     const list = $("dnd-columns");
@@ -321,7 +379,10 @@
       const btn = e.target.closest("button[data-move]");
       if (!btn) return;
       e.preventDefault();
-      moveColumn(btn.closest(".dnd-item").dataset.key, Number(btn.dataset.move));
+      moveColumn(
+        btn.closest(".dnd-item").dataset.key,
+        Number(btn.dataset.move),
+      );
     });
     let dragSrcEl = null;
     list.addEventListener("dragstart", (e) => {
@@ -402,7 +463,9 @@
 
   function parseGviz(data) {
     const t = data.table;
-    const headers = t.cols.map((c) => (c.label || c.id || "").replace(/\s+/g, " ").trim());
+    const headers = t.cols.map((c) =>
+      (c.label || c.id || "").replace(/\s+/g, " ").trim(),
+    );
     const rows = [];
     (t.rows || []).forEach((r, idx) => {
       const obj = { __row: idx + 2 };
@@ -421,7 +484,11 @@
             const match = cell.f.match(/href="([^"]+)"/);
             if (match) link = match[1].replace(/&amp;/g, "&");
           }
-          if (!link && typeof cell.v === "string" && /^https?:\/\//.test(cell.v.trim())) {
+          if (
+            !link &&
+            typeof cell.v === "string" &&
+            /^https?:\/\//.test(cell.v.trim())
+          ) {
             link = cell.v.trim();
           }
 
@@ -442,7 +509,8 @@
               .replace(/<[^>]+>/g, "")
               .trim();
           }
-          if (!link && typeof v === "string" && /^https?:\/\//.test(v)) link = v;
+          if (!link && typeof v === "string" && /^https?:\/\//.test(v))
+            link = v;
         }
         obj[headers[i]] = v;
         if (link) obj[headers[i] + "_link"] = link;
@@ -466,7 +534,11 @@
 
       const rvText = getVal("РВ") ? String(getVal("РВ")) : "";
       const rvLink =
-        getVal("Ссылка РВ") || getVal("РВ_link") || getVal("Ссылка") || getVal("URL") || null;
+        getVal("Ссылка РВ") ||
+        getVal("РВ_link") ||
+        getVal("Ссылка") ||
+        getVal("URL") ||
+        null;
 
       let cleanRvText = rvText;
       if (rvLink && rvText.includes(rvLink)) {
@@ -477,7 +549,8 @@
       const dMatch = cleanRvText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
       if (dMatch) date = new Date(+dMatch[3], +dMatch[2] - 1, +dMatch[1]);
 
-      const rawStatus = getVal("статус площадки") || getVal("статус") || "Не указан";
+      const rawStatus =
+        getVal("статус площадки") || getVal("статус") || "Не указан";
       const status = canonicalStatus(rawStatus);
       let category = getVal("категория") || getVal("категория объекта") || "";
       if (category === "Вспомогательные объекты") category = "Прочее";
@@ -532,7 +605,6 @@
     return s;
   }
 
-
   // ---------------------------------------------------------------------------
   // Фильтры
   // ---------------------------------------------------------------------------
@@ -561,7 +633,9 @@
   }
 
   function setFilterAll(key, all) {
-    state.filters[key] = all ? new Set(allValues(key, state.rawData)) : new Set();
+    state.filters[key] = all
+      ? new Set(allValues(key, state.rawData))
+      : new Set();
     renderFilterOptions();
     applyFilters();
     saveState();
@@ -581,7 +655,8 @@
         let vb = col === "rvText" ? b.rvSort : b[col];
         if (va === null || va === undefined || va === "") va = "";
         if (vb === null || vb === undefined || vb === "") vb = "";
-        if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+        if (typeof va === "number" && typeof vb === "number")
+          return (va - vb) * dir;
         return String(va).localeCompare(String(vb), "ru") * dir;
       });
     }
@@ -589,7 +664,9 @@
   }
 
   function processAllData() {
-    state.rawData = state.showBVS ? state.allData : state.allData.filter((r) => !r.isBVS);
+    state.rawData = state.showBVS
+      ? state.allData
+      : state.allData.filter((r) => !r.isBVS);
 
     for (const key of FILTER_KEYS) {
       const values = allValues(key, state.rawData);
@@ -654,7 +731,8 @@
       : `<tr><td colspan="${defs.length}" class="empty-state">Ничего не найдено. Измените фильтры.</td></tr>`;
 
     const count = $("table-count");
-    if (count) count.textContent = `${state.filteredData.length} из ${state.rawData.length}`;
+    if (count)
+      count.textContent = `${state.filteredData.length} из ${state.rawData.length}`;
   }
 
   function renderRow(r, defs) {
@@ -688,7 +766,8 @@
           : ' style="font-variant-numeric:tabular-nums"';
         return `<td ${label} class="${def.class}"${style}>${showNum(r[def.key])}</td>`;
       }
-      const cls = def.key === "source" || def.key === "damage" ? " cell-muted" : "";
+      const cls =
+        def.key === "source" || def.key === "damage" ? " cell-muted" : "";
       return `<td ${label} class="${def.class}${cls}">${esc(r[def.key])}</td>`;
     });
     return `<tr>${cells.join("")}</tr>`;
@@ -716,37 +795,43 @@
     today.setHours(0, 0, 0, 0);
     const currentYear = today.getFullYear();
     if ($("kpi-year-label")) $("kpi-year-label").textContent = currentYear;
-    if ($("kpi-remaining-year")) $("kpi-remaining-year").textContent = currentYear;
+    if ($("kpi-remaining-year"))
+      $("kpi-remaining-year").textContent = currentYear;
 
     const objects = new Set(data.map((r) => r.obj).filter(Boolean));
     if ($("kpi-objects")) $("kpi-objects").textContent = objects.size;
 
     const delivered = data.filter(
-      (r) => r.status === "Завершено" && r.rvDate && r.rvDate.getFullYear() === currentYear,
+      (r) =>
+        r.status === "Завершено" &&
+        r.rvDate &&
+        r.rvDate.getFullYear() === currentYear,
     );
     const deliveredArea = delivered.reduce((sum, r) => sum + r.areaBuild, 0);
     const deliveredObjs = new Set(delivered.map((r) => r.obj)).size;
-    if ($("kpi-delivered-year")) $("kpi-delivered-year").textContent = fmt(deliveredArea);
+    if ($("kpi-delivered-year"))
+      $("kpi-delivered-year").textContent = fmt(deliveredArea);
     if ($("kpi-delivered-sub")) {
-      $("kpi-delivered-sub").textContent = `${deliveredObjs} ${plural(deliveredObjs, [
-        "объект",
-        "объекта",
-        "объектов",
-      ])}`;
+      $("kpi-delivered-sub").textContent = `${deliveredObjs} ${plural(
+        deliveredObjs,
+        ["объект", "объекта", "объектов"],
+      )}`;
     }
 
     const remaining = data.filter(
-      (r) => r.status === "В работе" && r.rvDate && r.rvDate.getFullYear() === currentYear,
+      (r) =>
+        r.status === "В работе" &&
+        r.rvDate &&
+        r.rvDate.getFullYear() === currentYear,
     );
     const remainingArea = remaining.reduce((sum, r) => sum + r.areaBuild, 0);
     const remainingObjs = new Set(remaining.map((r) => r.obj)).size;
     if ($("kpi-remaining")) $("kpi-remaining").textContent = fmt(remainingArea);
     if ($("kpi-remaining-sub")) {
-      $("kpi-remaining-sub").textContent = `${remainingObjs} ${plural(remainingObjs, [
-        "объект",
-        "объекта",
-        "объектов",
-      ])}`;
+      $("kpi-remaining-sub").textContent = `${remainingObjs} ${plural(
+        remainingObjs,
+        ["объект", "объекта", "объектов"],
+      )}`;
     }
 
     const upcoming = data
@@ -762,7 +847,8 @@
           : days === 1
             ? "завтра"
             : `через ${days} ${plural(days, ["день", "дня", "дней"])}`;
-      if ($("kpi-nearest-name")) $("kpi-nearest-name").textContent = nearest.obj || "—";
+      if ($("kpi-nearest-name"))
+        $("kpi-nearest-name").textContent = nearest.obj || "—";
       if ($("kpi-nearest-date")) {
         $("kpi-nearest-date").textContent = `${nearest.rvText || "—"} · ${
           stageLabel(nearest) || "этап"
@@ -770,7 +856,8 @@
       }
     } else {
       if ($("kpi-nearest-name")) $("kpi-nearest-name").textContent = "—";
-      if ($("kpi-nearest-date")) $("kpi-nearest-date").textContent = "Нет запланированных";
+      if ($("kpi-nearest-date"))
+        $("kpi-nearest-date").textContent = "Нет запланированных";
     }
 
     const statusMap = new Map();
@@ -841,7 +928,9 @@
 
     initYearTable(data);
 
-    const sortedByDate = data.filter((r) => r.rvDate).sort((a, b) => a.rvDate - b.rvDate);
+    const sortedByDate = data
+      .filter((r) => r.rvDate)
+      .sort((a, b) => a.rvDate - b.rvDate);
     const recent = sortedByDate
       .filter((r) => r.status === "Завершено" && r.rvDate <= today)
       .sort((a, b) => b.rvDate - a.rvDate)
@@ -902,12 +991,19 @@
   ];
 
   function renderYearTable(data, year) {
-    const yearData = data.filter((r) => r.rvDate && r.rvDate.getFullYear() === year);
+    const yearData = data.filter(
+      (r) => r.rvDate && r.rvDate.getFullYear() === year,
+    );
     const byObject = new Map();
 
     yearData.forEach((r) => {
       if (!byObject.has(r.obj)) {
-        byObject.set(r.obj, { obj: r.obj, months: Array(12).fill(0), total: 0, items: [] });
+        byObject.set(r.obj, {
+          obj: r.obj,
+          months: Array(12).fill(0),
+          total: 0,
+          items: [],
+        });
       }
       const entry = byObject.get(r.obj);
       const month = r.rvDate.getMonth();
@@ -916,7 +1012,9 @@
       entry.items.push(r);
     });
 
-    const rows = [...byObject.values()].sort((a, b) => a.obj.localeCompare(b.obj, "ru"));
+    const rows = [...byObject.values()].sort((a, b) =>
+      a.obj.localeCompare(b.obj, "ru"),
+    );
     let html = `<tr><th class="text-left">Сдача площадей, ${year} год</th>${MONTHS_RU.map(
       (m) => `<th class="text-center">${m}</th>`,
     ).join("")}<th class="text-right">всего:</th></tr>`;
@@ -993,7 +1091,10 @@
         : sorted[0];
 
     select.innerHTML = sorted
-      .map((y) => `<option value="${y}" ${y === year ? "selected" : ""}>${y} год</option>`)
+      .map(
+        (y) =>
+          `<option value="${y}" ${y === year ? "selected" : ""}>${y} год</option>`,
+      )
       .join("");
     renderYearTable(data, year);
   }
@@ -1012,16 +1113,26 @@
     const unknownStatus = data.filter((r) => !STATUS_CONF[r.status]).length;
     const idCounts = new Map();
     data.forEach((r) => {
-      if (r.id && r.id !== "—") idCounts.set(r.id, (idCounts.get(r.id) || 0) + 1);
+      if (r.id && r.id !== "—")
+        idCounts.set(r.id, (idCounts.get(r.id) || 0) + 1);
     });
     const duplicateIds = [...idCounts.values()].filter((c) => c > 1).length;
-    const withoutCoords = [...new Set(data.map((r) => r.obj).filter((o) => o && !coordsFor(o)))];
+    const withoutCoords = [
+      ...new Set(data.map((r) => r.obj).filter((o) => o && !coordsFor(o))),
+    ];
 
-    if (noDate) items.push(`${noDate} ${plural(noDate, ["строка", "строки", "строк"])} без даты РВ`);
+    if (noDate)
+      items.push(
+        `${noDate} ${plural(noDate, ["строка", "строки", "строк"])} без даты РВ`,
+      );
     if (zeroArea)
-      items.push(`${zeroArea} ${plural(zeroArea, ["строка", "строки", "строк"])} с нулевой площадью стройки`);
+      items.push(
+        `${zeroArea} ${plural(zeroArea, ["строка", "строки", "строк"])} с нулевой площадью стройки`,
+      );
     if (badArea)
-      items.push(`${badArea} ${plural(badArea, ["строка", "строки", "строк"])} с нечитаемой площадью`);
+      items.push(
+        `${badArea} ${plural(badArea, ["строка", "строки", "строк"])} с нечитаемой площадью`,
+      );
     if (unknownStatus)
       items.push(
         `${unknownStatus} ${plural(unknownStatus, ["строка", "строки", "строк"])} с неизвестным статусом`,
@@ -1123,7 +1234,9 @@
       .replace(/\s+/g, " ")
       .trim();
 
-  const coordIndex = new Map(Object.entries(cityCoords).map(([k, v]) => [normName(k), v]));
+  const coordIndex = new Map(
+    Object.entries(cityCoords).map(([k, v]) => [normName(k), v]),
+  );
 
   function coordsFor(obj) {
     const n = normName(obj);
@@ -1132,7 +1245,11 @@
     let best = null;
     let bestLen = 0;
     for (const [key, value] of coordIndex) {
-      if (key && (n.startsWith(key) || n.includes(key)) && key.length > bestLen) {
+      if (
+        key &&
+        (n.startsWith(key) || n.includes(key)) &&
+        key.length > bestLen
+      ) {
         best = value;
         bestLen = key.length;
       }
@@ -1158,6 +1275,35 @@
     return mapsPromise;
   }
 
+  function watchMapTiles() {
+    let checks = 0;
+    const timer = setInterval(() => {
+      const mapEl = $("map");
+      if (!mapEl || !state.map) {
+        clearInterval(timer);
+        return;
+      }
+      const tiles = mapEl.querySelectorAll(
+        ".ymaps-2-1-79-tile img, .ymaps-2-1-79-tile canvas",
+      ).length;
+      if (tiles > 0) {
+        clearInterval(timer);
+        hideMapNotice();
+        return;
+      }
+      checks += 1;
+      if (checks === 5) {
+        showMapNotice(
+          "Карта инициализирована, но тайлы не загрузились. Проверьте API-ключ: тип сервиса " +
+            "(должен быть «JavaScript API»), активацию (до 15 минут) и ограничения по домену. " +
+            "Счётчик загрузок: " +
+            `${mapUsageToday().count}/${CONFIG.mapsDailyLimit}.`,
+        );
+      }
+      if (checks >= 10) clearInterval(timer);
+    }, 2000);
+  }
+
   function showMapNotice(html) {
     const notice = $("map-notice");
     if (!notice) return;
@@ -1167,6 +1313,33 @@
   function hideMapNotice() {
     const notice = $("map-notice");
     if (notice) notice.hidden = true;
+  }
+
+  const MAP_USAGE_KEY = "bos_map_usage";
+
+  function mapUsageToday() {
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      const raw = localStorage.getItem(MAP_USAGE_KEY);
+      const data = raw ? JSON.parse(raw) : null;
+      if (!data || data.date !== today || typeof data.count !== "number") {
+        return { date: today, count: 0 };
+      }
+      return data;
+    } catch {
+      return { date: today, count: 0 };
+    }
+  }
+
+  function bumpMapUsage() {
+    const usage = mapUsageToday();
+    usage.count += 1;
+    try {
+      localStorage.setItem(MAP_USAGE_KEY, JSON.stringify(usage));
+    } catch {
+      /* localStorage недоступен */
+    }
+    return usage;
   }
 
   function ensureMap() {
@@ -1189,6 +1362,18 @@
       return;
     }
     if (state.mapLoading) return;
+
+    const usage = mapUsageToday();
+    if (!state.mapForceLoad && usage.count >= CONFIG.mapsDailyLimit) {
+      showMapNotice(
+        `Дневной лимит загрузок карты исчерпан: ${usage.count}/${CONFIG.mapsDailyLimit}. ` +
+          "Счётчик локальный (для этого браузера) и обнуляется в полночь. " +
+          '<button type="button" class="btn btn-secondary map-force" data-map-force="1">Загрузить всё равно</button>',
+      );
+      return;
+    }
+    state.mapForceLoad = false;
+    bumpMapUsage();
 
     state.mapLoading = loadYandexMaps(CONFIG.mapsApiKey)
       .then(
@@ -1214,6 +1399,7 @@
                 state.map.geoObjects.add(state.markersLayer);
                 hideMapNotice();
                 updateMap();
+                watchMapTiles();
                 resolve();
               } catch (e) {
                 reject(e);
@@ -1263,11 +1449,11 @@
     });
 
     if ($("map-summary")) {
-      $("map-summary").textContent = `На карте: ${grouped.size} ${plural(grouped.size, [
-        "объект",
-        "объекта",
-        "объектов",
-      ])}`;
+      const usage = mapUsageToday();
+      $("map-summary").textContent = `На карте: ${grouped.size} ${plural(
+        grouped.size,
+        ["объект", "объекта", "объектов"],
+      )} · загрузок карты сегодня: ${usage.count}/${CONFIG.mapsDailyLimit}`;
     }
     if ($("map-missing")) {
       $("map-missing").textContent = missing.size
@@ -1310,14 +1496,17 @@
     });
   }
 
-
   // ---------------------------------------------------------------------------
   // Сравнение
   // ---------------------------------------------------------------------------
   const COMPARE_FIELDS = [
     { key: "этап", label: "Этап", excelPrefix: "Наименование этапа" },
     { key: "статус", label: "Статус площади", excelPrefix: "Статус площади" },
-    { key: "общая площадь", label: "Общая площадь", excelPrefix: "Общая площадь" },
+    {
+      key: "общая площадь",
+      label: "Общая площадь",
+      excelPrefix: "Общая площадь",
+    },
     {
       key: "площадь строительства",
       label: "Площадь объекта строительства",
@@ -1328,9 +1517,21 @@
       label: "Площадь блоков мезонина",
       excelPrefix: "Площадь блоков мезонина",
     },
-    { key: "площадь оперзоны", label: "Площадь оперзоны", excelPrefix: "Площадь оперзоны" },
-    { key: "площадь заморозки", label: "Площадь заморозки", excelPrefix: "Площадь заморозки" },
-    { key: "статус площадки", label: "Статус площадки", excelPrefix: "Статус площадки" },
+    {
+      key: "площадь оперзоны",
+      label: "Площадь оперзоны",
+      excelPrefix: "Площадь оперзоны",
+    },
+    {
+      key: "площадь заморозки",
+      label: "Площадь заморозки",
+      excelPrefix: "Площадь заморозки",
+    },
+    {
+      key: "статус площадки",
+      label: "Статус площадки",
+      excelPrefix: "Статус площадки",
+    },
     { key: "РВ", label: "Дата получения РВ", excelPrefix: "Дата получения РВ" },
     {
       key: "категория",
@@ -1338,7 +1539,11 @@
       excelPrefix: "Категория объекта",
       exact: true,
     },
-    { key: "источник", label: "Источник данных", excelPrefix: "Источник данных площади" },
+    {
+      key: "источник",
+      label: "Источник данных",
+      excelPrefix: "Источник данных площади",
+    },
     {
       key: "повреждения",
       label: "Повреждение блока",
@@ -1358,17 +1563,24 @@
   function pickHeader(row, names) {
     for (const name of names) {
       if (row[name] !== undefined) return row[name];
-      const key = Object.keys(row).find((k) => k.toLowerCase() === String(name).toLowerCase());
+      const key = Object.keys(row).find(
+        (k) => k.toLowerCase() === String(name).toLowerCase(),
+      );
       if (key !== undefined) return row[key];
     }
     return undefined;
   }
 
   function findLatestSuffix(headers) {
-    const matches = [...headers.join(" | ").matchAll(/\((\d{2})\.(\d{2})\.(\d{4})\)/g)];
+    const matches = [
+      ...headers.join(" | ").matchAll(/\((\d{2})\.(\d{2})\.(\d{4})\)/g),
+    ];
     if (!matches.length) return null;
     return matches
-      .map((m) => ({ full: m[0], ts: new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime() }))
+      .map((m) => ({
+        full: m[0],
+        ts: new Date(`${m[3]}-${m[2]}-${m[1]}`).getTime(),
+      }))
       .sort((a, b) => b.ts - a.ts)[0].full;
   }
 
@@ -1376,7 +1588,9 @@
     const suffix = findLatestSuffix(headers);
     const findCol = (prefix) => {
       const p = prefix.toLowerCase();
-      const starts = headers.filter((h) => String(h).toLowerCase().startsWith(p));
+      const starts = headers.filter((h) =>
+        String(h).toLowerCase().startsWith(p),
+      );
       if (!starts.length) return null;
       if (suffix) {
         const withSuffix = starts.find((h) => h.includes(suffix));
@@ -1385,14 +1599,26 @@
       return starts[0];
     };
     const exact = (name) =>
-      headers.find((h) => String(h).toLowerCase() === name.toLowerCase()) || null;
+      headers.find((h) => String(h).toLowerCase() === name.toLowerCase()) ||
+      null;
 
-    const mapping = { id: exact("id"), ФО: exact("ФО"), объект: exact("объект") };
+    const mapping = {
+      id: exact("id"),
+      ФО: exact("ФО"),
+      объект: exact("объект"),
+    };
     for (const field of COMPARE_FIELDS) {
-      const candidates = [field.excelPrefix, field.key, ...(COMPARE_ALIASES[field.key] || [])];
+      const candidates = [
+        field.excelPrefix,
+        field.key,
+        ...(COMPARE_ALIASES[field.key] || []),
+      ];
       let column = null;
       for (const candidate of candidates) {
-        column = field.exact || candidate === field.key ? exact(candidate) : findCol(candidate);
+        column =
+          field.exact || candidate === field.key
+            ? exact(candidate)
+            : findCol(candidate);
         if (column) break;
       }
       mapping[field.key] = column;
@@ -1412,7 +1638,8 @@
     }
     if (data.type === "google") {
       const headers = data.headers.map((h) => String(h).toLowerCase());
-      const has = (names) => names.some((n) => headers.includes(n.toLowerCase()));
+      const has = (names) =>
+        names.some((n) => headers.includes(n.toLowerCase()));
       const missingRequired = [];
       if (!has(["ФО"])) missingRequired.push("ФО");
       if (!has(["объект"])) missingRequired.push("объект");
@@ -1423,7 +1650,9 @@
       return {
         ok: missingRequired.length === 0,
         missingRequired,
-        missingOptional: COMPARE_FIELDS.filter((f) => !fields.includes(f)).map((f) => f.label),
+        missingOptional: COMPARE_FIELDS.filter((f) => !fields.includes(f)).map(
+          (f) => f.label,
+        ),
         fields: fields.map((f) => f.key),
         mapping: null,
       };
@@ -1434,7 +1663,9 @@
     return {
       ok: missingRequired.length === 0,
       missingRequired,
-      missingOptional: COMPARE_FIELDS.filter((f) => !mapping[f.key]).map((f) => f.label),
+      missingOptional: COMPARE_FIELDS.filter((f) => !mapping[f.key]).map(
+        (f) => f.label,
+      ),
       fields: fields.map((f) => f.key),
       mapping,
     };
@@ -1443,10 +1674,9 @@
   function normalizeValueComp(v) {
     if (v === null || v === undefined) return null;
     if (v instanceof Date) {
-      return `${String(v.getDate()).padStart(2, "0")}.${String(v.getMonth() + 1).padStart(
-        2,
-        "0",
-      )}.${v.getFullYear()}`;
+      return `${String(v.getDate()).padStart(2, "0")}.${String(
+        v.getMonth() + 1,
+      ).padStart(2, "0")}.${v.getFullYear()}`;
     }
     if (typeof v === "number") return v;
     if (typeof v === "string") {
@@ -1455,10 +1685,9 @@
       if (d) return `${d[3]}.${d[2]}.${d[1]}`;
       const gviz = s.match(/^Date\((\d+),(\d+),(\d+)/);
       if (gviz) {
-        return `${String(gviz[3]).padStart(2, "0")}.${String(+gviz[2] + 1).padStart(
-          2,
-          "0",
-        )}.${gviz[1]}`;
+        return `${String(gviz[3]).padStart(2, "0")}.${String(
+          +gviz[2] + 1,
+        ).padStart(2, "0")}.${gviz[1]}`;
       }
       return s;
     }
@@ -1519,7 +1748,8 @@
       return normalizeValueComp(row[mapping[field.key]]);
     };
     const baseValue = (row, key, aliases) => {
-      if (data.type === "google") return normalizeValueComp(pickHeader(row, aliases));
+      if (data.type === "google")
+        return normalizeValueComp(pickHeader(row, aliases));
       return normalizeValueComp(row[mapping[key]]);
     };
 
@@ -1550,15 +1780,28 @@
       right.inspect = inspectSource(right);
     }
     if (!left.inspect.ok || !right.inspect.ok) {
-      const missing = [...new Set([...left.inspect.missingRequired, ...right.inspect.missingRequired])];
-      showToast("Не хватает обязательных колонок: " + missing.join(", "), "error", 8000);
+      const missing = [
+        ...new Set([
+          ...left.inspect.missingRequired,
+          ...right.inspect.missingRequired,
+        ]),
+      ];
+      showToast(
+        "Не хватает обязательных колонок: " + missing.join(", "),
+        "error",
+        8000,
+      );
       return;
     }
 
     const fields = COMPARE_FIELDS.filter(
-      (f) => left.inspect.fields.includes(f.key) && right.inspect.fields.includes(f.key),
+      (f) =>
+        left.inspect.fields.includes(f.key) &&
+        right.inspect.fields.includes(f.key),
     );
-    const skipped = COMPARE_FIELDS.filter((f) => !fields.includes(f)).map((f) => f.label);
+    const skipped = COMPARE_FIELDS.filter((f) => !fields.includes(f)).map(
+      (f) => f.label,
+    );
 
     const gRows = extractNormalizedRowsComp(left);
     const xRows = extractNormalizedRowsComp(right);
@@ -1604,7 +1847,8 @@
       const restG = g.filter((_, i) => !usedG.has(i));
       const restX = x.filter((_, j) => !usedX.has(j));
       const minLen = Math.min(restG.length, restX.length);
-      for (let i = 0; i < minLen; i++) pairs.push([restG[i], restX[i], "fuzzy"]);
+      for (let i = 0; i < minLen; i++)
+        pairs.push([restG[i], restX[i], "fuzzy"]);
       onlyG.push(...restG.slice(minLen));
       onlyX.push(...restX.slice(minLen));
     }
@@ -1630,9 +1874,10 @@
           new: newValue,
           match,
         };
-        change.__search = `${change.id} ${change.fo} ${change.obj} ${change.stage_old} ${
-          change.stage_new
-        } ${change.field} ${change.old ?? ""} ${change.new ?? ""}`.toLowerCase();
+        change.__search =
+          `${change.id} ${change.fo} ${change.obj} ${change.stage_old} ${
+            change.stage_new
+          } ${change.field} ${change.old ?? ""} ${change.new ?? ""}`.toLowerCase();
         changes.push(change);
       }
     }
@@ -1678,8 +1923,10 @@
           r.match === "fuzzy"
             ? ' <span class="match-badge" title="Сопоставлено приблизительно">≈</span>'
             : "";
-        const oldVal = r.old === null || r.old === undefined || r.old === "" ? "—" : r.old;
-        const newVal = r.new === null || r.new === undefined || r.new === "" ? "—" : r.new;
+        const oldVal =
+          r.old === null || r.old === undefined || r.old === "" ? "—" : r.old;
+        const newVal =
+          r.new === null || r.new === undefined || r.new === "" ? "—" : r.new;
         return `<tr><td class="${cls}">${esc(r.id)}</td><td class="${cls}">${esc(
           r.fo,
         )}</td><td class="${cls}">${esc(r.obj)}${badge}</td><td class="${cls}">${stageHtml}</td><td><strong>${esc(
@@ -1710,7 +1957,11 @@
       { key: "only_g", label: `Только в ${left}`, count: d.onlyG.length },
     ];
     if (d.fuzzy.length) {
-      tabs.push({ key: "fuzzy", label: "Приблизительные пары", count: d.fuzzy.length });
+      tabs.push({
+        key: "fuzzy",
+        label: "Приблизительные пары",
+        count: d.fuzzy.length,
+      });
     }
 
     const headers = {
@@ -1767,7 +2018,9 @@
           <input class="filter" id="f-${t.key}" placeholder="Поиск..." aria-label="Поиск по таблице">
           <span class="row-count" id="c-${t.key}"></span>
         </div>
-        <div class="table-wrap"><table id="t-${t.key}"><thead><tr>${headers[t.key]
+        <div class="table-wrap"><table id="t-${t.key}"><thead><tr>${headers[
+          t.key
+        ]
           .map((h) => `<th>${esc(h)}</th>`)
           .join("")}</tr></thead><tbody></tbody></table></div>
       </div>`;
@@ -1780,7 +2033,8 @@
   function renderCompareRows() {
     const d = state.compare.result;
     if (!d) return;
-    const query = (panel) => (($("f-" + panel) || {}).value || "").trim().toLowerCase();
+    const query = (panel) =>
+      (($("f-" + panel) || {}).value || "").trim().toLowerCase();
 
     const changes = d.changes.filter(
       (r) => !query("changes") || r.__search.includes(query("changes")),
@@ -1797,7 +2051,11 @@
       const table = $("t-" + key);
       if (!table) return;
       const q = query(key);
-      const list = q ? rows.filter((r) => (render.search ? render.search(r) : "").includes(q)) : rows;
+      const list = q
+        ? rows.filter((r) =>
+            (render.search ? render.search(r) : "").includes(q),
+          )
+        : rows;
       table.querySelector("tbody").innerHTML =
         list.map((r) => render.row(r)).join("") ||
         `<tr><td colspan="${render.cols}" class="empty-state">Нет строк</td></tr>`;
@@ -1880,7 +2138,8 @@
   }
 
   async function readXlsxComp(file, preferredSheets) {
-    if (typeof ExcelJS === "undefined") throw new Error("библиотека ExcelJS не загружена");
+    if (typeof ExcelJS === "undefined")
+      throw new Error("библиотека ExcelJS не загружена");
     const buffer = await file.arrayBuffer();
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
@@ -1904,7 +2163,8 @@
         else if (value.text !== undefined) value = value.text;
         else if (value.result !== undefined) value = value.result;
       }
-      headers[col] = value == null ? "" : String(value).replace(/\s+/g, " ").trim();
+      headers[col] =
+        value == null ? "" : String(value).replace(/\s+/g, " ").trim();
     }
 
     const rows = [];
@@ -1917,7 +2177,8 @@
         let link = null;
         if (value && typeof value === "object" && !(value instanceof Date)) {
           if (value.hyperlink) link = value.hyperlink;
-          if (value.richText) value = value.richText.map((r) => r.text).join("");
+          if (value.richText)
+            value = value.richText.map((r) => r.text).join("");
           else if (value.text !== undefined) value = value.text;
           else if (value.result !== undefined) value = value.result;
         } else if (value instanceof Date) {
@@ -1929,7 +2190,8 @@
         if (header) {
           obj[header] = value;
           if (link) obj[header + "_link"] = link;
-          if (value !== null && value !== undefined && value !== "") hasValue = true;
+          if (value !== null && value !== undefined && value !== "")
+            hasValue = true;
         }
       });
       if (hasValue) rows.push(obj);
@@ -1964,7 +2226,11 @@
     headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
     headerRow.height = 20;
     headerRow.eachCell((cell) => {
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F172A" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF0F172A" },
+      };
       cell.alignment = { vertical: "middle" };
     });
     if (widths) sheet.columns = widths.map((width) => ({ width }));
@@ -1982,7 +2248,11 @@
       return;
     }
     if (typeof ExcelJS === "undefined") {
-      showToast("Библиотека ExcelJS не загрузилась (проверьте сеть)", "error", 7000);
+      showToast(
+        "Библиотека ExcelJS не загрузилась (проверьте сеть)",
+        "error",
+        7000,
+      );
       return;
     }
     try {
@@ -2008,7 +2278,10 @@
       defs.forEach((def, index) => {
         if (def.numeric) sheet.getColumn(index + 1).numFmt = "# ##0.00";
       });
-      downloadBlob(await workbook.xlsx.writeBuffer(), `Выборка_${fileStamp()}.xlsx`);
+      downloadBlob(
+        await workbook.xlsx.writeBuffer(),
+        `Выборка_${fileStamp()}.xlsx`,
+      );
       showToast("Экспорт готов", "success", 3000);
     } catch (e) {
       console.error(e);
@@ -2020,13 +2293,22 @@
     const d = state.compare.result;
     if (!d) return;
     if (typeof ExcelJS === "undefined") {
-      showToast("Библиотека ExcelJS не загрузилась (проверьте сеть)", "error", 7000);
+      showToast(
+        "Библиотека ExcelJS не загрузилась (проверьте сеть)",
+        "error",
+        7000,
+      );
       return;
     }
     const { left, right } = compareModeLabels();
     try {
       const workbook = new ExcelJS.Workbook();
-      const summary = addSheet(workbook, "Сводка", ["Параметр", "Значение"], [30, 40]);
+      const summary = addSheet(
+        workbook,
+        "Сводка",
+        ["Параметр", "Значение"],
+        [30, 40],
+      );
       [
         ["Режим сравнения", `${left} ↔ ${right}`],
         ["Строк слева", d.gRows.length],
@@ -2041,7 +2323,16 @@
       const changes = addSheet(
         workbook,
         "Изменения",
-        ["ID", "ФО", "Объект", "Этап", "Поле", "Было", "Стало", "Сопоставление"],
+        [
+          "ID",
+          "ФО",
+          "Объект",
+          "Этап",
+          "Поле",
+          "Было",
+          "Стало",
+          "Сопоставление",
+        ],
         [12, 15, 20, 30, 24, 20, 20, 16],
       );
       d.changes.forEach((change) => {
@@ -2071,9 +2362,22 @@
         };
       });
 
-      const onlyHeaders = ["ID", "ФО", "Объект", "Этап", "Статус", "Общая", "Строит."];
+      const onlyHeaders = [
+        "ID",
+        "ФО",
+        "Объект",
+        "Этап",
+        "Статус",
+        "Общая",
+        "Строит.",
+      ];
       const widths = [12, 15, 20, 30, 18, 16, 16];
-      const onlyX = addSheet(workbook, `Только в ${right}`.slice(0, 31), onlyHeaders, widths);
+      const onlyX = addSheet(
+        workbook,
+        `Только в ${right}`.slice(0, 31),
+        onlyHeaders,
+        widths,
+      );
       d.onlyX.forEach((r) => {
         const row = onlyX.addRow([
           r.id,
@@ -2085,11 +2389,20 @@
           r["площадь строительства"] ?? "",
         ]);
         row.eachCell((cell) => {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0FDF4" } };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF0FDF4" },
+          };
         });
       });
 
-      const onlyG = addSheet(workbook, `Только в ${left}`.slice(0, 31), onlyHeaders, widths);
+      const onlyG = addSheet(
+        workbook,
+        `Только в ${left}`.slice(0, 31),
+        onlyHeaders,
+        widths,
+      );
       d.onlyG.forEach((r) => {
         const row = onlyG.addRow([
           r.id,
@@ -2101,7 +2414,11 @@
           r["площадь строительства"] ?? "",
         ]);
         row.eachCell((cell) => {
-          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEF2F2" } };
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFEF2F2" },
+          };
         });
       });
 
@@ -2109,7 +2426,15 @@
         const fuzzy = addSheet(
           workbook,
           "Приблизительные пары",
-          ["ID", "ФО", "Объект", "Этап слева", "Этап справа", "Статус слева", "Статус справа"],
+          [
+            "ID",
+            "ФО",
+            "Объект",
+            "Этап слева",
+            "Этап справа",
+            "Статус слева",
+            "Статус справа",
+          ],
           [12, 15, 20, 28, 28, 18, 18],
         );
         d.fuzzy.forEach(([g, x]) =>
@@ -2125,7 +2450,10 @@
         );
       }
 
-      downloadBlob(await workbook.xlsx.writeBuffer(), `report_${fileStamp()}.xlsx`);
+      downloadBlob(
+        await workbook.xlsx.writeBuffer(),
+        `report_${fileStamp()}.xlsx`,
+      );
       showToast("Отчёт сохранён", "success", 3000);
     } catch (e) {
       console.error(e);
@@ -2141,7 +2469,12 @@
       const raw = sessionStorage.getItem(CONFIG.cacheKey);
       if (!raw) return null;
       const cached = JSON.parse(raw);
-      if (!cached || !Array.isArray(cached.rows) || !Array.isArray(cached.headers)) return null;
+      if (
+        !cached ||
+        !Array.isArray(cached.rows) ||
+        !Array.isArray(cached.headers)
+      )
+        return null;
       if (!ignoreTtl && Date.now() - cached.ts > CONFIG.cacheTtlMs) return null;
       return cached;
     } catch {
@@ -2151,7 +2484,10 @@
 
   function writeCache(payload) {
     try {
-      sessionStorage.setItem(CONFIG.cacheKey, JSON.stringify({ ts: Date.now(), ...payload }));
+      sessionStorage.setItem(
+        CONFIG.cacheKey,
+        JSON.stringify({ ts: Date.now(), ...payload }),
+      );
     } catch {
       /* превышена квота — просто работаем без кэша */
     }
@@ -2199,7 +2535,10 @@
   async function loadData({ force = false } = {}) {
     const cached = force ? null : readCache();
     if (cached) {
-      applyData(cached.headers, cached.rows, { ts: cached.ts, fromCache: true });
+      applyData(cached.headers, cached.rows, {
+        ts: cached.ts,
+        fromCache: true,
+      });
       return;
     }
 
@@ -2234,7 +2573,6 @@
     }
   }
 
-
   // ---------------------------------------------------------------------------
   // Навигация и обработчики
   // ---------------------------------------------------------------------------
@@ -2268,7 +2606,10 @@
         e.preventDefault();
         const index = buttons.indexOf(btn);
         const next =
-          buttons[(index + (e.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length];
+          buttons[
+            (index + (e.key === "ArrowRight" ? 1 : -1) + buttons.length) %
+              buttons.length
+          ];
         next.focus();
         activateTab(next.dataset.tab);
       });
@@ -2303,7 +2644,10 @@
 
     document.querySelectorAll(".filter-header").forEach((header) => {
       const group = header.closest(".filter-group");
-      header.setAttribute("aria-expanded", String(!!group && group.classList.contains("open")));
+      header.setAttribute(
+        "aria-expanded",
+        String(!!group && group.classList.contains("open")),
+      );
     });
 
     sidebar.addEventListener("click", (e) => {
@@ -2420,6 +2764,17 @@
     if (btn) btn.addEventListener("click", exportSelection);
   }
 
+  function initMapHandlers() {
+    const notice = $("map-notice");
+    if (!notice) return;
+    notice.addEventListener("click", (e) => {
+      if (!e.target.closest("[data-map-force]")) return;
+      state.mapForceLoad = true;
+      hideMapNotice();
+      ensureMap();
+    });
+  }
+
   function initCompare() {
     if ($("gsheet-id-comp")) $("gsheet-id-comp").value = CONFIG.sheetId;
     if ($("gsheet-name-comp")) $("gsheet-name-comp").value = CONFIG.sheetName;
@@ -2427,30 +2782,43 @@
     const radios = [...document.querySelectorAll('input[name="compare-mode"]')];
     radios.forEach((radio, index) => {
       radio.addEventListener("change", () => {
-        if ($("mode-slider")) $("mode-slider").style.transform = `translateX(${index * 100}%)`;
+        if ($("mode-slider"))
+          $("mode-slider").style.transform = `translateX(${index * 100}%)`;
         state.compare.mode = radio.value;
         const google = state.compare.mode === "g_vs_x";
-        if ($("google-fields")) $("google-fields").style.display = google ? "block" : "none";
+        if ($("google-fields"))
+          $("google-fields").style.display = google ? "block" : "none";
         if ($("left-icon")) {
           $("left-icon").className = google ? "card-icon g" : "card-icon x";
           $("left-icon").textContent = google ? "G" : "X";
         }
         if ($("left-title")) {
-          $("left-title").textContent = google ? "Google Sheets" : "Excel-файл (старый)";
+          $("left-title").textContent = google
+            ? "Google Sheets"
+            : "Excel-файл (старый)";
         }
         if ($("right-title")) {
-          $("right-title").textContent = google ? "Excel-файл" : "Excel-файл (новый)";
+          $("right-title").textContent = google
+            ? "Excel-файл"
+            : "Excel-файл (новый)";
         }
         state.compare.left = null;
         state.compare.right = null;
         state.compare.result = null;
-        if ($("compare-upload-screen")) $("compare-upload-screen").style.display = "block";
-        if ($("compare-report-screen")) $("compare-report-screen").style.display = "none";
+        if ($("compare-upload-screen"))
+          $("compare-upload-screen").style.display = "block";
+        if ($("compare-report-screen"))
+          $("compare-report-screen").style.display = "none";
         ["file-left-comp", "file-right-comp"].forEach((id) => {
           const el = $(id);
           if (el) el.value = "";
         });
-        ["fn-left-comp", "fn-right-comp", "status-g-comp", "status-x-comp"].forEach((id) => {
+        [
+          "fn-left-comp",
+          "fn-right-comp",
+          "status-g-comp",
+          "status-x-comp",
+        ].forEach((id) => {
           const el = $(id);
           if (el) el.textContent = "";
         });
@@ -2471,12 +2839,20 @@
         setCompareStatus("status-g-comp", "Загрузка...", "muted");
         try {
           const data = await loadGoogleSheet(id, name);
-          applyCompareSource("left", { ...data, type: "google" }, "status-g-comp");
+          applyCompareSource(
+            "left",
+            { ...data, type: "google" },
+            "status-g-comp",
+          );
         } catch (e) {
           console.error(e);
           state.compare.left = null;
           setCompareStatus("status-g-comp", "Ошибка: " + e.message, "error");
-          showToast("Не удалось загрузить Google Sheets: " + e.message, "error", 7000);
+          showToast(
+            "Не удалось загрузить Google Sheets: " + e.message,
+            "error",
+            7000,
+          );
           updateCompareBtn();
         } finally {
           loadButton.disabled = false;
@@ -2503,7 +2879,11 @@
           console.error(e);
           if (side === "left") state.compare.left = null;
           else state.compare.right = null;
-          setCompareStatus(statusId, "Ошибка чтения файла: " + e.message, "error");
+          setCompareStatus(
+            statusId,
+            "Ошибка чтения файла: " + e.message,
+            "error",
+          );
           showToast("Не удалось прочитать Excel: " + e.message, "error", 7000);
           updateCompareBtn();
         } finally {
@@ -2531,14 +2911,16 @@
     const content = $("compare-content");
     if (!content) return;
     content.addEventListener("click", (e) => {
-      const tab = e.target.closest('.tab[data-tab]');
+      const tab = e.target.closest(".tab[data-tab]");
       if (!tab) return;
       content.querySelectorAll(".tab").forEach((t) => {
         const active = t === tab;
         t.classList.toggle("active", active);
         t.setAttribute("aria-selected", String(active));
       });
-      content.querySelectorAll(".panel").forEach((panel) => panel.classList.add("hidden"));
+      content
+        .querySelectorAll(".panel")
+        .forEach((panel) => panel.classList.add("hidden"));
       const panel = $("panel-" + tab.dataset.tab);
       if (panel) panel.classList.remove("hidden");
     });
@@ -2584,6 +2966,7 @@
     initTableHandlers();
     initYearTableHandlers();
     initExport();
+    initMapHandlers();
     initCompare();
     initHash();
     loadData();
