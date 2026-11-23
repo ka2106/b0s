@@ -1396,8 +1396,10 @@
         clearInterval(timer);
         return;
       }
+      // Тайлы Яндекс рисует либо в <img> (старые версии), либо в <canvas> внутри
+      // ground-pane. Селекторы без привязки к версии API, чтобы не ломались при обновлении.
       const tiles = mapEl.querySelectorAll(
-        ".ymaps-2-1-79-tile img, .ymaps-2-1-79-tile canvas",
+        '[class*="ground-pane"] img, [class*="ground-pane"] canvas, [class*="tile"] img, [class*="tile"] canvas',
       ).length;
       if (tiles > 0) {
         clearInterval(timer);
