@@ -19,10 +19,12 @@
     stateKey: "bos_analytics_state",
     cacheKey: "bos_analytics_cache",
     cacheTtlMs: 10 * 60 * 1000,
+    autoRefreshMs: 5 * 60 * 1000,
     sheetTimeoutMs: 20000,
   };
 
   const FILTER_KEYS = ["fo", "obj", "category", "status"];
+  const FILTER_LABELS = { fo: "ФО", obj: "Объект", category: "Категория", status: "Статус" };
 
   // ---------------------------------------------------------------------------
   // Утилиты
@@ -220,6 +222,11 @@
       status: new Set(),
     },
     sort: { col: null, dir: 1 },
+    page: 1,
+    pageSize: 100,
+    printAll: false,
+    loading: false,
+    lastFingerprint: null,
     showBVS: true,
     selectedYear: new Date().getFullYear(),
     columnOrder: [...DEFAULT_COLUMNS],
@@ -251,6 +258,7 @@
           filters,
           seen,
           selectedYear: state.selectedYear,
+          pageSize: state.pageSize,
         }),
       );
     } catch (e) {
@@ -294,6 +302,9 @@
         }
       }
       if (Number.isInteger(s.selectedYear)) state.selectedYear = s.selectedYear;
+      if (Number.isInteger(s.pageSize) && [0, 50, 100, 250, 500].includes(s.pageSize)) {
+        state.pageSize = s.pageSize;
+      }
     } catch (e) {
       console.error("Ошибка загрузки настроек", e);
       localStorage.removeItem(CONFIG.stateKey);
@@ -647,6 +658,8 @@
       FILTER_KEYS.every((k) => !f[k] || f[k].has(r[k])),
     );
 
+    state.page = 1;
+
     if (state.sort.col) {
       const col = state.sort.col;
       const dir = state.sort.dir;
@@ -726,13 +739,30 @@
 
     const body = $("table-body");
     if (!body) return;
-    body.innerHTML = state.filteredData.length
-      ? state.filteredData.map((r) => renderRow(r, defs)).join("")
+
+    const total = state.filteredData.length;
+    const pageSize = state.printAll ? 0 : state.pageSize;
+    const pageCount = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+    state.page = Math.min(Math.max(1, state.page), pageCount);
+    const start = pageSize > 0 ? (state.page - 1) * pageSize : 0;
+    const end = pageSize > 0 ? Math.min(start + pageSize, total) : total;
+    const pageRows = state.filteredData.slice(start, end);
+
+    body.innerHTML = pageRows.length
+      ? pageRows.map((r) => renderRow(r, defs)).join("")
       : `<tr><td colspan="${defs.length}" class="empty-state">Ничего не найдено. Измените фильтры.</td></tr>`;
 
     const count = $("table-count");
-    if (count)
-      count.textContent = `${state.filteredData.length} из ${state.rawData.length}`;
+    if (count) count.textContent = `${total} из ${state.rawData.length}`;
+
+    const info = $("page-info");
+    if (info) info.textContent = total ? `${start + 1}–${end} из ${total}` : "0";
+    const prev = $("page-prev");
+    if (prev) prev.disabled = state.page <= 1;
+    const next = $("page-next");
+    if (next) next.disabled = state.page >= pageCount;
+    const size = $("page-size");
+    if (size && size.value !== String(state.pageSize)) size.value = String(state.pageSize);
   }
 
   function renderRow(r, defs) {
@@ -2299,6 +2329,19 @@
     return sheet;
   }
 
+  function describeFilters() {
+    const parts = [];
+    for (const key of FILTER_KEYS) {
+      const all = allValues(key, state.rawData).length;
+      const selected = state.filters[key];
+      if (selected && selected.size !== all) {
+        parts.push(`${FILTER_LABELS[key]}: ${selected.size} из ${all}`);
+      }
+    }
+    if (!state.showBVS) parts.push("БВС скрыты");
+    return parts.length ? parts.join("; ") : "Все данные";
+  }
+
   async function exportSelection() {
     if (!state.filteredData.length) {
       showToast("Нет данных для экспорта", "warning");
@@ -2315,14 +2358,47 @@
     try {
       const defs = visibleColumnDefs();
       const workbook = new ExcelJS.Workbook();
+
+      const objects = new Set(state.filteredData.map((r) => r.obj).filter(Boolean)).size;
+      const totalArea = state.filteredData.reduce((sum, r) => sum + r.areaBuild, 0);
+      const summary = addSheet(workbook, "Сводка", ["Показатель", "Значение"], [38, 46]);
+      summary.addRow(["Дата выгрузки", new Date().toLocaleString("ru-RU")]);
+      summary.addRow(["Источник", `Google Sheets · ${CONFIG.sheetName}`]);
+      summary.addRow(["Строк в выборке", state.filteredData.length]);
+      summary.addRow(["Объектов", objects]);
+      const areaRow = summary.addRow(["Площадь стройки, м²", totalArea]);
+      areaRow.getCell(2).numFmt = "# ##0.00";
+      summary.addRow(["Фильтры", describeFilters()]);
+      summary.addRow(["БВС", state.showBVS ? "показываются" : "скрыты"]);
+
+      const byStatus = new Map();
+      state.filteredData.forEach((r) => {
+        const item = byStatus.get(r.status) || { count: 0, area: 0 };
+        item.count += 1;
+        item.area += r.status === "Отказ" ? r.areaFreeze : r.areaBuild;
+        byStatus.set(r.status, item);
+      });
+      summary.addRow([]);
+      [...byStatus.entries()]
+        .sort((a, b) => String(a[0]).localeCompare(String(b[0]), "ru"))
+        .forEach(([status, item]) => {
+          summary.addRow([
+            "Статус: " + status,
+            `${item.count} ${plural(item.count, ["строка", "строки", "строк"])} · ${fmt(
+              item.area,
+            )} м²`,
+          ]);
+        });
+
       const sheet = addSheet(
         workbook,
         "Выборка",
         defs.map((d) => d.label),
         defs.map((d) => d.width || 16),
       );
+      const rvIndex = defs.findIndex((d) => d.key === "rvText");
       state.filteredData.forEach((r) => {
-        sheet.addRow(
+        const row = sheet.addRow(
           defs.map((def) => {
             if (def.key === "obj") {
               const stage = stageLabel(r);
@@ -2331,6 +2407,14 @@
             return r[def.key] ?? "";
           }),
         );
+        if (rvIndex >= 0 && r.rvLink) {
+          const url = safeUrl(r.rvLink);
+          if (url) {
+            const cell = row.getCell(rvIndex + 1);
+            cell.value = { text: r.rvText || "Ссылка", hyperlink: url, tooltip: url };
+            cell.font = { color: { argb: "FF2563EB" }, underline: true };
+          }
+        }
       });
       defs.forEach((def, index) => {
         if (def.numeric) sheet.getColumn(index + 1).numFmt = "# ##0.00";
@@ -2582,15 +2666,30 @@
     }
   }
 
+  function dataFingerprint(headers, rows) {
+    const text = headers.join("|") + "|" + JSON.stringify(rows);
+    let hash = 5381;
+    for (let i = 0; i < text.length; i += 1) {
+      hash = ((hash << 5) + hash + text.charCodeAt(i)) | 0;
+    }
+    return String(hash);
+  }
+
   function applyData(headers, rows, meta = {}) {
+    const fingerprint = dataFingerprint(headers, rows);
+    const changed =
+      state.lastFingerprint !== null && fingerprint !== state.lastFingerprint;
+    state.lastFingerprint = fingerprint;
     state.allData = processData(headers, rows);
     processAllData();
     if (meta.ts) updateTimestamp(meta.ts);
     if (meta.fromCache) showToast("Показаны данные из кэша", "info", 3000);
+    if (meta.auto && changed) showToast("Данные обновлены", "info", 2500);
   }
 
-  async function loadData({ force = false } = {}) {
-    const cached = force ? null : readCache();
+  async function loadData({ force = false, silent = false, auto = false } = {}) {
+    if (state.loading) return;
+    const cached = force || auto ? null : readCache();
     if (cached) {
       applyData(cached.headers, cached.rows, {
         ts: cached.ts,
@@ -2599,14 +2698,19 @@
       return;
     }
 
-    setLoading(true, "Загружаю данные...");
+    state.loading = true;
+    if (!silent) setLoading(true, "Загружаю данные...");
     try {
       const { headers, rows } = await loadGoogleSheet();
       if (!headers.length) throw new Error("лист не содержит заголовков");
       writeCache({ headers, rows });
-      applyData(headers, rows, { ts: Date.now() });
+      applyData(headers, rows, { ts: Date.now(), auto });
     } catch (e) {
       console.error(e);
+      if (auto) {
+        showToast("Не удалось обновить данные автоматически", "warning", 4000);
+        return;
+      }
       const fallback = readCache(true);
       if (fallback) {
         applyData(fallback.headers, fallback.rows, { ts: fallback.ts });
@@ -2626,7 +2730,8 @@
         showToast("Не удалось загрузить данные: " + e.message, "error", 0);
       }
     } finally {
-      setLoading(false);
+      state.loading = false;
+      if (!silent) setLoading(false);
     }
   }
 
@@ -2648,6 +2753,7 @@
     document.querySelectorAll(".tab-content").forEach((panel) => {
       const active = panel.id === "tab-" + tab;
       panel.style.display = active ? "block" : "none";
+      panel.classList.toggle("active", active);
       panel.setAttribute("aria-hidden", String(!active));
     });
     if (tab === "map") ensureMap();
@@ -2740,20 +2846,129 @@
     });
   }
 
+  function setFiltersOpen(open) {
+    const sidebar = $("sidebar");
+    const overlay = $("sidebar-overlay");
+    const button = $("btn-filters");
+    if (!sidebar) return;
+    sidebar.classList.toggle("open", open);
+    if (overlay) overlay.hidden = !open;
+    if (button) button.setAttribute("aria-expanded", String(open));
+    document.body.classList.toggle("filters-open", open);
+    if (open) {
+      const first = sidebar.querySelector("input, button, select");
+      if (first) setTimeout(() => first.focus(), 60);
+    }
+  }
+
+  function initFiltersDrawer() {
+    const button = $("btn-filters");
+    if (button) {
+      button.addEventListener("click", () =>
+        setFiltersOpen(!$("sidebar").classList.contains("open")),
+      );
+    }
+    const close = $("btn-filters-close");
+    if (close) close.addEventListener("click", () => setFiltersOpen(false));
+    const overlay = $("sidebar-overlay");
+    if (overlay) overlay.addEventListener("click", () => setFiltersOpen(false));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setFiltersOpen(false);
+    });
+    const desktop = window.matchMedia("(min-width: 769px)");
+    const onChange = (e) => {
+      if (e.matches) setFiltersOpen(false);
+    };
+    if (desktop.addEventListener) desktop.addEventListener("change", onChange);
+    else desktop.addListener(onChange);
+  }
+
+  function initPrint() {
+    window.addEventListener("beforeprint", () => {
+      state.printAll = true;
+      const date = $("print-date");
+      const count = $("print-count");
+      const title = $("print-title");
+      const active = document.querySelector(".nav-btn.active");
+      if (title && active) {
+        title.textContent = `БОС · Аналитика — ${active.textContent.trim()}`;
+      }
+      if (date) date.textContent = new Date().toLocaleString("ru-RU");
+      if (count) {
+        count.textContent = `${state.filteredData.length} ${plural(state.filteredData.length, [
+          "строка",
+          "строки",
+          "строк",
+        ])}`;
+      }
+      renderTable();
+    });
+    window.addEventListener("afterprint", () => {
+      state.printAll = false;
+      renderTable();
+    });
+  }
+
+  function startAutoRefresh() {
+    if (!CONFIG.autoRefreshMs) return;
+    setInterval(() => {
+      if (document.visibilityState !== "visible" || state.loading) return;
+      const el = document.activeElement;
+      if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      loadData({ force: true, silent: true, auto: true });
+    }, CONFIG.autoRefreshMs);
+  }
+
   function initTableHandlers() {
     const head = $("main-table-head");
-    if (!head) return;
-    head.addEventListener("click", (e) => {
-      const th = e.target.closest("th[data-sort]");
-      if (th) sortTable(th.dataset.sort);
-    });
-    head.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      const th = e.target.closest("th[data-sort]");
-      if (!th) return;
-      e.preventDefault();
-      sortTable(th.dataset.sort);
-    });
+    if (head) {
+      head.addEventListener("click", (e) => {
+        const th = e.target.closest("th[data-sort]");
+        if (th) sortTable(th.dataset.sort);
+      });
+      head.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const th = e.target.closest("th[data-sort]");
+        if (!th) return;
+        e.preventDefault();
+        sortTable(th.dataset.sort);
+      });
+    }
+
+    const size = $("page-size");
+    if (size) {
+      size.value = String(state.pageSize);
+      size.addEventListener("change", (e) => {
+        state.pageSize = Number(e.target.value);
+        state.page = 1;
+        saveState();
+        renderTable();
+      });
+    }
+
+    const prev = $("page-prev");
+    if (prev) {
+      prev.addEventListener("click", () => {
+        state.page = Math.max(1, state.page - 1);
+        renderTable();
+        scrollTableTop();
+      });
+    }
+    const next = $("page-next");
+    if (next) {
+      next.addEventListener("click", () => {
+        state.page += 1;
+        renderTable();
+        scrollTableTop();
+      });
+    }
+  }
+
+  function scrollTableTop() {
+    const main = $("main-content");
+    if (main) main.scrollTo({ top: 0, behavior: "smooth" });
+    const scroller = document.querySelector(".table-scroll");
+    if (scroller) scroller.scrollTop = 0;
   }
 
   function toggleTooltip(wrap) {
@@ -3020,13 +3235,16 @@
     initHeader();
     initColumnsManager();
     initSidebar();
+    initFiltersDrawer();
     initTableHandlers();
     initYearTableHandlers();
     initExport();
     initMapHandlers();
     initCompare();
+    initPrint();
     initHash();
     loadData();
+    startAutoRefresh();
   }
 
   if (document.readyState === "loading") {

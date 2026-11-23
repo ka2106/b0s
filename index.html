@@ -43,6 +43,10 @@
 
       <div class="main-content" id="main-content">
         <div class="container">
+          <div class="print-only print-header">
+            <h1 id="print-title">БОС · Аналитика — Реестр объектов</h1>
+            <div class="print-meta"><span id="print-date"></span> · <span id="print-count"></span></div>
+          </div>
           <!-- DASHBOARD -->
           <div id="tab-dashboard" class="tab-content" role="tabpanel" aria-labelledby="btn-tab-dashboard">
             <div
@@ -131,7 +135,9 @@
           <!-- TABLE -->
           <div id="tab-table" class="tab-content" role="tabpanel" aria-labelledby="btn-tab-table" style="display: none">
             <div class="table-layout">
+              <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
               <aside class="sidebar" id="sidebar">
+                <button class="btn btn-secondary sidebar-close" id="btn-filters-close" type="button">Показать результаты</button>
                 <div class="filter-group">
                   <div class="filter-header" role="button" tabindex="0" aria-expanded="false">
                     <div class="filter-title-wrap">
@@ -296,10 +302,25 @@
               <div class="table-container" id="main-table-container">
                 <div class="table-header">
                   <span class="table-title">Реестр объектов <span class="table-count" id="table-count"></span></span>
-                  <div style="display: flex; align-items: center; gap: 16px">
-                    <button class="btn btn-secondary" id="btn-export-excel">
-                      Экспорт в Excel
-                    </button>
+                  <div class="table-actions">
+                    <button class="btn btn-secondary btn-filters" id="btn-filters" type="button" aria-controls="sidebar" aria-expanded="false">Фильтры</button>
+                    <button class="btn btn-secondary" id="btn-export-excel" type="button">Экспорт в Excel</button>
+                  </div>
+                </div>
+                                <div class="table-toolbar">
+                  <label class="page-size-label">Строк:
+                    <select id="page-size" class="year-select" aria-label="Строк на странице">
+                      <option value="50">50</option>
+                      <option value="100" selected>100</option>
+                      <option value="250">250</option>
+                      <option value="500">500</option>
+                      <option value="0">Все</option>
+                    </select>
+                  </label>
+                  <div class="pager">
+                    <button class="btn btn-secondary pager-btn" id="page-prev" type="button" aria-label="Предыдущая страница" disabled>←</button>
+                    <span class="page-info" id="page-info"></span>
+                    <button class="btn btn-secondary pager-btn" id="page-next" type="button" aria-label="Следующая страница" disabled>→</button>
                   </div>
                 </div>
                 <div class="table-scroll">
@@ -459,7 +480,7 @@
       </div>
     </div>
 
-        <script src="config.js" defer></script>
+    <script src="config.js" defer></script>
     <script src="app.js" defer></script>
     <div id="toast-container" class="toast-container" aria-live="polite"></div>
     <noscript><div class="noscript">Для работы дашборда нужен JavaScript.</div></noscript>
