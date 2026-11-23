@@ -1517,6 +1517,7 @@
                 });
                 state.markersLayer = new ymaps.GeoObjectCollection();
                 state.map.geoObjects.add(state.markersLayer);
+                state.mapSignature = null;
                 hideMapNotice();
                 updateMap();
                 watchMapTiles();
@@ -1533,19 +1534,31 @@
       });
   }
 
-  function getPieChartGradient(statusAreas) {
-    const total = Object.values(statusAreas).reduce((a, b) => a + b, 0);
-    if (!total) return "#ccc";
-    let angle = 0;
-    const parts = [];
-    Object.entries(statusAreas)
-      .sort((a, b) => b[1] - a[1])
-      .forEach(([status, area]) => {
-        const span = (area / total) * 360;
-        parts.push(`${statusConf(status).hex} ${angle}deg ${angle + span}deg`);
-        angle += span;
-      });
-    return `conic-gradient(${parts.join(", ")})`;
+  // Метка рисуется SVG-картинкой: так Яндекс не перерисовывает DOM-разметку 68 меток
+  // при каждом зуме (из-за этого карта подвисала), и клик всегда попадает в метку.
+  function pieImageUrl(statusAreas) {
+    const entries = Object.entries(statusAreas).sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((sum, [, area]) => sum + area, 0);
+    const r = 10;
+    let angle = -Math.PI / 2;
+    const slices = entries
+      .map(([status, area]) => {
+        const sweep = total ? (area / total) * Math.PI * 2 : 0;
+        const x1 = 12 + r * Math.cos(angle);
+        const y1 = 12 + r * Math.sin(angle);
+        angle += sweep;
+        const x2 = 12 + r * Math.cos(angle);
+        const y2 = 12 + r * Math.sin(angle);
+        const large = sweep > Math.PI ? 1 : 0;
+        const d = `M12 12 L${x1.toFixed(2)} ${y1.toFixed(2)} A${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+        return `<path d="${d}" fill="${statusConf(status).hex}"/>`;
+      })
+      .join("");
+    const svg =
+      `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">` +
+      `<circle cx="12" cy="12" r="11.5" fill="#ffffff"/>` +
+      `<circle cx="12" cy="12" r="10" fill="#e2e8f0"/>${slices}</svg>`;
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   }
 
   function updateMap() {
@@ -1592,13 +1605,24 @@
     }
 
     if (!state.map || !state.markersLayer) return;
+
+    // Если данные не изменились (обновление по таймеру, повторный вход на вкладку),
+    // слой меток не пересобираем — иначе карта дёргается и теряет зум.
+    const signature = [...grouped.entries()]
+      .map(
+        ([city, d]) =>
+          `${city}:${d.coords.join(",")}:${Math.round(d.area)}:${d.stages}:${d.abch}:` +
+          Object.entries(d.statusAreas)
+            .map(([st, a]) => st + Math.round(a))
+            .join("|"),
+      )
+      .join(";");
+    if (signature === state.mapSignature) return;
+    state.mapSignature = signature;
+
     state.markersLayer.removeAll();
 
     grouped.forEach((d, city) => {
-      const gradient = getPieChartGradient(d.statusAreas);
-      const layout = ymaps.templateLayoutFactory.createClass(
-        `<div class="map-pie" style="background:${gradient}"></div>`,
-      );
       const stageLines = [
         d.stages ? `Этапов: ${d.stages}` : "",
         d.abch ? `АБЧ: ${d.abch}` : "",
@@ -1616,12 +1640,10 @@
         </div>`,
         },
         {
-          iconLayout: "default#imageWithContent",
-          iconImageHref:
-            "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+          iconLayout: "default#image",
+          iconImageHref: pieImageUrl(d.statusAreas),
           iconImageSize: [24, 24],
           iconImageOffset: [-12, -12],
-          iconContentLayout: layout,
         },
       );
       state.markersLayer.add(placemark);
