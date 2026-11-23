@@ -1554,41 +1554,6 @@ td.muted-text {
 .btn-filters {
   display: none;
 }
-.table-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-}
-.page-size-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-.page-size-label .year-select {
-  padding: 4px 8px;
-}
-.pager {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.pager-btn {
-  padding: 4px 10px;
-}
-.page-info {
-  min-width: 110px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
 .print-only {
   display: none;
 }
@@ -1643,9 +1608,6 @@ td.muted-text {
   }
   body.filters-open {
     overflow: hidden;
-  }
-  .table-toolbar {
-    padding: 10px 12px;
   }
   .table-header {
     flex-wrap: wrap;
@@ -1810,7 +1772,6 @@ td.muted-text {
   .toast-container,
   .sidebar,
   .sidebar-overlay,
-  .table-toolbar,
   .map-meta,
   .year-select,
   .nav-tabs {

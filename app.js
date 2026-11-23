@@ -222,9 +222,6 @@
       status: new Set(),
     },
     sort: { col: null, dir: 1 },
-    page: 1,
-    pageSize: 100,
-    printAll: false,
     loading: false,
     lastFingerprint: null,
     showBVS: true,
@@ -258,7 +255,6 @@
           filters,
           seen,
           selectedYear: state.selectedYear,
-          pageSize: state.pageSize,
         }),
       );
     } catch (e) {
@@ -302,9 +298,6 @@
         }
       }
       if (Number.isInteger(s.selectedYear)) state.selectedYear = s.selectedYear;
-      if (Number.isInteger(s.pageSize) && [0, 50, 100, 250, 500].includes(s.pageSize)) {
-        state.pageSize = s.pageSize;
-      }
     } catch (e) {
       console.error("Ошибка загрузки настроек", e);
       localStorage.removeItem(CONFIG.stateKey);
@@ -658,8 +651,6 @@
       FILTER_KEYS.every((k) => !f[k] || f[k].has(r[k])),
     );
 
-    state.page = 1;
-
     if (state.sort.col) {
       const col = state.sort.col;
       const dir = state.sort.dir;
@@ -740,29 +731,12 @@
     const body = $("table-body");
     if (!body) return;
 
-    const total = state.filteredData.length;
-    const pageSize = state.printAll ? 0 : state.pageSize;
-    const pageCount = pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-    state.page = Math.min(Math.max(1, state.page), pageCount);
-    const start = pageSize > 0 ? (state.page - 1) * pageSize : 0;
-    const end = pageSize > 0 ? Math.min(start + pageSize, total) : total;
-    const pageRows = state.filteredData.slice(start, end);
-
-    body.innerHTML = pageRows.length
-      ? pageRows.map((r) => renderRow(r, defs)).join("")
+    body.innerHTML = state.filteredData.length
+      ? state.filteredData.map((r) => renderRow(r, defs)).join("")
       : `<tr><td colspan="${defs.length}" class="empty-state">Ничего не найдено. Измените фильтры.</td></tr>`;
 
     const count = $("table-count");
-    if (count) count.textContent = `${total} из ${state.rawData.length}`;
-
-    const info = $("page-info");
-    if (info) info.textContent = total ? `${start + 1}–${end} из ${total}` : "0";
-    const prev = $("page-prev");
-    if (prev) prev.disabled = state.page <= 1;
-    const next = $("page-next");
-    if (next) next.disabled = state.page >= pageCount;
-    const size = $("page-size");
-    if (size && size.value !== String(state.pageSize)) size.value = String(state.pageSize);
+    if (count) count.textContent = `${state.filteredData.length} из ${state.rawData.length}`;
   }
 
   function renderRow(r, defs) {
@@ -2885,7 +2859,6 @@
 
   function initPrint() {
     window.addEventListener("beforeprint", () => {
-      state.printAll = true;
       const date = $("print-date");
       const count = $("print-count");
       const title = $("print-title");
@@ -2901,11 +2874,6 @@
           "строк",
         ])}`;
       }
-      renderTable();
-    });
-    window.addEventListener("afterprint", () => {
-      state.printAll = false;
-      renderTable();
     });
   }
 
@@ -2935,40 +2903,6 @@
       });
     }
 
-    const size = $("page-size");
-    if (size) {
-      size.value = String(state.pageSize);
-      size.addEventListener("change", (e) => {
-        state.pageSize = Number(e.target.value);
-        state.page = 1;
-        saveState();
-        renderTable();
-      });
-    }
-
-    const prev = $("page-prev");
-    if (prev) {
-      prev.addEventListener("click", () => {
-        state.page = Math.max(1, state.page - 1);
-        renderTable();
-        scrollTableTop();
-      });
-    }
-    const next = $("page-next");
-    if (next) {
-      next.addEventListener("click", () => {
-        state.page += 1;
-        renderTable();
-        scrollTableTop();
-      });
-    }
-  }
-
-  function scrollTableTop() {
-    const main = $("main-content");
-    if (main) main.scrollTo({ top: 0, behavior: "smooth" });
-    const scroller = document.querySelector(".table-scroll");
-    if (scroller) scroller.scrollTop = 0;
   }
 
   function toggleTooltip(wrap) {
