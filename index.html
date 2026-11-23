@@ -275,6 +275,31 @@
                   </div>
                 </div>
 
+                <div class="filter-group">
+                  <div class="filter-header" role="button" tabindex="0" aria-expanded="false">
+                    <div class="filter-title-wrap">
+                      <span class="filter-title">Год РВ</span>
+                      <svg
+                        class="filter-arrow"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </div>
+                    <div class="filter-actions-wrap">
+                      <span class="filter-actions" data-target="year" data-action="all">Все</span><span class="filter-actions" data-target="year" data-action="none">Ничего</span>
+                    </div>
+                  </div>
+                  <div class="filter-content">
+                    <div class="checkbox-list" id="filter-year"></div>
+                  </div>
+                </div>
+
                 <!-- Drag & Drop Колонки -->
                 <div class="filter-group open">
                   <div class="filter-header" role="button" tabindex="0" aria-expanded="false">
@@ -308,7 +333,8 @@
                   </div>
                 </div>
                 <div class="table-scroll">
-                  <table>
+                  <table id="main-table">
+                    <colgroup id="main-table-cols"></colgroup>
                     <thead id="main-table-head"></thead>
                     <tbody id="table-body"></tbody>
                   </table>

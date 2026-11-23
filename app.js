@@ -23,8 +23,14 @@
     sheetTimeoutMs: 20000,
   };
 
-  const FILTER_KEYS = ["fo", "obj", "category", "status"];
-  const FILTER_LABELS = { fo: "ФО", obj: "Объект", category: "Категория", status: "Статус" };
+  const FILTER_KEYS = ["fo", "obj", "category", "status", "year"];
+  const FILTER_LABELS = {
+    fo: "ФО",
+    obj: "Объект",
+    category: "Категория",
+    status: "Статус",
+    year: "Год РВ",
+  };
 
   // ---------------------------------------------------------------------------
   // Утилиты
@@ -159,42 +165,16 @@
   // Колонки
   // ---------------------------------------------------------------------------
   const COLUMN_DEFS = [
-    { key: "obj", label: "Объект / Этап", class: "text-left", width: 34 },
-    { key: "category", label: "Категория", class: "text-left", width: 20 },
-    { key: "status", label: "Статус", class: "text-center", width: 16 },
-    {
-      key: "areaBuild",
-      label: "Стройка",
-      class: "text-right",
-      numeric: true,
-      bold: true,
-      width: 16,
-    },
-    {
-      key: "areaMezzanine",
-      label: "Мезонин",
-      class: "text-right",
-      numeric: true,
-      width: 16,
-    },
-    {
-      key: "areaOper",
-      label: "Оперзона",
-      class: "text-right",
-      numeric: true,
-      width: 16,
-    },
-    {
-      key: "areaFreeze",
-      label: "Заморозка",
-      class: "text-right",
-      numeric: true,
-      bold: true,
-      width: 16,
-    },
-    { key: "rvText", label: "РВ (Дата)", class: "text-center", width: 18 },
-    { key: "source", label: "Источник данных", class: "text-left", width: 24 },
-    { key: "damage", label: "Повреждения", class: "text-left", width: 22 },
+    { key: "obj", label: "Объект / Этап", class: "text-left", width: 34, w: 240 },
+    { key: "category", label: "Категория", class: "text-left", width: 20, w: 150 },
+    { key: "status", label: "Статус", class: "text-center", width: 16, w: 110 },
+    { key: "areaBuild", label: "Стройка", class: "text-right", numeric: true, bold: true, width: 16, w: 105 },
+    { key: "areaMezzanine", label: "Мезонин", class: "text-right", numeric: true, width: 16, w: 105 },
+    { key: "areaOper", label: "Оперзона", class: "text-right", numeric: true, width: 16, w: 105 },
+    { key: "areaFreeze", label: "Заморозка", class: "text-right", numeric: true, bold: true, width: 16, w: 105 },
+    { key: "rvText", label: "РВ (Дата)", class: "text-center", width: 18, w: 120 },
+    { key: "source", label: "Источник данных", class: "text-left", width: 24, w: 210 },
+    { key: "damage", label: "Повреждения", class: "text-left", width: 22, w: 220 },
   ];
   const DEFAULT_COLUMNS = [
     "obj",
@@ -214,12 +194,13 @@
     allData: [],
     rawData: [],
     filteredData: [],
-    filters: { fo: null, obj: null, category: null, status: null },
+    filters: { fo: null, obj: null, category: null, status: null, year: null },
     seen: {
       fo: new Set(),
       obj: new Set(),
       category: new Set(),
       status: new Set(),
+      year: new Set(),
     },
     sort: { col: null, dir: 1 },
     loading: false,
@@ -326,15 +307,11 @@
     if (!list) return;
     list.innerHTML = orderedColumnDefs()
       .map((col) => {
-        const checked = state.visible.has(col.key) ? "checked" : "";
-        return `<div class="dnd-item" draggable="true" data-key="${col.key}">
+        const on = state.visible.has(col.key);
+        return `<div class="dnd-item ${on ? "is-on" : ""}" draggable="true" data-key="${col.key}">
       <span class="dnd-handle" aria-hidden="true">☰</span>
-      <input type="checkbox" data-col-key="${col.key}" ${checked} aria-label="Показывать столбец «${esc(col.label)}»">
+      <input type="checkbox" data-col-key="${col.key}" ${on ? "checked" : ""} aria-label="Показывать столбец «${esc(col.label)}»">
       <span class="dnd-label">${esc(col.label)}</span>
-      <span class="dnd-move">
-        <button type="button" data-move="-1" aria-label="Поднять «${esc(col.label)}»">▲</button>
-        <button type="button" data-move="1" aria-label="Опустить «${esc(col.label)}»">▼</button>
-      </span>
     </div>`;
       })
       .join("");
@@ -344,18 +321,8 @@
     if (checked) state.visible.add(key);
     else state.visible.delete(key);
     if (!state.columnOrder.includes(key)) state.columnOrder.push(key);
-    renderTable();
-    saveState();
-  }
-
-  function moveColumn(key, delta) {
-    const order = state.columnOrder;
-    const from = order.indexOf(key);
-    const to = from + delta;
-    if (from < 0 || to < 0 || to >= order.length) return;
-    order.splice(from, 1);
-    order.splice(to, 0, key);
-    renderColumnsManager();
+    const chip = document.querySelector(`.dnd-item[data-key="${key}"]`);
+    if (chip) chip.classList.toggle("is-on", checked);
     renderTable();
     saveState();
   }
@@ -379,15 +346,7 @@
       const cb = e.target.closest("input[data-col-key]");
       if (cb) setColumnVisible(cb.dataset.colKey, cb.checked);
     });
-    list.addEventListener("click", (e) => {
-      const btn = e.target.closest("button[data-move]");
-      if (!btn) return;
-      e.preventDefault();
-      moveColumn(
-        btn.closest(".dnd-item").dataset.key,
-        Number(btn.dataset.move),
-      );
-    });
+
     let dragSrcEl = null;
     list.addEventListener("dragstart", (e) => {
       const item = e.target.closest(".dnd-item");
@@ -528,6 +487,14 @@
   // ---------------------------------------------------------------------------
   // Нормализация строк листа
   // ---------------------------------------------------------------------------
+  function yearBucket(date) {
+    const year = date.getFullYear();
+    const currentYear = new Date().getFullYear();
+    if (year < 2024) return "Ранее";
+    if (year > currentYear) return "Далее";
+    return String(year);
+  }
+
   function processData(headers, rows) {
     return rows.map((r) => {
       const getVal = (k) => (r[k] !== undefined ? r[k] : null);
@@ -587,6 +554,7 @@
         rvLink,
         rvDate: date,
         rvSort: date ? date.getTime() : 0,
+        year: date ? yearBucket(date) : "Без даты",
         badArea,
         isBVS:
           String(getVal("категория") || "").includes("БВС") ||
@@ -612,10 +580,23 @@
   // ---------------------------------------------------------------------------
   // Фильтры
   // ---------------------------------------------------------------------------
-  const allValues = (key, data) =>
-    [...new Set(data.map((r) => r[key]).filter(Boolean))].sort((a, b) =>
-      String(a).localeCompare(String(b), "ru"),
-    );
+  const rowFilterValue = (r, key) => (key === "year" ? r.year : r[key]);
+
+  const YEAR_RANK = (v) => {
+    if (v === "Ранее") return Number.NEGATIVE_INFINITY;
+    if (v === "Далее") return Number.MAX_SAFE_INTEGER - 1;
+    if (v === "Без даты") return Number.MAX_SAFE_INTEGER;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER - 2;
+  };
+
+  const allValues = (key, data) => {
+    const values = [
+      ...new Set(data.map((r) => rowFilterValue(r, key)).filter(Boolean)),
+    ];
+    if (key === "year") return values.sort((a, b) => YEAR_RANK(a) - YEAR_RANK(b));
+    return values.sort((a, b) => String(a).localeCompare(String(b), "ru"));
+  };
 
   function renderFilterOptions() {
     for (const key of FILTER_KEYS) {
@@ -648,7 +629,7 @@
   function applyFilters() {
     const f = state.filters;
     state.filteredData = state.rawData.filter((r) =>
-      FILTER_KEYS.every((k) => !f[k] || f[k].has(r[k])),
+      FILTER_KEYS.every((k) => !f[k] || f[k].has(rowFilterValue(r, k))),
     );
 
     if (state.sort.col) {
@@ -695,8 +676,25 @@
     for (const key of FILTER_KEYS) {
       state.filters[key] = new Set(allValues(key, state.rawData));
     }
-    if (type === "delivered") state.filters.status = new Set(["Завершено"]);
-    else if (type === "remaining") state.filters.status = new Set(["В работе"]);
+    const currentYear = String(new Date().getFullYear());
+    if (type === "delivered") {
+      state.filters.status = new Set(["Завершено"]);
+      state.filters.year = new Set([currentYear]);
+    } else if (type === "remaining") {
+      state.filters.status = new Set(["В работе"]);
+      state.filters.year = new Set([currentYear]);
+    }
+    renderFilterOptions();
+    applyFilters();
+    saveState();
+  }
+
+  function drillDownYear(bucket) {
+    activateTab("table");
+    for (const key of FILTER_KEYS) {
+      state.filters[key] = new Set(allValues(key, state.rawData));
+    }
+    state.filters.year = new Set([bucket]);
     renderFilterOptions();
     applyFilters();
     saveState();
@@ -707,6 +705,16 @@
   // ---------------------------------------------------------------------------
   function renderTable() {
     const defs = visibleColumnDefs();
+    const table = $("main-table");
+    const cols = $("main-table-cols");
+    if (cols) {
+      cols.innerHTML = defs
+        .map((def) => `<col style="width:${def.w || 120}px">`)
+        .join("");
+    }
+    if (table) {
+      table.style.minWidth = `${defs.reduce((sum, def) => sum + (def.w || 120), 0)}px`;
+    }
     const head = $("main-table-head");
     if (head) {
       head.innerHTML =
@@ -752,9 +760,9 @@
     const cells = defs.map((def) => {
       const label = `data-label="${esc(def.label)}"`;
       if (def.key === "obj") {
-        return `<td ${label} class="${def.class}"><div class="cell-title">${esc(
+        return `<td ${label} class="${def.class}"><div class="cell-title" title="${esc(
           r.obj,
-        )}</div>${stage ? `<div class="cell-sub">${esc(stage)}</div>` : ""}</td>`;
+        )}">${esc(r.obj)}</div>${stage ? `<div class="cell-sub" title="${esc(stage)}">${esc(stage)}</div>` : ""}</td>`;
       }
       if (def.key === "status") {
         return `<td ${label} class="${def.class}"><span class="status-badge ${conf.badge}">${esc(
@@ -772,7 +780,9 @@
       }
       const cls =
         def.key === "source" || def.key === "damage" ? " cell-muted" : "";
-      return `<td ${label} class="${def.class}${cls}">${esc(r[def.key])}</td>`;
+      return `<td ${label} class="${def.class}${cls}" title="${esc(
+        r[def.key],
+      )}">${esc(r[def.key])}</td>`;
     });
     return `<tr>${cells.join("")}</tr>`;
   }
@@ -921,7 +931,11 @@
         .map((year) => {
           const area = yearMap[year];
           const pct = (area / maxYearArea) * 100;
-          return `<div class="bar-item"><div class="bar-label">${esc(
+          return `<div class="bar-item clickable" data-year="${esc(
+            year,
+          )}" role="button" tabindex="0" aria-label="Показать объекты: ${esc(
+            year,
+          )}"><div class="bar-label">${esc(
             year,
           )}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--accent)"></div></div><div class="bar-value">${fmt(
             area,
@@ -2756,11 +2770,22 @@
     const dashboard = $("tab-dashboard");
     if (!dashboard) return;
     dashboard.addEventListener("click", (e) => {
+      const yearBar = e.target.closest("#chart-years [data-year]");
+      if (yearBar) {
+        drillDownYear(yearBar.dataset.year);
+        return;
+      }
       const card = e.target.closest("[data-drill]");
       if (card) drillDown(card.dataset.drill);
     });
     dashboard.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
+      const yearBar = e.target.closest("#chart-years [data-year]");
+      if (yearBar) {
+        e.preventDefault();
+        drillDownYear(yearBar.dataset.year);
+        return;
+      }
       const card = e.target.closest("[data-drill]");
       if (!card) return;
       e.preventDefault();
