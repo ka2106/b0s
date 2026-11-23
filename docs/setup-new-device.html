@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>БОС · Аналитика — как продолжить работу на новом устройстве</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f8fb;
+        --surface: #fff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --border: #e2e8f0;
+        --accent: #4f46e5;
+        --accent-soft: #eef2ff;
+        --code-bg: #0f172a;
+        --code-text: #e2e8f0;
+        --warn: #b45309;
+        --warn-bg: #fffbeb;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0b1220;
+          --surface: #111c2e;
+          --text: #e2e8f0;
+          --muted: #94a3b8;
+          --border: #26364d;
+          --accent: #818cf8;
+          --accent-soft: #1e1b4b;
+          --code-bg: #060b14;
+          --code-text: #dbeafe;
+          --warn: #fbbf24;
+          --warn-bg: #2a2113;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 32px 16px 64px;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.65 "Segoe UI",
+          Roboto,
+          Arial,
+          sans-serif;
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 32px 36px 44px;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+      }
+      h1 {
+        font-size: 28px;
+        line-height: 1.25;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 21px;
+        margin: 40px 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      h3 {
+        font-size: 17px;
+        margin: 24px 0 8px;
+      }
+      .lead {
+        color: var(--muted);
+        margin: 0 0 24px;
+      }
+      code {
+        font-family: Consolas, "Cascadia Mono", monospace;
+        font-size: 0.92em;
+        background: var(--accent-soft);
+        color: var(--accent);
+        padding: 1px 6px;
+        border-radius: 5px;
+        word-break: break-word;
+      }
+      pre {
+        background: var(--code-bg);
+        color: var(--code-text);
+        padding: 14px 16px;
+        border-radius: 10px;
+        overflow-x: auto;
+        font-family: Consolas, "Cascadia Mono", monospace;
+        font-size: 13.5px;
+        line-height: 1.55;
+        margin: 10px 0 16px;
+      }
+      pre code {
+        background: none;
+        color: inherit;
+        padding: 0;
+        font-size: inherit;
+      }
+      .step {
+        border-left: 3px solid var(--accent);
+        padding: 0 0 0 16px;
+        margin: 18px 0;
+      }
+      .note,
+      .warn {
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin: 14px 0;
+        font-size: 15px;
+      }
+      .note {
+        background: var(--accent-soft);
+        border: 1px solid var(--border);
+      }
+      .warn {
+        background: var(--warn-bg);
+        border: 1px solid var(--warn);
+        color: var(--text);
+      }
+      .warn b {
+        color: var(--warn);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 12px 0 20px;
+        font-size: 15px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      th {
+        background: var(--accent-soft);
+        font-weight: 600;
+      }
+      ol,
+      ul {
+        padding-left: 22px;
+      }
+      ol li,
+      ul li {
+        margin: 6px 0;
+      }
+      .toc {
+        background: var(--accent-soft);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 20px;
+        font-size: 15px;
+      }
+      .toc ol {
+        margin: 6px 0;
+      }
+      .toc a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .toc a:hover {
+        text-decoration: underline;
+      }
+      .file {
+        font-family: Consolas, monospace;
+        font-size: 14px;
+        color: var(--accent);
+      }
+      footer {
+        margin-top: 40px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 14px;
+      }
+      @media (max-width: 640px) {
+        main {
+          padding: 20px 16px 32px;
+        }
+        h1 {
+          font-size: 23px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>БОС · Аналитика — настройка работы на новом устройстве</h1>
+      <p class="lead">
+        Пошаговая инструкция «с нуля»: на компьютере нет ни Git, ни Node.js, ни редактора.
+        За ~20 минут получится рабочая копия дашборда и возможность пушить изменения на GitHub.
+      </p>
+
+      <div class="toc">
+        <b>Содержание</b>
+        <ol>
+          <li><a href="#about">Что это за проект</a></li>
+          <li><a href="#install">Установка инструментов (Git, Node.js, VS Code)</a></li>
+          <li><a href="#clone">Клонирование репозитория</a></li>
+          <li><a href="#config">Локальные настройки: ключ Яндекс.Карт</a></li>
+          <li><a href="#run">Запуск и проверка</a></li>
+          <li><a href="#git">Как работать с Git: ветки, коммиты, push</a></li>
+          <li><a href="#auth">Вход в GitHub</a></li>
+          <li><a href="#data">Данные: Google-таблица, кэш, автообновление</a></li>
+          <li><a href="#optional">Необязательно: prettier, eslint, html-validate</a></li>
+          <li><a href="#troubles">Частые проблемы и решения</a></li>
+          <li><a href="#checklist">Финальный чек-лист</a></li>
+        </ol>
+      </div>
+
+      <h2 id="about">1. Что это за проект</h2>
+      <p>
+        Одностраничный дашборд строительства складов. Это <b>статические файлы</b>: нет сборки,
+        нет <code>npm install</code>, нет серверной части. Достаточно открыть
+        <span class="file">index.html</span> — но надёжнее через локальный веб-сервер (шаг 5).
+      </p>
+      <table>
+        <tr>
+          <th>Файл</th>
+          <th>Назначение</th>
+        </tr>
+        <tr>
+          <td class="file">index.html</td>
+          <td>Разметка всех вкладок: Дашборд, Таблица, Карта, Сравнение</td>
+        </tr>
+        <tr>
+          <td class="file">styles.css</td>
+          <td>Все стили, включая тёмную тему и печать</td>
+        </tr>
+        <tr>
+          <td class="file">app.js</td>
+          <td>Логика: загрузка Google Sheets, фильтры, таблица, карта, экспорт в Excel</td>
+        </tr>
+        <tr>
+          <td class="file">config.example.js</td>
+          <td>Шаблон локального конфига (ключ Яндекс.Карт) — лежит в репозитории</td>
+        </tr>
+        <tr>
+          <td class="file">config.js</td>
+          <td>
+            Ваш личный конфиг с ключом. <b>В git не попадает</b> (в
+            <span class="file">.gitignore</span>) — создаётся на каждом устройстве отдельно
+          </td>
+        </tr>
+      </table>
+      <p>
+        Репозиторий: <code>https://github.com/ka2106/b0s.git</code>, основная ветка —
+        <code>main</code>. Любая новая работа начинается от <code>main</code>.
+      </p>
+
+      <h2 id="install">2. Установка инструментов</h2>
+      <p>
+        Все команды ниже — для Windows в <b>PowerShell</b> (меню «Пуск» → введите
+        <code>PowerShell</code>). Для macOS/Linux — примечания в конце шага.
+      </p>
+
+      <div class="step">
+        <h3>2.1. Git</h3>
+        <pre><code>winget install --id Git.Git -e --source winget</code></pre>
+        <p>Проверка (может понадобиться перезапустить PowerShell):</p>
+        <pre><code>git --version</code></pre>
+        <p>Представьтесь Git — это попадёт в коммиты:</p>
+        <pre><code>git config --global user.name "Ваше Имя"
+git config --global user.email "почта@example.com"</code></pre>
+        <p>Полезные настройки для Windows (кириллица в путях и переносы строк):</p>
+        <pre><code>git config --global core.autocrlf true
+git config --global core.quotepath off
+git config --global init.defaultBranch main</code></pre>
+      </div>
+
+      <div class="step">
+        <h3>2.2. Node.js LTS</h3>
+        <p>
+          Сборка проекту не нужна, но Node даёт локальный сервер (<code>npx serve</code>) и
+          линтеры. Ставьте LTS-версию:
+        </p>
+        <pre><code>winget install --id OpenJS.NodeJS.LTS -e --source winget</code></pre>
+        <pre><code>node -v
+npm -v</code></pre>
+        <p>
+          <b>Альтернатива без Node:</b> если есть Python — <code>python -m http.server 5173</code>
+          из папки проекта. Или просто откройте <span class="file">index.html</span> двойным
+          кликом (всё работает, но карта Яндекса на <code>file://</code> может ругаться на ключ).
+        </p>
+      </div>
+
+      <div class="step">
+        <h3>2.3. VS Code</h3>
+        <pre><code>winget install --id Microsoft.VisualStudioCode -e --source winget</code></pre>
+        <p>Проверка из PowerShell:</p>
+        <pre><code>code --version</code></pre>
+        <p>Рекомендуемые расширения:</p>
+        <pre><code>code --install-extension esbenp.prettier-vscode
+code --install-extension dbaeumer.vscode-eslint
+code --install-extension ritwickdey.liveserver
+code --install-extension ms-vscode.powershell</code></pre>
+      </div>
+
+      <p>
+        <b>macOS:</b> <code>brew install git node</code>, VS Code — с сайта code.visualstudio.com.
+        <b>Linux (Debian/Ubuntu):</b> <code>sudo apt install git nodejs npm</code>.
+      </p>
+
+      <h2 id="clone">3. Клонирование репозитория</h2>
+      <ol>
+        <li>Создайте папку для проектов, например <code>D:\Projects</code>.</li>
+        <li>В PowerShell:</li>
+      </ol>
+      <pre><code>cd D:\Projects
+git clone https://github.com/ka2106/b0s.git
+cd b0s</code></pre>
+      <p>Проверка:</p>
+      <pre><code>git status
+git log --oneline -5</code></pre>
+      <p>
+        Должно быть <code>On branch main</code> и <code>nothing to commit, working tree clean</code>.
+        Открыть проект в VS Code:
+      </p>
+      <pre><code>code .</code></pre>
+
+      <h2 id="config">4. Локальные настройки: ключ Яндекс.Карт</h2>
+      <p>
+        Ключ <b>не хранится в репозитории</b> (репозиторий публичный). На каждом устройстве он
+        создаётся заново:
+      </p>
+      <pre><code>Copy-Item config.example.js config.js</code></pre>
+      <p>Откройте <span class="file">config.js</span> и вставьте ключ:</p>
+      <pre><code>window.BOS_CONFIG = {
+  mapsApiKey: "ваш-ключ-javascript-api",
+  mapsDailyLimit: 100,
+};</code></pre>
+      <div class="note">
+        <b>Где взять ключ:</b>
+        <a href="https://developer.tech.yandex.ru/services/">developer.tech.yandex.ru</a> → сервис
+        <b>«JavaScript API и Геокодер»</b> (не Static API, не MapKit SDK, не Tiles API) → создать
+        ключ. В настройках ключа можно ограничить его доменом (<code>localhost</code>,
+        <code>127.0.0.1</code>). Бесплатный тариф — около 100 загрузок карты в сутки; приложение
+        считает их локально (<code>localStorage["bos_map_usage"]</code>) и после лимита
+        останавливает автозагрузку — рядом есть кнопка принудительной загрузки.
+      </div>
+      <div class="warn">
+        <b>Не коммитьте <span class="file">config.js</span>.</b> Он уже в
+        <span class="file">.gitignore</span> — если добавите принудительно
+        (<code>git add -f</code>), ключ утечёт в публичный репозиторий.
+      </div>
+      <p>
+        Без ключа приложение тоже работает: вкладка «Карта» покажет инструкцию, остальные разделы
+        не зависят от карты.
+      </p>
+
+      <h2 id="run">5. Запуск и проверка</h2>
+      <p>Из папки проекта (любой из вариантов):</p>
+      <pre><code># вариант 1: Node
+npx serve -l 5173 .
+
+# вариант 2: Python
+python -m http.server 5173
+
+# вариант 3: расширение Live Server в VS Code
+# правый клик по index.html → Open with Live Server</code></pre>
+      <p>Откройте <code>http://localhost:5173</code> и проверьте:</p>
+      <ul>
+        <li><b>Дашборд</b> — загружается без ошибок, KPI «Всего объектов» = 68;</li>
+        <li><b>Таблица</b> — «Реестр объектов 185 из 185», сортировка по клику на заголовок;</li>
+        <li><b>фильтры</b> в сайдбаре: ФО, Объект, Категория, Статус, Год РВ;</li>
+        <li><b>клик по KPI</b> «Сдано в …» / «Осталось сдать» открывает таблицу с фильтром по году;</li>
+        <li><b>клик по году</b> на графике «Сдача площадей» — тот же drill-down;</li>
+        <li><b>Карта</b> — 68 маркеров (плитки появятся только с валидным ключом);</li>
+        <li><b>Сравнение</b> — загрузите два файла .xlsx и нажмите «Сравнить»;</li>
+        <li><b>Экспорт в Excel</b> — скачивается файл с листами «Сводка» и «Выборка».</li>
+      </ul>
+      <p>Если консоль браузера (F12) чистая — окружение настроено верно.</p>
+
+      <h2 id="git">6. Как работать с Git</h2>
+      <p>
+        <b>Правило:</b> <code>main</code> — всегда рабочая версия. Любая доработка — отдельная
+        ветка от <code>main</code>, затем merge (или Pull Request) обратно в <code>main</code>.
+      </p>
+      <h3>Обычный цикл работы</h3>
+      <pre><code># 1. обновить main
+git switch main
+git pull
+
+# 2. новая ветка под задачу
+git switch -c feature/kpi-by-object
+
+# 3. правки в файлах... затем
+git status
+git add index.html app.js styles.css
+git commit -m "feat: KPI по объектам"
+
+# 4. выложить ветку
+git push -u origin feature/kpi-by-object</code></pre>
+      <p>Далее на GitHub — Pull Request в <code>main</code>, просмотр diff, Merge.</p>
+      <h3>Если работаете один и без PR</h3>
+      <pre><code>git switch main
+git merge --no-ff feature/kpi-by-object
+git push
+git branch -d feature/kpi-by-object
+git push origin --delete feature/kpi-by-object</code></pre>
+      <h3>Полезное</h3>
+      <pre><code>git log --oneline --graph --all -20   # история
+git diff                              # что изменено, но не добавлено
+git restore index.html                # отменить правки в файле
+git switch main                       # вернуться на основную ветку</code></pre>
+
+      <h2 id="auth">7. Вход в GitHub</h2>
+      <p>При первом <code>git push</code> Git спросит учётные данные. Варианты:</p>
+      <ol>
+        <li>
+          <b>Git Credential Manager</b> (ставится вместе с Git для Windows) — откроется окно
+          браузера, войдите в аккаунт <code>ka2106</code>, токен сохранится в системе.
+        </li>
+        <li>
+          <b>GitHub CLI</b> (удобно для PR и issues):
+          <pre><code>winget install --id GitHub.cli -e --source winget
+gh auth login --web</code></pre>
+        </li>
+        <li>
+          <b>Личный токен (PAT)</b>: GitHub → Settings → Developer settings → Personal access
+          tokens → Fine-grained tokens → доступ к репозиторию <code>b0s</code>, права
+          <i>Contents: Read and write</i>. Этот токен вводится вместо пароля.
+        </li>
+      </ol>
+      <p>Проверка доступа:</p>
+      <pre><code>git ls-remote origin</code></pre>
+
+      <h2 id="data">8. Данные: Google-таблица, кэш, автообновление</h2>
+      <p>
+        Источник данных — публичная Google-таблица, которая читается через gviz-эндпоинт.
+        Настройки лежат в начале <span class="file">app.js</span> в объекте <code>CONFIG</code>:
+      </p>
+      <table>
+        <tr>
+          <th>Параметр</th>
+          <th>Смысл</th>
+        </tr>
+        <tr>
+          <td><code>sheetId</code></td>
+          <td>ID таблицы из её URL (между <code>/d/</code> и <code>/edit</code>)</td>
+        </tr>
+        <tr>
+          <td><code>sheetName</code></td>
+          <td>Имя листа, по умолчанию <code>data</code></td>
+        </tr>
+        <tr>
+          <td><code>cacheTtlMs</code></td>
+          <td>Сколько живёт локальный кэш данных (10 минут)</td>
+        </tr>
+        <tr>
+          <td><code>autoRefreshMs</code></td>
+          <td>Автообновление каждые 5 минут</td>
+        </tr>
+        <tr>
+          <td><code>mapsDailyLimit</code></td>
+          <td>Дневной лимит загрузок карты (100)</td>
+        </tr>
+      </table>
+      <p>
+        Чтобы сменить источник: скопируйте ID новой таблицы в <code>sheetId</code> (лист должен
+        быть открыт на чтение по ссылке). Кнопка «Обновить» в шапке сбрасывает кэш и
+        перезагружает данные.
+      </p>
+
+      <h2 id="optional">9. Необязательно, но полезно</h2>
+      <h3>Форматирование и линт</h3>
+      <pre><code>npx prettier --check .
+npx prettier --write .</code></pre>
+      <p>
+        В VS Code удобно включить форматирование при сохранении: Settings →
+        <code>editor.formatOnSave = true</code>,
+        <code>editor.defaultFormatter = esbenp.prettier-vscode</code>.
+      </p>
+      <h3>Валидация HTML (по желанию)</h3>
+      <pre><code>npx html-validate index.html</code></pre>
+      <h3>Проверка синтаксиса JS без запуска</h3>
+      <pre><code>node --check app.js</code></pre>
+
+      <h2 id="troubles">10. Частые проблемы</h2>
+      <table>
+        <tr>
+          <th>Симптом</th>
+          <th>Что делать</th>
+        </tr>
+        <tr>
+          <td>Таблица не грузится, в консоли CORS/403</td>
+          <td>
+            Проверьте, что лист Google открыт «Все, у кого есть ссылка — Читать», и что
+            <code>sheetId</code>/<code>sheetName</code> верные. Открывайте через
+            <code>http://localhost:5173</code>, а не двойным кликом по файлу.
+          </td>
+        </tr>
+        <tr>
+          <td>Карта пустая, «Invalid API key»</td>
+          <td>
+            Ключ не от сервиса «JavaScript API и Геокодер» либо ограничен другим доменом.
+            Проверьте <span class="file">config.js</span> и настройки ключа в кабинете Яндекса.
+          </td>
+        </tr>
+        <tr>
+          <td>Карта не грузится после нескольких перезагрузок</td>
+          <td>
+            Исчерпан дневной лимит 100 загрузок: подождите до следующих суток или нажмите кнопку
+            принудительной загрузки (счётчик хранится в <code>localStorage</code>).
+          </td>
+        </tr>
+        <tr>
+          <td>Правки «пропали» после редактирования</td>
+          <td>
+            VS Code держал старый буфер файла и перезаписал его при сохранении. Всегда проверяйте
+            <code>git diff</code> перед коммитом; если файл меняли не в редакторе — сделайте
+            Revert File и перезагрузите окно.
+          </td>
+        </tr>
+        <tr>
+          <td><code>git push</code> просит пароль и отвергает его</td>
+          <td>
+            GitHub не принимает пароль аккаунта. Нужен PAT (шаг 7) или вход через Git Credential
+            Manager.
+          </td>
+        </tr>
+        <tr>
+          <td>Кракозябры в выводе Git</td>
+          <td><code>chcp 65001</code> в PowerShell или <code>core.quotepath off</code></td>
+        </tr>
+      </table>
+
+      <h2 id="checklist">11. Финальный чек-лист</h2>
+      <ul>
+        <li>☐ <code>git --version</code>, <code>node -v</code>, <code>code --version</code> отвечают</li>
+        <li>☐ <code>git config --global user.name</code> и <code>user.email</code> заданы</li>
+        <li>☐ Репозиторий склонирован, <code>git status</code> чистый, ветка <code>main</code></li>
+        <li>
+          ☐ Создан <span class="file">config.js</span> с ключом (и он не появляется в
+          <code>git status</code>)
+        </li>
+        <li>☐ Дашборд открывается на <code>http://localhost:5173</code>: 68 объектов и 185 строк</li>
+        <li>☐ Консоль браузера без ошибок</li>
+        <li>☐ <code>git push</code> в тестовую ветку проходит (доступ к GitHub есть)</li>
+      </ul>
+
+      <footer>
+        Файл-инструкция лежит в репозитории: <span class="file">docs/setup-new-device.html</span>.
+        Открывается двойным кликом в браузере, интернет не нужен.
+      </footer>
+    </main>
+  </body>
+</html>
