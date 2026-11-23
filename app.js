@@ -815,6 +815,59 @@
     const objects = new Set(data.map((r) => r.obj).filter(Boolean));
     if ($("kpi-objects")) $("kpi-objects").textContent = objects.size;
 
+    // Статус объекта — статус его крупнейшего по площади этапа, иначе сумма
+    // по статусам не совпадёт с числом объектов (у части объектов этапы в разных статусах).
+    const biggestStage = new Map();
+    data.forEach((r) => {
+      if (!r.obj) return;
+      const area = Number.isFinite(r.areaBuild) ? r.areaBuild : 0;
+      const cur = biggestStage.get(r.obj);
+      if (!cur || area > cur.area) {
+        biggestStage.set(r.obj, { status: r.status || "Не указан", area });
+      }
+    });
+    const statusCounts = new Map();
+    biggestStage.forEach(({ status }) =>
+      statusCounts.set(status, (statusCounts.get(status) || 0) + 1),
+    );
+    const statusRows = [...statusCounts.entries()].sort((a, b) => {
+      const ia = STATUS_ORDER.indexOf(a[0]);
+      const ib = STATUS_ORDER.indexOf(b[0]);
+      if (ia === -1 && ib === -1) return b[1] - a[1];
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+    const statusBar = $("kpi-objects-bar");
+    if (statusBar) {
+      const total = statusRows.reduce((sum, [, n]) => sum + n, 0) || 1;
+      statusBar.innerHTML = statusRows
+        .map(
+          ([status, n]) =>
+            `<span style="width:${(n / total) * 100}%;background:${
+              statusConf(status).color
+            }" title="${esc(status)}: ${n}"></span>`,
+        )
+        .join("");
+    }
+    const statusList = $("kpi-objects-statuses");
+    if (statusList) {
+      statusList.innerHTML = statusRows
+        .map(
+          ([status, n]) =>
+            `<li><i style="background:${statusConf(status).color}"></i><span>${esc(
+              status,
+            )}</span><b>${n}</b></li>`,
+        )
+        .join("");
+    }
+    const allObjectsCard = document.querySelector('[data-drill="all"]');
+    if (allObjectsCard) {
+      allObjectsCard.title = `Всего объектов: ${objects.size} · ${statusRows
+        .map(([status, n]) => `${status}: ${n}`)
+        .join(", ")}`;
+    }
+
     const delivered = data.filter(
       (r) =>
         r.status === "Завершено" &&
@@ -986,8 +1039,6 @@
         ? listHtml(recent, "past")
         : '<div class="empty-state">Нет данных</div>';
     }
-
-    renderDataQuality(data);
   }
 
   // ---------------------------------------------------------------------------
@@ -1115,66 +1166,6 @@
       )
       .join("");
     renderYearTable(data, year);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Качество данных
-  // ---------------------------------------------------------------------------
-  function renderDataQuality(data) {
-    const host = $("data-quality");
-    if (!host) return;
-
-    const items = [];
-    const noDate = data.filter((r) => !r.rvDate).length;
-    const zeroArea = data.filter((r) => r.areaBuild === 0).length;
-    const badArea = data.filter((r) => r.badArea).length;
-    const unknownStatus = data.filter((r) => !STATUS_CONF[r.status]).length;
-    const idCounts = new Map();
-    data.forEach((r) => {
-      if (r.id && r.id !== "—")
-        idCounts.set(r.id, (idCounts.get(r.id) || 0) + 1);
-    });
-    const duplicateIds = [...idCounts.values()].filter((c) => c > 1).length;
-    const withoutCoords = [
-      ...new Set(data.map((r) => r.obj).filter((o) => o && !coordsFor(o))),
-    ];
-
-    if (noDate)
-      items.push(
-        `${noDate} ${plural(noDate, ["строка", "строки", "строк"])} без даты РВ`,
-      );
-    if (zeroArea)
-      items.push(
-        `${zeroArea} ${plural(zeroArea, ["строка", "строки", "строк"])} с нулевой площадью стройки`,
-      );
-    if (badArea)
-      items.push(
-        `${badArea} ${plural(badArea, ["строка", "строки", "строк"])} с нечитаемой площадью`,
-      );
-    if (unknownStatus)
-      items.push(
-        `${unknownStatus} ${plural(unknownStatus, ["строка", "строки", "строк"])} с неизвестным статусом`,
-      );
-    if (duplicateIds) items.push(`${duplicateIds} повторяющихся ID`);
-    if (withoutCoords.length) {
-      items.push(
-        `${withoutCoords.length} ${plural(withoutCoords.length, [
-          "объект",
-          "объекта",
-          "объектов",
-        ])} без координат на карте`,
-      );
-    }
-
-    if (!items.length) {
-      host.hidden = true;
-      host.innerHTML = "";
-      return;
-    }
-    host.hidden = false;
-    host.innerHTML = `<div class="quality-title">Качество данных</div><ul class="quality-list">${items
-      .map((i) => `<li>${esc(i)}</li>`)
-      .join("")}</ul>`;
   }
 
   // ---------------------------------------------------------------------------
@@ -1514,11 +1505,19 @@
         return;
       }
       if (!grouped.has(r.obj)) {
-        grouped.set(r.obj, { coords, area: 0, stages: 0, statusAreas: {} });
+        grouped.set(r.obj, {
+          coords,
+          area: 0,
+          stages: 0,
+          abch: 0,
+          statusAreas: {},
+        });
       }
       const g = grouped.get(r.obj);
       g.area += r.areaBuild;
-      g.stages++;
+      // АБЧ считаем отдельно, остальное (склад, СЦ, промпарк, производство, БВС) — этапы.
+      if (/АБЧ/i.test(r.category) || /АБЧ/i.test(r.stage)) g.abch++;
+      else g.stages++;
       const st = r.status || "Не указан";
       g.statusAreas[st] = (g.statusAreas[st] || 0) + (r.areaBuild || 1);
     });
@@ -1546,6 +1545,10 @@
       const layout = ymaps.templateLayoutFactory.createClass(
         `<div class="map-pie" style="background:${gradient}"></div>`,
       );
+      const stageLines = [
+        d.stages ? `Этапов: ${d.stages}` : "",
+        d.abch ? `АБЧ: ${d.abch}` : "",
+      ].filter(Boolean);
       const placemark = new ymaps.Placemark(
         d.coords,
         {
@@ -1553,7 +1556,7 @@
           balloonContentHeader: `<b class="map-balloon-title">${esc(city)}</b>`,
           balloonContentBody: `
         <div class="map-balloon">
-          Этапов: ${d.stages}<br>
+          ${stageLines.join("<br>") || "Этапов: 0"}<br>
           Площадь: ${fmt(d.area)} м²<br>
           <a href="#table?obj=${encodeURIComponent(city)}">Показать в таблице</a>
         </div>`,

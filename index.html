@@ -66,6 +66,13 @@
                 <div class="kpi-card blue" data-drill="all" role="button" tabindex="0">
                   <div class="kpi-label">Всего объектов</div>
                   <div class="kpi-value" id="kpi-objects">0</div>
+                  <div
+                    class="kpi-status-bar"
+                    id="kpi-objects-bar"
+                    role="img"
+                    aria-label="Распределение объектов по статусам"
+                  ></div>
+                  <ul class="kpi-status-list" id="kpi-objects-statuses"></ul>
                 </div>
                 <div class="kpi-card green" data-drill="delivered" role="button" tabindex="0">
                   <div class="kpi-label">
@@ -95,7 +102,6 @@
                   <div class="kpi-sub" id="kpi-nearest-date"></div>
                 </div>
               </div>
-              <div id="data-quality" class="quality-card" hidden></div>
               <div class="charts-row">
                 <div class="chart-card">
                   <h3 class="chart-title">

@@ -255,6 +255,57 @@ input:checked + .slider:before {
   margin-top: auto;
 }
 
+/* Раскладка «Всего объектов» по статусам */
+.kpi-status-bar {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--border);
+}
+.kpi-status-bar:empty {
+  display: none;
+}
+.kpi-status-bar span {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: 999px;
+  transition: width 0.25s;
+}
+.kpi-status-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.kpi-status-list:empty {
+  display: none;
+}
+.kpi-status-list li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.kpi-status-list i {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.kpi-status-list b {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Графики */
 .charts-row {
   display: grid;
@@ -747,7 +798,6 @@ tbody tr:hover td {
   left: 0;
   background: var(--surface);
   z-index: 2;
-  border-right: 1px solid var(--border);
 }
 .table-scroll th:first-child {
   padding-left: 16px;
@@ -755,7 +805,6 @@ tbody tr:hover td {
   left: 0;
   background: var(--bg);
   z-index: 6;
-  border-right: 1px solid var(--border);
 }
 
 /* Цвета статусов */
@@ -1359,30 +1408,6 @@ td.muted-text {
   opacity: 0.7;
 }
 
-/* Качество данных */
-.quality-card {
-  background: var(--warning-bg);
-  border: 1px solid #fde68a;
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  margin-bottom: 24px;
-}
-.quality-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #92400e;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.quality-list {
-  margin: 0;
-  padding-left: 18px;
-  color: #92400e;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
 /* Карта */
 .map-notice {
   margin-bottom: 12px;
@@ -1716,14 +1741,6 @@ td.muted-text {
     background: #0f2b22;
     color: #6ee7b7;
   }
-  .quality-card {
-    background: #2b2208;
-    border-color: #6b500e;
-  }
-  .quality-title,
-  .quality-list {
-    color: #fcd34d;
-  }
   .map-notice-inner {
     background: #082436;
     border-color: #155e75;
@@ -1814,12 +1831,10 @@ td.muted-text {
   .table-scroll td:first-child,
   .table-scroll th:first-child {
     position: static !important;
-    border-right: none;
   }
   .kpi-card,
   .chart-card,
   .table-container,
-  .quality-card,
   .stat {
     box-shadow: none !important;
     break-inside: avoid;
