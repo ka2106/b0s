@@ -7,12 +7,50 @@
   // ---------------------------------------------------------------------------
   // Конфигурация
   // ---------------------------------------------------------------------------
+  const MAP_KEY_STORAGE = "bos_maps_key";
+
+  // Ключ карты: локальный config.js → параметр ?mapsKey= в адресе → значение,
+  // сохранённое в этом браузере. Так карта работает и на GitHub Pages,
+  // где config.js нет (файл не хранится в публичном репозитории).
+  function resolveMapsKey() {
+    const fromConfig = (window.BOS_CONFIG && window.BOS_CONFIG.mapsApiKey) || "";
+    if (fromConfig) return fromConfig;
+    let fromUrl = "";
+    try {
+      const params = new URLSearchParams(window.location.search);
+      fromUrl = (params.get("mapsKey") || params.get("key") || "").trim();
+    } catch {
+      /* некорректный адрес */
+    }
+    if (fromUrl) {
+      try {
+        localStorage.setItem(MAP_KEY_STORAGE, fromUrl);
+      } catch {
+        /* localStorage недоступен */
+      }
+      try {
+        const clean = new URL(window.location.href);
+        clean.searchParams.delete("mapsKey");
+        clean.searchParams.delete("key");
+        window.history.replaceState({}, "", clean);
+      } catch {
+        /* history недоступен (file://) */
+      }
+      return fromUrl;
+    }
+    try {
+      return localStorage.getItem(MAP_KEY_STORAGE) || "";
+    } catch {
+      return "";
+    }
+  }
+
   const CONFIG = {
     sheetId: "1mDdg8Z1KpH8iDbf9PMnqnEA0dp_FZY1T1ab0RpY0etM",
     sheetName: "data",
     // Ключ API Яндекс.Карт: https://developer.tech.yandex.ru/services/
     // Без ключа вкладка «Карта» показывает инструкцию вместо пустой карты.
-    mapsApiKey: (window.BOS_CONFIG && window.BOS_CONFIG.mapsApiKey) || "",
+    mapsApiKey: resolveMapsKey(),
     // Бесплатный тариф JS API считает загрузки карты; при достижении лимита
     // автозагрузка останавливается (счётчик локальный, см. README-рекомендации).
     mapsDailyLimit: 100,
@@ -815,21 +853,27 @@
     const objects = new Set(data.map((r) => r.obj).filter(Boolean));
     if ($("kpi-objects")) $("kpi-objects").textContent = objects.size;
 
-    // Статус объекта — статус его крупнейшего по площади этапа, иначе сумма
-    // по статусам не совпадёт с числом объектов (у части объектов этапы в разных статусах).
-    const biggestStage = new Map();
-    data.forEach((r) => {
-      if (!r.obj) return;
-      const area = Number.isFinite(r.areaBuild) ? r.areaBuild : 0;
-      const cur = biggestStage.get(r.obj);
-      if (!cur || area > cur.area) {
-        biggestStage.set(r.obj, { status: r.status || "Не указан", area });
-      }
-    });
+    // Этапы = все строки, кроме АБЧ. Статусы считаем по этапам, а не по объектам:
+    // у объекта этапы бывают в разных статусах, и «статус объекта» был бы условным.
+    const isAbchRow = (r) => /АБЧ/i.test(r.category) || /АБЧ/i.test(r.stage);
+    const abchCount = data.filter(isAbchRow).length;
+    const stageCount = data.length - abchCount;
+    const stagesHost = $("kpi-objects-stages");
+    if (stagesHost) {
+      stagesHost.innerHTML =
+        `<span><b>${stageCount}</b> ${plural(stageCount, [
+          "этап",
+          "этапа",
+          "этапов",
+        ])}</span>` +
+        `<span><b>${abchCount}</b> АБЧ</span>`;
+    }
+
     const statusCounts = new Map();
-    biggestStage.forEach(({ status }) =>
-      statusCounts.set(status, (statusCounts.get(status) || 0) + 1),
-    );
+    data.forEach((r) => {
+      const status = r.status || "Не указан";
+      statusCounts.set(status, (statusCounts.get(status) || 0) + 1);
+    });
     const statusRows = [...statusCounts.entries()].sort((a, b) => {
       const ia = STATUS_ORDER.indexOf(a[0]);
       const ib = STATUS_ORDER.indexOf(b[0]);
@@ -863,9 +907,11 @@
     }
     const allObjectsCard = document.querySelector('[data-drill="all"]');
     if (allObjectsCard) {
-      allObjectsCard.title = `Всего объектов: ${objects.size} · ${statusRows
-        .map(([status, n]) => `${status}: ${n}`)
-        .join(", ")}`;
+      allObjectsCard.title =
+        `Объектов: ${objects.size}, этапов: ${stageCount}, АБЧ: ${abchCount}` +
+        ` · статусы этапов — ${statusRows
+          .map(([status, n]) => `${status}: ${n}`)
+          .join(", ")}`;
     }
 
     const delivered = data.filter(
@@ -1411,9 +1457,14 @@
   function ensureMap() {
     if (!CONFIG.mapsApiKey) {
       showMapNotice(
-        "Карта недоступна: не задан API-ключ Яндекс.Карт. Получите ключ в " +
-          '<a href="https://developer.tech.yandex.ru/services/" target="_blank" rel="noopener noreferrer">кабинете разработчика</a> ' +
-          "и укажите его в <code>CONFIG.mapsApiKey</code> в файле <code>app.js</code>.",
+        "Карта недоступна: не задан API-ключ Яндекс.Карт. Ключ нужен от сервиса " +
+          '<a href="https://developer.tech.yandex.ru/services/" target="_blank" rel="noopener noreferrer">«JavaScript API и Геокодер»</a>. ' +
+          "Вставьте его ниже — он сохранится только в этом браузере и не попадёт в репозиторий:" +
+          '<div class="map-key-row">' +
+          '<input type="password" id="map-key-input" class="map-key-input" placeholder="Ключ JavaScript API" autocomplete="off" aria-label="API-ключ Яндекс.Карт">' +
+          '<button type="button" class="btn btn-primary" data-map-key-save="1">Сохранить и загрузить</button>' +
+          "</div>" +
+          '<div class="map-key-hint">Этот же ключ можно передать в адресе страницы: <code>?mapsKey=ВАШ_КЛЮЧ</code></div>',
       );
       updateMap();
       return;
@@ -3002,10 +3053,32 @@
     const notice = $("map-notice");
     if (!notice) return;
     notice.addEventListener("click", (e) => {
+      if (e.target.closest("[data-map-key-save]")) {
+        const input = $("map-key-input");
+        const key = input ? input.value.trim() : "";
+        if (!key) {
+          if (input) input.focus();
+          return;
+        }
+        try {
+          localStorage.setItem(MAP_KEY_STORAGE, key);
+        } catch {
+          /* localStorage недоступен */
+        }
+        CONFIG.mapsApiKey = key;
+        hideMapNotice();
+        ensureMap();
+        return;
+      }
       if (!e.target.closest("[data-map-force]")) return;
       state.mapForceLoad = true;
       hideMapNotice();
       ensureMap();
+    });
+    notice.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" || !e.target.closest("#map-key-input")) return;
+      e.preventDefault();
+      notice.querySelector("[data-map-key-save]")?.click();
     });
   }
 

@@ -256,6 +256,26 @@ input:checked + .slider:before {
 }
 
 /* Раскладка «Всего объектов» по статусам */
+.kpi-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.kpi-stages:empty {
+  display: none;
+}
+.kpi-stages b {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-stages span + span::before {
+  content: "·";
+  margin-right: 8px;
+}
 .kpi-status-bar {
   display: flex;
   gap: 2px;
@@ -1425,6 +1445,32 @@ td.muted-text {
   background: rgba(0, 0, 0, 0.06);
   padding: 1px 5px;
   border-radius: 4px;
+}
+.map-key-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.map-key-input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid #7dd3fc;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  background: var(--surface);
+  color: var(--text);
+}
+.map-key-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.map-key-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.85;
 }
 .map-meta {
   display: flex;
