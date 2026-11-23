@@ -238,6 +238,10 @@
           <td class="file">app.js</td>
           <td>Логика: загрузка Google Sheets, фильтры, таблица, карта, экспорт в Excel</td>
         </tr>
+        <tr>
+          <td class="file">config.js</td>
+          <td>Ключ Яндекс.Карт (публичный, ограничен по домену в кабинете Яндекса)</td>
+        </tr>
       </table>
       <p>
         Репозиторий: <code>https://github.com/ka2106/b0s.git</code>, основная ветка —
@@ -316,22 +320,25 @@ git log --oneline -5</code></pre>
 
       <h2 id="config">4. Ключ Яндекс.Карт</h2>
       <p>
-        Ключ <b>не хранится в репозитории</b> (репозиторий публичный) и не пишется в файлы.
-        Откройте дашборд → вкладка «Карта» → вставьте ключ в поле «Ключ JavaScript API» →
-        «Сохранить и загрузить». Ключ запомнится в этом браузере
-        (<code>localStorage</code>) и подставится при следующих открытиях.
+        Ключ уже вшит в проект — он лежит в <span class="file">config.js</span> и работает у всех
+        посетителей без ввода. На новом устройстве ничего настраивать не нужно, достаточно
+        склонировать репозиторий. Ничего вводить на вкладке «Карта» не придётся.
       </p>
-      <p>Тот же результат даёт ссылка с ключом в адресе — удобно для закладки:</p>
-      <pre><code>http://localhost:5173/?mapsKey=ВАШ-КЛЮЧ</code></pre>
+      <pre><code>// config.js
+window.BOS_CONFIG = {
+  mapsApiKey: "ваш-ключ-javascript-api",
+  mapsDailyLimit: 100,
+};</code></pre>
       <div class="note">
-        <b>Где взять ключ:</b>
-        <a href="https://developer.tech.yandex.ru/services/">developer.tech.yandex.ru</a> → продукт
-        <b>«JavaScript API»</b> (не Static API, не MapKit SDK, не Tiles API) → создать ключ.
-        <br />
-        <b>Обязательно:</b> в ограничениях ключа по HTTP Referer должны быть все домены, с которых
-        открывается дашборд: <code>localhost</code>, <code>127.0.0.1</code>,
-        <code>ka2106.github.io</code> и ваш боевой домен. Если домена нет в списке, API отвечает
-        <code>Invalid API key</code>. Активация ключа занимает до 15 минут.
+        <b>Ключ публичный</b> — файл лежит в открытом репозитории. Для JavaScript API это норма:
+        Яндекс всё равно отдаёт ключ в исходниках страницы, а защита строится на ограничении по
+        HTTP Referer. Поэтому в кабинете
+        <a href="https://developer.tech.yandex.ru/services/">developer.tech.yandex.ru</a> у ключа
+        продукта <b>«JavaScript API»</b> должны быть разрешены все домены, с которых открывается
+        дашборд:
+        <code>ka2106.github.io</code>, <code>paragulgov.ru</code>, а для локальной разработки —
+        <code>localhost</code> и <code>127.0.0.1</code>. Если домена нет в списке, API отвечает
+        <code>Invalid API key</code>; после правок ключ активируется до 15 минут.
         <br />
         Бесплатный тариф — около 100 загрузок карты в сутки; приложение считает их локально
         (<code>localStorage["bos_map_usage"]</code>) и после лимита останавливает автозагрузку —
@@ -343,8 +350,10 @@ git log --oneline -5</code></pre>
         <code>http://localhost:5173</code>.
       </div>
       <p>
-        Без ключа приложение работает: вкладка «Карта» показывает инструкцию, остальные разделы
-        не зависят от карты.
+        Если ключ нужно заменить (ротация), правится одна строка в
+        <span class="file">config.js</span> — больше нигде ключ не дублируется. Если
+        <span class="file">config.js</span> отсутствует или пуст, вкладка «Карта» покажет поле для
+        ввода ключа и запомнит его в браузере.
       </p>
 
       <h2 id="run">5. Запуск и проверка</h2>
@@ -533,8 +542,8 @@ npx prettier --write .</code></pre>
         <li>☐ <code>git config --global user.name</code> и <code>user.email</code> заданы</li>
         <li>☐ Репозиторий склонирован, <code>git status</code> чистый, ветка <code>main</code></li>
         <li>
-          ☐ Ключ карты вставлен на вкладке «Карта» (и домен <code>localhost</code> разрешён в
-          кабинете Яндекса)
+          ☐ В <span class="file">config.js</span> есть ключ, а домены <code>localhost</code> и
+          домен хостинга разрешены в кабинете Яндекса
         </li>
         <li>☐ Дашборд открывается на <code>http://localhost:5173</code>: 68 объектов и 185 строк</li>
         <li>☐ Консоль браузера без ошибок</li>

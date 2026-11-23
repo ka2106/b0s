@@ -9,9 +9,9 @@
   // ---------------------------------------------------------------------------
   const MAP_KEY_STORAGE = "bos_maps_key";
 
-  // Ключ карты хранится вне репозитория: параметр ?mapsKey= в адресе страницы
-  // или значение, сохранённое в этом браузере (вставляется прямо на вкладке «Карта»).
-  // window.BOS_CONFIG поддерживается для обратной совместимости.
+  // Ключ карты задан в config.js (лежит в репозитории, ограничен по HTTP Referer).
+  // Если ключа нет, приложение попросит вставить его на вкладке «Карта» и запомнит
+  // в этом браузере; ключ можно передать и в адресе: ?mapsKey=…
   function resolveMapsKey() {
     const fromConfig = (window.BOS_CONFIG && window.BOS_CONFIG.mapsApiKey) || "";
     if (fromConfig) return fromConfig;
@@ -53,7 +53,8 @@
     mapsApiKey: resolveMapsKey(),
     // Бесплатный тариф JS API считает загрузки карты; при достижении лимита
     // автозагрузка останавливается (счётчик локальный, см. README-рекомендации).
-    mapsDailyLimit: 100,
+    mapsDailyLimit:
+      (window.BOS_CONFIG && window.BOS_CONFIG.mapsDailyLimit) || 100,
     stateKey: "bos_analytics_state",
     cacheKey: "bos_analytics_cache",
     cacheTtlMs: 10 * 60 * 1000,
