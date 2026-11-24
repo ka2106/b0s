@@ -960,6 +960,23 @@ tbody tr:hover td {
   z-index: 1;
 }
 
+/* Отладочный оверлей диагностики (?debug=1) */
+.perf-hud {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 9999;
+  max-width: min(92vw, 460px);
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #e2e8f0;
+  font: 11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-line;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
 /* COMPARE STYLES */
 .mode-selector {
   display: flex;
