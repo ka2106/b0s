@@ -5,18 +5,19 @@
 
 ## Где что
 
-- Репозиторий: https://github.com/ka2106/b0s.git, ветка `main` — рабочая версия, тег `v1.0`.
-- Прод: https://ka2106.github.io/b0s/ (GitHub Pages из `main`, корень). На 24.11.2026 в `main`
-  диагностика `?debug=1` (коммит `8427871`), прод побайтово совпадает с локальными `app.js`,
-  `index.html`, `styles.css`, `config.js`; актуальный хеш — `git log -1`.
-  Сверять так: `Invoke-WebRequest` файла с Pages → сравнить строки после нормализации `\r\n`.
+- Репозиторий: https://github.com/ka2106/b0s.git, ветка `main` — рабочая версия.
+  Актуальный релиз — тег `v1.1` (26.11.2026), предыдущий — `v1.0`.
+- Прод: https://ka2106.github.io/b0s/ (GitHub Pages из `main`, корень), деплой ~1 минута.
+  Актуальный хеш — `git log -1`; сверять прод с локалем через `Invoke-WebRequest` файла
+  с Pages и нормализацию `\r\n`.
 - Локально: `npx serve -l 5173 .` → http://localhost:5173 (не `file://`, иначе карта без Referer).
 - Файлы: `index.html` (разметка 4 вкладок), `styles.css` (стили, тёмная тема, печать),
   `app.js` (логика: данные, фильтры, таблица, карта, сравнение, экспорт; ~3.2k строк, IIFE,
   классический скрипт), `coords.js` (координаты площадок, `window.BOS_COORDS`),
   `debug-hud.js` (оверлей `?debug=1`, `window.BOS_DEBUG_HUD`), `excel-loader.js` (ленивая
   загрузка ExcelJS, `window.BOS_EXCEL`), `config.js` (ключ карты, публичный, ограничен
-  Referer), `docs/setup-new-device.html` (инструкция с нуля), `README.md`, `docs/WORK-RULES.md`.
+  Referer), `docs/setup-new-device.html` (инструкция с нуля), `README.md`, `docs/WORK-RULES.md`,
+  `docs/IDEAS.md` (отложенные идеи и список отклонённых направлений).
 
 ## Тестовые ориентиры (регресс-чек после правок)
 
