@@ -260,6 +260,8 @@
       year: new Set(),
     },
     sort: { col: null, dir: 1 },
+    search: "",
+    dataTs: null,
     loading: false,
     lastFingerprint: null,
     showBVS: true,
@@ -273,6 +275,63 @@
     mapForceLoad: false,
     compare: { left: null, right: null, mode: "g_vs_x", result: null },
   };
+
+  // ---------------------------------------------------------------------------
+  // Тема оформления: системная / светлая / тёмная
+  // ---------------------------------------------------------------------------
+  const THEME_KEY = "bos_theme";
+  const THEME_MODES = ["system", "light", "dark"];
+  const THEME_TITLES = {
+    system: "как в системе",
+    light: "светлая",
+    dark: "тёмная",
+  };
+  const darkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+  let themeMode = "system";
+
+  function applyTheme(mode) {
+    themeMode = THEME_MODES.includes(mode) ? mode : "system";
+    const dark =
+      themeMode === "dark" || (themeMode === "system" && darkScheme.matches);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    const btn = $("btn-theme");
+    if (btn) {
+      btn.textContent =
+        themeMode === "light" ? "☀" : themeMode === "dark" ? "☾" : "◐";
+      btn.title = `Тема: ${THEME_TITLES[themeMode]} — нажмите, чтобы переключить`;
+      btn.setAttribute("aria-label", btn.title);
+      btn.setAttribute("aria-pressed", String(dark));
+    }
+    try {
+      if (themeMode === "system") localStorage.removeItem(THEME_KEY);
+      else localStorage.setItem(THEME_KEY, themeMode);
+    } catch {
+      /* localStorage недоступен */
+    }
+  }
+
+  function initTheme() {
+    let saved = "system";
+    try {
+      saved = localStorage.getItem(THEME_KEY) || "system";
+    } catch {
+      /* localStorage недоступен */
+    }
+    applyTheme(saved);
+    if (darkScheme.addEventListener) {
+      darkScheme.addEventListener("change", () => {
+        if (themeMode === "system") applyTheme("system");
+      });
+    }
+    const btn = $("btn-theme");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        const next =
+          THEME_MODES[(THEME_MODES.indexOf(themeMode) + 1) % THEME_MODES.length];
+        applyTheme(next);
+      });
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Сохранение настроек
@@ -656,6 +715,11 @@
   // ---------------------------------------------------------------------------
   const rowFilterValue = (r, key) => (key === "year" ? r.year : r[key]);
 
+  const rowSearchMain = (r) =>
+    [r.id, r.fo, r.obj, r.stage, r.category, r.status, r.rvText, r.source, r.damage]
+      .join(" ")
+      .toLowerCase();
+
   const YEAR_RANK = (v) => {
     if (v === "Ранее") return Number.NEGATIVE_INFINITY;
     if (v === "Далее") return Number.MAX_SAFE_INTEGER - 1;
@@ -701,10 +765,71 @@
     saveState();
   }
 
+  function setSearch(value) {
+    state.search = String(value || "");
+    const input = $("table-search");
+    if (input && input.value !== state.search) input.value = state.search;
+    applyFilters();
+  }
+
+  function resetAllFilters() {
+    state.pinned.clear();
+    for (const key of FILTER_KEYS) {
+      state.filters[key] = new Set(allValues(key, state.rawData));
+    }
+    state.search = "";
+    const input = $("table-search");
+    if (input) input.value = "";
+    renderFilterOptions();
+    applyFilters();
+    saveState();
+  }
+
+  // Плашка «Выборка»: какие фильтры и поиск сейчас ограничивают таблицу.
+  function renderFilterContext() {
+    const host = $("table-context");
+    if (!host) return;
+    const chips = [];
+    for (const key of FILTER_KEYS) {
+      const all = allValues(key, state.rawData);
+      const selected = state.filters[key];
+      if (!selected || selected.size >= all.length) continue;
+      const names = [...selected];
+      const label =
+        names.length <= 2 ? names.join(", ") : `${names.length} из ${all.length}`;
+      chips.push(
+        `<button type="button" class="filter-chip" data-clear-filter="${key}" title="Убрать фильтр «${esc(
+          FILTER_LABELS[key],
+        )}»">${esc(FILTER_LABELS[key])}: ${esc(label)} <span aria-hidden="true">×</span></button>`,
+      );
+    }
+    const query = state.search.trim();
+    if (query) {
+      chips.push(
+        `<button type="button" class="filter-chip" data-clear-search="1" title="Очистить поиск">Поиск: «${esc(
+          query,
+        )}» <span aria-hidden="true">×</span></button>`,
+      );
+    }
+    if (!chips.length) {
+      host.hidden = true;
+      host.innerHTML = "";
+      return;
+    }
+    host.hidden = false;
+    host.innerHTML =
+      '<span class="table-context-label">Выборка:</span>' +
+      chips.join("") +
+      '<button type="button" class="filter-chip filter-chip-reset" data-reset-all="1">Сбросить всё</button>';
+  }
+
   function applyFilters() {
     const f = state.filters;
-    state.filteredData = state.rawData.filter((r) =>
-      FILTER_KEYS.every((k) => !f[k] || f[k].has(rowFilterValue(r, k))),
+    const query = state.search.trim().toLowerCase();
+    state.filteredData = state.rawData.filter(
+      (r) =>
+        FILTER_KEYS.every((k) => !f[k] || f[k].has(rowFilterValue(r, k))) &&
+        (!query || rowSearchMain(r).includes(query)),
     );
 
     if (state.sort.col) {
@@ -720,6 +845,7 @@
         return String(va).localeCompare(String(vb), "ru") * dir;
       });
     }
+    renderFilterContext();
     renderTable();
   }
 
@@ -823,6 +949,35 @@
 
     const count = $("table-count");
     if (count) count.textContent = `${state.filteredData.length} из ${state.rawData.length}`;
+
+    renderTableFoot(defs);
+  }
+
+  function renderTableFoot(defs) {
+    const foot = $("table-foot");
+    if (!foot) return;
+    const sums = new Map();
+    for (const def of defs) {
+      if (!def.numeric) continue;
+      sums.set(
+        def.key,
+        state.filteredData.reduce((sum, r) => sum + (r[def.key] || 0), 0),
+      );
+    }
+    if (!sums.size || !state.filteredData.length) {
+      foot.innerHTML = "";
+      return;
+    }
+    const cells = defs.map((def, index) => {
+      if (def.numeric) {
+        return `<td class="${def.class}">${showNum(sums.get(def.key))}</td>`;
+      }
+      if (index === 0) {
+        return `<th class="${def.class}" scope="row">Итого: ${state.filteredData.length}</th>`;
+      }
+      return `<td class="${def.class}"></td>`;
+    });
+    foot.innerHTML = `<tr>${cells.join("")}</tr>`;
   }
 
   function renderRow(r, defs) {
@@ -2623,6 +2778,7 @@
 
   function updateTimestamp(ts, label = "обновлено") {
     const el = $("updated-at");
+    state.dataTs = ts || null;
     if (!el) return;
     if (!ts) {
       el.textContent = "";
@@ -2630,10 +2786,17 @@
       return;
     }
     const date = new Date(ts);
-    el.textContent = `${label} ${date.toLocaleTimeString("ru-RU", {
+    const time = date.toLocaleTimeString("ru-RU", {
       hour: "2-digit",
       minute: "2-digit",
-    })}`;
+    });
+    // Если данные не за сегодня — показываем и дату, иначе «обновлено 23:49» неинформативно.
+    const sameDay = date.toDateString() === new Date().toDateString();
+    const day = date.toLocaleDateString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+    });
+    el.textContent = sameDay ? `${label} ${time}` : `${label} ${day}, ${time}`;
     el.title = date.toLocaleString("ru-RU");
   }
 
@@ -2898,23 +3061,82 @@
     else desktop.addListener(onChange);
   }
 
+  // Печать/PDF: три режима — сводный отчёт, только дашборд, только реестр.
+  // Печатный макет A4-альбом собирается из существующей разметки, без библиотек.
+  const PRINT_TITLES = {
+    all: "сводный отчёт",
+    dashboard: "дашборд",
+    table: "реестр объектов",
+  };
+  const PRINT_CLASSES = [
+    "printing-report",
+    "print-mode-all",
+    "print-mode-dashboard",
+    "print-mode-table",
+  ];
+
+  function printReport(mode = "all") {
+    const kind = PRINT_TITLES[mode] ? mode : "all";
+    document.body.classList.add("printing-report", "print-mode-" + kind);
+    const done = () => document.body.classList.remove(...PRINT_CLASSES);
+    window.addEventListener("afterprint", done, { once: true });
+    setTimeout(() => window.print(), 50);
+  }
+
+  function currentPrintMode() {
+    const body = document.body;
+    if (!body.classList.contains("printing-report")) return null;
+    if (body.classList.contains("print-mode-dashboard")) return "dashboard";
+    if (body.classList.contains("print-mode-table")) return "table";
+    return "all";
+  }
+
   function initPrint() {
     window.addEventListener("beforeprint", () => {
+      const mode = currentPrintMode();
       const date = $("print-date");
       const count = $("print-count");
       const title = $("print-title");
+      const filters = $("print-filters");
+      const dataDate = $("print-data-date");
       const active = document.querySelector(".nav-btn.active");
-      if (title && active) {
-        title.textContent = `БОС · Аналитика — ${active.textContent.trim()}`;
+      if (title) {
+        title.textContent = `БОС · Аналитика — ${
+          mode
+            ? PRINT_TITLES[mode]
+            : active
+              ? active.textContent.trim()
+              : "Реестр объектов"
+        }`;
       }
       if (date) date.textContent = new Date().toLocaleString("ru-RU");
       if (count) {
-        count.textContent = `${state.filteredData.length} ${plural(state.filteredData.length, [
-          "строка",
-          "строки",
-          "строк",
-        ])}`;
+        count.textContent = `${state.filteredData.length} ${plural(
+          state.filteredData.length,
+          ["строка", "строки", "строк"],
+        )} из ${state.rawData.length}`;
       }
+      if (filters) filters.textContent = describeFilters();
+      if (dataDate) {
+        dataDate.textContent = state.dataTs
+          ? new Date(state.dataTs).toLocaleString("ru-RU")
+          : "—";
+      }
+    });
+
+    const menu = $("report-menu");
+    if (!menu) return;
+    menu.querySelectorAll("[data-print-mode]").forEach((item) => {
+      item.addEventListener("click", () => {
+        menu.open = false;
+        printReport(item.dataset.printMode);
+      });
+    });
+    menu.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") menu.open = false;
+    });
+    document.addEventListener("click", (e) => {
+      if (menu.open && !menu.contains(e.target)) menu.open = false;
     });
   }
 
@@ -2944,6 +3166,32 @@
       });
     }
 
+    const search = $("table-search");
+    if (search) {
+      search.addEventListener(
+        "input",
+        debounce(() => setSearch(search.value), 200),
+      );
+    }
+
+    const context = $("table-context");
+    if (context) {
+      context.addEventListener("click", (e) => {
+        const clear = e.target.closest("[data-clear-filter]");
+        if (clear) {
+          setFilterAll(clear.dataset.clearFilter, true);
+          return;
+        }
+        if (e.target.closest("[data-clear-search]")) {
+          setSearch("");
+          return;
+        }
+        if (e.target.closest("[data-reset-all]")) resetAllFilters();
+      });
+    }
+
+    const reset = $("btn-reset-filters");
+    if (reset) reset.addEventListener("click", resetAllFilters);
   }
 
   function toggleTooltip(wrap) {
@@ -3229,6 +3477,7 @@
   // ---------------------------------------------------------------------------
   function init() {
     loadState();
+    initTheme();
     initTabs();
     initHeader();
     initColumnsManager();

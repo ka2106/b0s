@@ -18,6 +18,23 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (function () {
+        try {
+          var mode = localStorage.getItem("bos_theme") || "system";
+          var dark =
+            mode === "dark" ||
+            (mode === "system" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.setAttribute(
+            "data-theme",
+            dark ? "dark" : "light",
+          );
+        } catch (e) {
+          /* localStorage недоступен */
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -31,6 +48,16 @@
         <div class="header-controls">
           <button class="btn btn-secondary btn-refresh" id="btn-refresh" type="button" title="Обновить данные из Google Sheets">⟳ Обновить</button>
           <span class="updated-at" id="updated-at"></span>
+          <button class="btn btn-secondary btn-icon" id="btn-theme" type="button" aria-pressed="false" title="Тема оформления">◐</button>
+          <details class="report-menu" id="report-menu">
+            <summary class="btn btn-secondary" title="Печать или сохранение в PDF">Отчёт PDF</summary>
+            <div class="report-menu-list">
+              <button type="button" class="report-menu-item" data-print-mode="all">Сводный отчёт</button>
+              <button type="button" class="report-menu-item" data-print-mode="dashboard">Только дашборд</button>
+              <button type="button" class="report-menu-item" data-print-mode="table">Только реестр</button>
+              <div class="report-menu-hint">В диалоге печати: A4 · альбомная · масштаб 100 % · фоновая графика</div>
+            </div>
+          </details>
           <label class="switch-wrap">
             <div class="switch">
               <input type="checkbox" id="toggle-bvs" checked />
@@ -53,6 +80,8 @@
           <div class="print-only print-header">
             <h1 id="print-title">БОС · Аналитика — Реестр объектов</h1>
             <div class="print-meta"><span id="print-date"></span> · <span id="print-count"></span></div>
+            <div class="print-meta">Выборка: <span id="print-filters"></span></div>
+            <div class="print-meta">Источник: Google Sheets · данные на <span id="print-data-date"></span></div>
           </div>
           <!-- DASHBOARD -->
           <div id="tab-dashboard" class="tab-content" role="tabpanel" aria-labelledby="btn-tab-dashboard">
@@ -156,6 +185,7 @@
               <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
               <aside class="sidebar" id="sidebar">
                 <button class="btn btn-secondary sidebar-close" id="btn-filters-close" type="button">Показать результаты</button>
+                <button class="btn btn-secondary btn-block" id="btn-reset-filters" type="button">Сбросить фильтры</button>
                 <div class="filter-group">
                   <div class="filter-header" role="button" tabindex="0" aria-expanded="false">
                     <div class="filter-title-wrap">
@@ -311,15 +341,25 @@
                 <div class="table-header">
                   <span class="table-title">Реестр объектов <span class="table-count" id="table-count"></span></span>
                   <div class="table-actions">
+                    <input
+                      type="search"
+                      id="table-search"
+                      class="table-search"
+                      placeholder="Поиск по реестру…"
+                      aria-label="Поиск по реестру"
+                      autocomplete="off"
+                    />
                     <button class="btn btn-secondary btn-filters" id="btn-filters" type="button" aria-controls="sidebar" aria-expanded="false">Фильтры</button>
                     <button class="btn btn-secondary" id="btn-export-excel" type="button">Экспорт в Excel</button>
                   </div>
                 </div>
+                <div class="table-context" id="table-context" hidden></div>
                 <div class="table-scroll">
                   <table id="main-table">
                     <colgroup id="main-table-cols"></colgroup>
                     <thead id="main-table-head"></thead>
                     <tbody id="table-body"></tbody>
+                    <tfoot id="table-foot"></tfoot>
                   </table>
                 </div>
               </div>

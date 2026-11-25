@@ -1668,9 +1668,8 @@ td.muted-text {
   }
 }
 
-/* Тёмная тема */
-@media (prefers-color-scheme: dark) {
-  :root {
+/* Тёмная тема (включается атрибутом data-theme="dark") */
+:root[data-theme="dark"] {
     color-scheme: dark;
     --bg: #0b1220;
     --surface: #111c2e;
@@ -1691,115 +1690,124 @@ td.muted-text {
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
     --shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   }
-  .btn-secondary,
-  .year-select,
-  .card,
-  .drop-zone,
-  .mode-selector,
-  .mode-slider,
-  .field input[type="text"],
-  input.filter {
+:where(:root[data-theme="dark"]) .btn-secondary,
+:where(:root[data-theme="dark"]) .year-select,
+:where(:root[data-theme="dark"]) .card,
+:where(:root[data-theme="dark"]) .drop-zone,
+:where(:root[data-theme="dark"]) .mode-selector,
+:where(:root[data-theme="dark"]) .mode-slider,
+:where(:root[data-theme="dark"]) .field input[type="text"],
+:where(:root[data-theme="dark"]) input.filter {
     background: var(--surface);
     color: var(--text);
     border-color: var(--border);
   }
-  .btn-secondary:hover:not(:disabled) {
+:where(:root[data-theme="dark"]) .btn-secondary:hover:not(:disabled) {
     background: #1b2940;
   }
-  th {
+:where(:root[data-theme="dark"]) th {
     background: var(--bg);
   }
-  th:hover {
+:where(:root[data-theme="dark"]) th:hover {
     background: #1b2940;
     color: var(--text);
   }
-  tbody tr:nth-child(even) td {
+:where(:root[data-theme="dark"]) tbody tr:nth-child(even) td {
     background-color: #0e1728;
   }
-  tbody tr:hover td {
+:where(:root[data-theme="dark"]) tbody tr:hover td {
     background-color: #17233a !important;
   }
-  .status-badge.delivered {
+:where(:root[data-theme="dark"]) .status-badge.delivered {
     background: var(--success-bg);
     color: var(--success);
   }
-  .status-badge.planned {
+:where(:root[data-theme="dark"]) .status-badge.planned {
     background: var(--info-bg);
     color: var(--info);
   }
-  .status-badge.danger {
+:where(:root[data-theme="dark"]) .status-badge.danger {
     background: var(--danger-bg);
     color: var(--danger);
   }
-  .status-badge.warning {
+:where(:root[data-theme="dark"]) .status-badge.warning {
     background: var(--warning-bg);
     color: var(--warning);
   }
-  .status-badge.gray {
+:where(:root[data-theme="dark"]) .status-badge.gray {
     background: #26364d;
     color: #cbd5e1;
   }
-  .old-val {
+:where(:root[data-theme="dark"]) .old-val {
     background: var(--danger-bg);
     color: var(--danger);
   }
-  .new-val {
+:where(:root[data-theme="dark"]) .new-val {
     background: var(--success-bg);
     color: var(--success);
   }
-  .tooltip-text {
+:where(:root[data-theme="dark"]) .tooltip-text {
     background: #050a14;
   }
-  .mode-selector {
+:where(:root[data-theme="dark"]) .mode-selector {
     background: #1b2940;
     border-color: var(--border);
   }
-  .mode-slider {
+:where(:root[data-theme="dark"]) .mode-slider {
     background: #334155;
   }
-  .checkbox-item input[type="checkbox"] {
+:where(:root[data-theme="dark"]) .checkbox-item input[type="checkbox"] {
     background: var(--surface);
     border-color: var(--border);
   }
-  .card-icon.g {
+:where(:root[data-theme="dark"]) .card-icon.g {
     background: #11243b;
     color: #7dd3fc;
   }
-  .card-icon.x {
+:where(:root[data-theme="dark"]) .card-icon.x {
     background: #0f2b22;
     color: #6ee7b7;
   }
-  .map-notice-inner {
+:where(:root[data-theme="dark"]) .map-notice-inner {
     background: #082436;
     border-color: #155e75;
     color: #bae6fd;
   }
-  .toast {
+:where(:root[data-theme="dark"]) .toast {
     background: #050a14;
   }
-  .tab-count {
+:where(:root[data-theme="dark"]) .tab-count {
     background: #1b2940;
     color: var(--text-muted);
   }
-  .delivery-item {
+:where(:root[data-theme="dark"]) .delivery-item {
     background: #0e1728;
   }
-  .year-table th {
+:where(:root[data-theme="dark"]) .year-table th {
     background: #0e1728;
   }
-  .slider {
+:where(:root[data-theme="dark"]) .slider {
     background-color: #475569;
   }
-}
 
 /* Печать */
 @media print {
-  :root {
+  :root,
+  :root[data-theme] {
+    color-scheme: light;
     --bg: #fff;
     --surface: #fff;
     --text: #000;
     --text-muted: #444;
     --border: #bbb;
+  }
+  tbody tr:nth-child(even) td,
+  .delivery-item,
+  .year-table th {
+    background: #f7f7f7 !important;
+  }
+  tbody tr:hover td {
+    background: #fff !important;
   }
   body {
     background: #fff;
@@ -1828,6 +1836,9 @@ td.muted-text {
   }
   .container {
     max-width: none;
+    /* Запас по краям: работает даже если в диалоге печати выбраны минимальные поля
+       или браузер проигнорировал @page margin. */
+    padding: 6mm 6mm 8mm !important;
   }
   .tab-content {
     display: none !important;
@@ -2040,8 +2051,404 @@ td.muted-text {
 :root {
   --row-alt: #f8fafc;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --row-alt: #0e1728;
+:root[data-theme="dark"] {
+  --row-alt: #0e1728;
+}
+
+/* ==========================================================================
+   Поиск по реестру, плашка выборки, строка итогов, тема, отчёт PDF
+   ========================================================================== */
+.btn-icon {
+  width: 32px;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+}
+.btn-block {
+  width: 100%;
+  margin-bottom: 10px;
+}
+.table-search {
+  width: 200px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.table-search:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.table-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.table-context-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.filter-chip:hover {
+  border-color: var(--accent);
+}
+.filter-chip span {
+  color: var(--text-muted);
+}
+.filter-chip-reset {
+  color: var(--accent);
+  background: transparent;
+}
+#main-table tfoot th,
+#main-table tfoot td {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: var(--surface);
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+  color: var(--text);
+}
+#main-table tfoot th {
+  text-align: left;
+}
+
+@media print {
+  .table-search {
+    display: none !important;
+  }
+  body.printing-report {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body.printing-report #tab-dashboard,
+  body.printing-report #tab-table {
+    display: block !important;
+  }
+  body.printing-report #tab-map,
+  body.printing-report #tab-compare,
+  body.printing-report .table-context,
+  body.printing-report .table-actions {
+    display: none !important;
+  }
+  body.printing-report #tab-table {
+    margin-top: 16px;
+    break-before: page;
+  }
+  body.printing-report .table-container {
+    height: auto !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tbody tr {
+    break-inside: avoid;
+  }
+  #main-table tfoot th,
+  #main-table tfoot td {
+    position: static;
+    background: #eee !important;
+  }
+  .print-meta {
+    font-size: 10px;
+    color: #444;
+  }
+}
+
+/* Меню «Отчёт PDF» */
+.report-menu {
+  position: relative;
+}
+.report-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.report-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.report-menu[open] > summary {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.report-menu-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 190px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+.report-menu-item {
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.report-menu-item:hover {
+  background: var(--bg);
+}
+.report-menu-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.report-menu-hint {
+  margin-top: 4px;
+  padding: 6px 10px 2px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+/* ==========================================================================
+   Печатный макет: A4 горизонтально, аккуратные отступы, три режима отчёта
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm 12mm;
+  }
+  .report-menu {
+    display: none !important;
+  }
+  body.printing-report,
+  body.printing-report * {
+    /* Свойство не наследуется — иначе цветные полосы и плашки печатаются серыми. */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.printing-report {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #111;
+    /* Без сглаживания «в толщину»: штрихи в печати плотнее и не выглядят размытыми. */
+    -webkit-font-smoothing: auto;
+    text-rendering: geometricPrecision;
+  }
+  body.printing-report * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-font-smoothing: auto !important;
+  }
+
+  /* Шапка отчёта */
+  body.printing-report .print-header {
+    display: block;
+    margin: 0 0 10px;
+    padding-bottom: 7px;
+    border-bottom: 2px solid #111;
+  }
+  body.printing-report .print-header h1 {
+    margin: 0 0 4px;
+    font-size: 15pt;
+    line-height: 1.2;
+  }
+  body.printing-report .print-meta {
+    display: inline-block;
+    margin: 0 16px 0 0;
+    font-size: 8.5pt;
+    color: #333;
+  }
+
+  /* Режимы */
+  body.print-mode-dashboard #tab-table,
+  body.print-mode-table #tab-dashboard {
+    display: none !important;
+  }
+  body.printing-report #tab-table {
+    margin-top: 0 !important;
+    break-before: auto !important;
+  }
+  body.print-mode-all #tab-table {
+    break-before: page !important;
+  }
+
+  /* Дашборд: компактная сетка под альбомную страницу */
+  body.printing-report .dashboard-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+  }
+  body.printing-report .kpi-card {
+    padding: 10px 12px !important;
+    gap: 6px !important;
+    break-inside: avoid;
+  }
+  body.printing-report .kpi-value {
+    font-size: 20px !important;
+  }
+  body.printing-report .kpi-label,
+  body.printing-report .kpi-sub,
+  body.printing-report .kpi-stages,
+  body.printing-report .kpi-status-list {
+    font-size: 9px !important;
+    color: #333 !important;
+  }
+  body.printing-report .charts-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+  }
+  body.printing-report .chart-card {
+    padding: 10px 12px !important;
+    break-inside: avoid;
+  }
+  body.printing-report .chart-title {
+    font-size: 11px !important;
+    margin-bottom: 6px !important;
+  }
+  body.printing-report .bar-label,
+  body.printing-report .bar-value {
+    font-size: 9px !important;
+    color: #111 !important;
+  }
+  body.printing-report .delivery-item {
+    padding: 5px 8px !important;
+    font-size: 9px !important;
+    color: #111 !important;
+    border: 1px solid #d5dbe3 !important;
+    break-inside: avoid;
+  }
+  body.printing-report .year-table {
+    font-size: 9px !important;
+  }
+  body.printing-report .year-table th,
+  body.printing-report .year-table td {
+    padding: 3px 4px !important;
+  }
+  body.printing-report .tooltip-text {
+    display: none !important;
+  }
+
+  /* Реестр */
+  body.printing-report .table-header {
+    padding: 0 0 4px !important;
+    border-bottom: 1px solid #ccc !important;
+  }
+  body.printing-report .table-title {
+    font-size: 11px !important;
+  }
+  body.printing-report #main-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+    font-size: 10px !important;
+    color: #111 !important;
+  }
+  body.printing-report #main-table th {
+    font-weight: 700 !important;
+  }
+  body.printing-report #main-table col {
+    width: auto !important;
+  }
+  body.printing-report #main-table th,
+  body.printing-report #main-table td {
+    padding: 3px 5px !important;
+    border-bottom: 1px solid #c9d1db !important;
+    color: #111 !important;
+  }
+  body.printing-report #main-table tbody tr:nth-child(even) td {
+    background: #f5f7fa !important;
+  }
+  body.printing-report #main-table tbody tr:hover td {
+    background: inherit !important;
+  }
+  body.printing-report #main-table tfoot th,
+  body.printing-report #main-table tfoot td {
+    background: #eef1f5 !important;
+    border-top: 1px solid #999 !important;
+  }
+  /* Цветные плашки статусов в отчёте (общий печатный CSS делает их серыми) */
+  body.printing-report .status-badge {
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+  }
+  body.printing-report .status-badge.delivered {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+  }
+  body.printing-report .status-badge.planned {
+    background: #e0f2fe !important;
+    color: #075985 !important;
+  }
+  body.printing-report .status-badge.danger {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+  }
+  body.printing-report .status-badge.warning {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+  }
+  body.printing-report .status-badge.gray {
+    background: #eef1f5 !important;
+    color: #475569 !important;
+  }
+  body.printing-report .cell-sub {
+    font-size: 8px !important;
+  }
+
+  /* Ничего не должно вылезать за ширину листа — иначе браузер масштабирует страницу
+     и текст выглядит «мыльным». */
+  body.printing-report .container,
+  body.printing-report .main-content,
+  body.printing-report .table-scroll,
+  body.printing-report .table-container,
+  body.printing-report .year-table-wrap {
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+  body.printing-report #year-table,
+  body.printing-report .year-table {
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+}
+
+/* Если печать всё же пошла в портрет (браузер проигнорировал size: landscape),
+   перестраиваем макет на одну колонку, чтобы ничего не сжималось и не «мылилось». */
+@media print and (orientation: portrait) {
+  body.printing-report {
+    font-size: 10.5px;
+  }
+  body.printing-report .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  body.printing-report .charts-row {
+    grid-template-columns: 1fr !important;
+  }
+  body.print-mode-all #tab-table {
+    break-before: page !important;
   }
 }
