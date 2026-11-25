@@ -4,13 +4,20 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>БОС · Аналитика</title>
+    <meta
+      name="description"
+      content="Дашборд строительства складов: KPI по годам, реестр объектов, карта площадок и сравнение выгрузок."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f172a'/%3E%3Ctext x='16' y='23' font-size='19' font-family='Arial,sans-serif' font-weight='bold' fill='%23ffffff' text-anchor='middle'%3EБ%3C/text%3E%3C/svg%3E"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" integrity="sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -124,7 +131,7 @@
                   <h3 class="chart-title" style="margin: 0">
                     Сдача площадей по месяцам
                   </h3>
-                  <select class="year-select" id="year-select"></select>
+                  <select class="year-select" id="year-select" aria-label="Год сдачи площадей"></select>
                 </div>
                 <div class="year-table-wrap">
                   <table class="year-table" id="year-table"></table>
@@ -166,17 +173,8 @@
                       </svg>
                     </div>
                     <div class="filter-actions-wrap">
-                      <span
-                        class="filter-actions"
-                        data-target="fo"
-                        data-action="all"
-                        >Все</span
-                      ><span
-                        class="filter-actions"
-                        data-target="fo"
-                        data-action="none"
-                        >Ничего</span
-                      >
+                      <button type="button" class="filter-actions" data-target="fo" data-action="all">Все</button>
+                      <button type="button" class="filter-actions" data-target="fo" data-action="none">Ничего</button>
                     </div>
                   </div>
                   <div class="filter-content">
@@ -200,17 +198,8 @@
                       </svg>
                     </div>
                     <div class="filter-actions-wrap">
-                      <span
-                        class="filter-actions"
-                        data-target="obj"
-                        data-action="all"
-                        >Все</span
-                      ><span
-                        class="filter-actions"
-                        data-target="obj"
-                        data-action="none"
-                        >Ничего</span
-                      >
+                      <button type="button" class="filter-actions" data-target="obj" data-action="all">Все</button>
+                      <button type="button" class="filter-actions" data-target="obj" data-action="none">Ничего</button>
                     </div>
                   </div>
                   <div class="filter-content">
@@ -234,17 +223,8 @@
                       </svg>
                     </div>
                     <div class="filter-actions-wrap">
-                      <span
-                        class="filter-actions"
-                        data-target="category"
-                        data-action="all"
-                        >Все</span
-                      ><span
-                        class="filter-actions"
-                        data-target="category"
-                        data-action="none"
-                        >Ничего</span
-                      >
+                      <button type="button" class="filter-actions" data-target="category" data-action="all">Все</button>
+                      <button type="button" class="filter-actions" data-target="category" data-action="none">Ничего</button>
                     </div>
                   </div>
                   <div class="filter-content">
@@ -268,17 +248,8 @@
                       </svg>
                     </div>
                     <div class="filter-actions-wrap">
-                      <span
-                        class="filter-actions"
-                        data-target="status"
-                        data-action="all"
-                        >Все</span
-                      ><span
-                        class="filter-actions"
-                        data-target="status"
-                        data-action="none"
-                        >Ничего</span
-                      >
+                      <button type="button" class="filter-actions" data-target="status" data-action="all">Все</button>
+                      <button type="button" class="filter-actions" data-target="status" data-action="none">Ничего</button>
                     </div>
                   </div>
                   <div class="filter-content">
@@ -303,7 +274,8 @@
                       </svg>
                     </div>
                     <div class="filter-actions-wrap">
-                      <span class="filter-actions" data-target="year" data-action="all">Все</span><span class="filter-actions" data-target="year" data-action="none">Ничего</span>
+                      <button type="button" class="filter-actions" data-target="year" data-action="all">Все</button>
+                      <button type="button" class="filter-actions" data-target="year" data-action="none">Ничего</button>
                     </div>
                   </div>
                   <div class="filter-content">
@@ -313,7 +285,7 @@
 
                 <!-- Drag & Drop Колонки -->
                 <div class="filter-group open">
-                  <div class="filter-header" role="button" tabindex="0" aria-expanded="false">
+                  <div class="filter-header" role="button" tabindex="0" aria-expanded="true">
                     <div class="filter-title-wrap">
                       <span class="filter-title">Столбцы (D&D)</span>
                       <svg
@@ -501,6 +473,9 @@
       </div>
     </div>
 
+    <script src="coords.js" defer></script>
+    <script src="debug-hud.js" defer></script>
+    <script src="excel-loader.js" defer></script>
     <script src="config.js" defer></script>
     <script src="app.js" defer></script>
     <div id="toast-container" class="toast-container" aria-live="polite"></div>

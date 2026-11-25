@@ -645,6 +645,17 @@ input:checked + .slider:before {
 .filter-actions:hover {
   text-decoration: underline;
 }
+button.filter-actions {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+}
+button.filter-actions:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .filter-content {
   display: none;
   margin-top: 10px;
@@ -699,37 +710,7 @@ input:checked + .slider:before {
   transform: rotate(45deg);
 }
 
-/* DND Column Manager */
-.dnd-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.dnd-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: grab;
-}
-.dnd-item:active {
-  cursor: grabbing;
-}
-.dnd-item input[type="checkbox"] {
-  accent-color: var(--accent);
-  width: 14px;
-  height: 14px;
-  cursor: pointer;
-}
-.dnd-handle {
-  color: var(--text-muted);
-  font-size: 16px;
-  user-select: none;
-}
+/* DND Column Manager: базовые стили плиток — в блоке «Плитки выбора столбцов» ниже. */
 
 .table-container {
   flex: 1;
@@ -1506,13 +1487,6 @@ td.muted-text {
   padding: 6px 12px;
   font-size: 12px;
 }
-.map-pie {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  border: 2px solid #fff;
-}
 .map-balloon-title {
   font-size: 14px;
 }
@@ -1570,17 +1544,8 @@ td.muted-text {
 }
 
 /* Перестановка столбцов */
-.dnd-item {
-  cursor: grab;
-}
 .dnd-item.dragging {
   opacity: 0.4;
-}
-.dnd-label {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .dnd-move {
   display: inline-flex;
@@ -1976,6 +1941,10 @@ td.muted-text {
 .dnd-item input[type="checkbox"] {
   margin: 0;
   flex-shrink: 0;
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
 }
 .dnd-handle {
   order: 3;
@@ -1984,8 +1953,10 @@ td.muted-text {
   font-size: 12px;
   color: var(--text-muted);
   opacity: 0.6;
+  user-select: none;
 }
 .dnd-label {
+  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -57,6 +57,7 @@
       (window.BOS_CONFIG && window.BOS_CONFIG.mapsDailyLimit) || 100,
     stateKey: "bos_analytics_state",
     cacheKey: "bos_analytics_cache",
+    snapshotKey: "bos_analytics_snapshot",
     cacheTtlMs: 10 * 60 * 1000,
     autoRefreshMs: 5 * 60 * 1000,
     sheetTimeoutMs: 20000,
@@ -135,10 +136,21 @@
   const parseNumStrict = (v) => {
     if (typeof v === "number") return Number.isFinite(v) ? v : NaN;
     if (v === null || v === undefined) return null;
-    const s = String(v)
-      .replace(/[\s\u00A0]/g, "")
-      .replace(",", ".");
+    let s = String(v).replace(/[\s\u00A0]/g, "");
     if (s === "" || s === "-" || s === "—") return null;
+    const commas = (s.match(/,/g) || []).length;
+    const dots = (s.match(/\./g) || []).length;
+    if (commas && dots) {
+      // Последний разделитель — десятичный, остальные считаем тысячами.
+      s =
+        s.lastIndexOf(",") > s.lastIndexOf(".")
+          ? s.replace(/\./g, "").replace(",", ".")
+          : s.replace(/,/g, "");
+    } else if (commas > 1 || dots > 1) {
+      s = s.replace(/[.,]/g, "");
+    } else if (commas === 1) {
+      s = s.replace(",", ".");
+    }
     const n = Number(s);
     return Number.isFinite(n) ? n : NaN;
   };
@@ -200,6 +212,10 @@
   const statusConf = (s) =>
     STATUS_CONF[s] || { color: "#94a3b8", hex: "#94a3b8", badge: "gray" };
 
+  // Этап = строка, где категория/этап не содержит «АБЧ». Правило используется
+  // и в KPI, и на карте — держать в одном месте.
+  const isAbchRow = (r) => /АБЧ/i.test(r.category) || /АБЧ/i.test(r.stage);
+
   // ---------------------------------------------------------------------------
   // Колонки
   // ---------------------------------------------------------------------------
@@ -234,6 +250,8 @@
     rawData: [],
     filteredData: [],
     filters: { fo: null, obj: null, category: null, status: null, year: null },
+    // Ключи фильтров, заданные ссылкой (#table?obj=…): их набор не расширяем автоматически.
+    pinned: new Set(),
     seen: {
       fo: new Set(),
       obj: new Set(),
@@ -251,6 +269,7 @@
     map: null,
     markersLayer: null,
     mapLoading: null,
+    mapSignature: null,
     mapForceLoad: false,
     compare: { left: null, right: null, mode: "g_vs_x", result: null },
   };
@@ -474,6 +493,8 @@
       let hasValue = false;
       (r.c || []).forEach((cell, i) => {
         if (i >= headers.length || !headers[i]) return;
+        // Одноимённые колонки не перезаписывают друг друга.
+        if (Object.prototype.hasOwnProperty.call(obj, headers[i])) return;
         let v = null;
         let link = null;
         if (cell) {
@@ -535,8 +556,22 @@
   }
 
   function processData(headers, rows) {
+    // Имена колонок листа могут отличаться регистром/пробелами — ищем без учёта регистра.
+    const headerByLower = new Map();
+    (headers || []).forEach((h) => {
+      const key = String(h || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      if (key && !headerByLower.has(key)) headerByLower.set(key, h);
+    });
     return rows.map((r) => {
-      const getVal = (k) => (r[k] !== undefined ? r[k] : null);
+      const getVal = (k) => {
+        const key = Object.prototype.hasOwnProperty.call(r, k)
+          ? k
+          : headerByLower.get(String(k).toLowerCase());
+        return key !== undefined && r[key] !== undefined ? r[key] : null;
+      };
       const area = (k) => {
         const n = parseNumStrict(getVal(k));
         return n === null || Number.isNaN(n) ? 0 : n;
@@ -556,7 +591,7 @@
       }
 
       let date = null;
-      const dMatch = cleanRvText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+      const dMatch = cleanRvText.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
       if (dMatch) date = new Date(+dMatch[3], +dMatch[2] - 1, +dMatch[1]);
 
       const rawStatus =
@@ -657,6 +692,7 @@
   }
 
   function setFilterAll(key, all) {
+    state.pinned.delete(key);
     state.filters[key] = all
       ? new Set(allValues(key, state.rawData))
       : new Set();
@@ -695,6 +731,7 @@
     for (const key of FILTER_KEYS) {
       const values = allValues(key, state.rawData);
       if (!state.seen[key]) state.seen[key] = new Set();
+      if (state.pinned.has(key)) continue;
       if (!state.filters[key]) state.filters[key] = new Set(values);
       for (const v of values) {
         if (!state.seen[key].has(v)) {
@@ -712,6 +749,7 @@
 
   function drillDown(type) {
     activateTab("table");
+    state.pinned.clear();
     for (const key of FILTER_KEYS) {
       state.filters[key] = new Set(allValues(key, state.rawData));
     }
@@ -730,6 +768,7 @@
 
   function drillDownYear(bucket) {
     activateTab("table");
+    state.pinned.clear();
     for (const key of FILTER_KEYS) {
       state.filters[key] = new Set(allValues(key, state.rawData));
     }
@@ -780,7 +819,7 @@
 
     body.innerHTML = state.filteredData.length
       ? state.filteredData.map((r) => renderRow(r, defs)).join("")
-      : `<tr><td colspan="${defs.length}" class="empty-state">Ничего не найдено. Измените фильтры.</td></tr>`;
+      : `<tr><td colspan="${Math.max(1, defs.length)}" class="empty-state">Ничего не найдено. Измените фильтры.</td></tr>`;
 
     const count = $("table-count");
     if (count) count.textContent = `${state.filteredData.length} из ${state.rawData.length}`;
@@ -856,7 +895,6 @@
 
     // Этапы = все строки, кроме АБЧ. Статусы считаем по этапам, а не по объектам:
     // у объекта этапы бывают в разных статусах, и «статус объекта» был бы условным.
-    const isAbchRow = (r) => /АБЧ/i.test(r.category) || /АБЧ/i.test(r.stage);
     const abchCount = data.filter(isAbchRow).length;
     const stageCount = data.length - abchCount;
     const stagesHost = $("kpi-objects-stages");
@@ -1205,6 +1243,7 @@
       : years.has(fallback)
         ? fallback
         : sorted[0];
+    state.selectedYear = year;
 
     select.innerHTML = sorted
       .map(
@@ -1218,157 +1257,8 @@
   // ---------------------------------------------------------------------------
   // Карта
   // ---------------------------------------------------------------------------
-  // Координаты площадок: файл «ВБИ Адреса площадок.xlsx» (листы «Адреса объектов»,
-  // «БСКС», «Адреса объектов (ПТО)»; обновлён 29.09.2026).
-  // Для 5 объектов координат в файле нет — оставлены городские (помечены ниже).
-  const cityCoords = {
-    "Электросталь": [55.74639, 38.417711],
-    "Коледино": [55.386171, 37.583835],
-    "Краснодар - 3": [45.05564, 39.067185],
-    "Санкт-Петeрбург (Шушары) - 0": [59.796976, 30.452527],
-    "Алексин (Тула)": [54.437607, 37.463473],
-    "Невинномысск": [44.662811, 41.895601],
-    "Волгоград (Авторемонтная)": [48.750677, 44.441552],
-    "Котовск": [52.600805, 41.452585],
-    "Сарапул": [56.481745, 53.691994],
-    "Воронеж": [51.614243, 39.341544],
-    "Владимир": [56.051602, 40.126095],
-    "Рязань": [54.67858, 39.572295],
-    "Самара": [53.390071, 50.332243],
-    "Алексин (Тула) - 2": [54.440371, 37.464769],
-    "Архангельск": [64.590071, 40.552306],
-    "Благовещенск": [50.295939, 127.791289],
-    "Бурятия (Улан-Удэ)": [51.761364, 107.448776],
-    "Владивосток": [43.339111, 131.996753],
-    "Владикавказ": [43.026541, 44.557658],
-    "Екатеринбург": [56.729026, 60.576359],
-    "Екатеринбург - 2": [56.726615, 60.572419],
-    "Есипово": [56.108609, 37.085198],
-    "Иваново Новоталицы": [56.997066, 40.85231],
-    "Ингушетия (Магас)": [43.295793, 44.954482],
-    "Иркутск (Ангарск)": [52.544358, 103.888249],
-    "Коледино (доработка)": [55.386473, 37.584747],
-    "Краснодар ПромПарк": [45.053159, 39.065039],
-    "Красноярск": [56.18791, 92.978155],
-    "Курск": [52.071634, 35.874111],
-    "Кучино (Овчинки)": [55.420108, 37.689721],
-    "Максимиха": [55.224401, 37.853757],
-    "Новосаратовка": [59.857095, 30.521528],
-    "Новосибирск": [55.018528, 82.534361],
-    "Нижний Новгород": [56.204794, 43.879953],
-    "Омск": [54.862278, 73.250236],
-    "Оренбург": [51.86296, 55.183772],
-    "Пенза": [53.266822, 44.788021],
-    "Пермь": [57.89915, 56.20448],
-    "Петрозаводск": [61.83802, 34.253724],
-    "Ростов на Дону": [47.378061, 39.889191],
-    "Рязань (производство)": [54.69051, 39.57768],
-    "Санкт-Петербург (Красный бор)": [59.682958, 30.626177],
-    "Санкт-Петербург (Шушары)": [59.796976, 30.452527],
-    "Саратов": [51.61675, 45.855272],
-    "Сенькино Секерино": [55.434284, 37.147903],
-    "Симферополь": [45.011499, 34.184453],
-    "Смоленск": [54.805902, 31.954295],
-    "Софьино Краснопахорское": [55.449402, 37.318632],
-    "Софьинское Раменское": [55.488226, 38.149492],
-    "Сургут": [61.288497, 73.209988],
-    "Тверь": [56.788146, 36.058515],
-    "Тюмень": [57.099972, 65.389269],
-    "Уфа": [54.717566, 55.764302],
-    "Химки": [55.956217, 37.335997],
-    "Челябинск": [55.219045, 61.111108],
-    "Чита": [52.010938, 113.289675],
-    "Южно-Сахалинск": [46.582785, 142.25605],
-    "Юрга": [55.729765, 84.820016],
-    "Ярославль": [57.544153, 39.899716],
-    "Грузия (Тбилиси)": [41.610536, 44.901903],
-    "Алматы": [43.327079, 76.80816],
-    "Минск": [53.909439, 27.968931],
-    "Астана (Нур-Султан)": [51.261958, 71.400396],
-    "Ташкент": [41.191909, 69.172645],
-    "Бишкек": [42.907119, 74.6656],
-    "Минск - 2 (Фаниполь)": [53.756712, 27.392481],
-    "Сенькино": [55.434284, 37.147903],
-    "Алабушево": [56.099662, 37.155263],
-    "Санкт-Петербург (Шушары) - 1": [59.796976, 30.452527],
-    "Иркутск": [52.544358, 103.888249],
-    "Грузия": [41.610536, 44.901903],
-    "Алексин": [54.437607, 37.463473],
-    "Алексин 2": [54.440371, 37.464769],
-    "Волгоград": [48.750677, 44.441552],
-    "Иваново": [56.997066, 40.85231],
-    "Краснодар": [45.05564, 39.067185],
-    "Магас": [43.295793, 44.954482],
-    "Санкт-Петербург (Новосаратовка)": [59.857095, 30.521528],
-    "Тбилиси": [41.610536, 44.901903],
-    "Улан-Удэ": [51.761364, 107.448776],
-    "Фаниполь": [53.756712, 27.392481],
-    "Казань Зеленодольск": [55.7963, 49.1088], // в файле координаты не заполнены
-    "Новоалтайск": [53.3918, 83.9363], // в файле координаты не заполнены
-    "Махачкала": [42.9849, 47.5047], // объекта нет в файле
-    "Хабаровск": [48.4827, 135.0838], // объекта нет в файле
-    "Комсомольск-на-Амуре": [50.55, 137], // объекта нет в файле
-  };
-
-  const normName = (s) =>
-    String(s || "")
-      .toLowerCase()
-      .replace(/ё/g, "е")
-      .replace(/[^0-9a-zа-я\s]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  const coordIndex = new Map(
-    Object.entries(cityCoords).map(([k, v]) => [normName(k), v]),
-  );
-
-  function coordsFor(obj) {
-    const full = normName(obj);
-    if (!full) return null;
-    if (coordIndex.has(full)) return coordIndex.get(full);
-
-    const parenthetical = String(obj).match(/\(([^)]+)\)/);
-    if (parenthetical) {
-      const inner = normName(parenthetical[1]);
-      if (inner && coordIndex.has(inner)) return coordIndex.get(inner);
-    }
-
-    const base = normName(String(obj).replace(/\([^)]*\)/g, " "));
-    if (base && coordIndex.has(base)) return coordIndex.get(base);
-
-    const withoutNumber = full.replace(/\s+\d+$/, "");
-    if (withoutNumber !== full && coordIndex.has(withoutNumber)) {
-      return coordIndex.get(withoutNumber);
-    }
-
-    const words = full.split(" ").filter((w) => w.length >= 3);
-    if (words.length) {
-      let bestKey = null;
-      let bestExtra = Infinity;
-      for (const key of coordIndex.keys()) {
-        const keyWords = new Set(key.split(" "));
-        if (!words.every((w) => keyWords.has(w))) continue;
-        const extra = keyWords.size - words.length;
-        if (
-          extra < bestExtra ||
-          (extra === bestExtra && (!bestKey || key.length < bestKey.length))
-        ) {
-          bestKey = key;
-          bestExtra = extra;
-        }
-      }
-      if (bestKey) return coordIndex.get(bestKey);
-    }
-
-    let prefixKey = null;
-    for (const key of coordIndex.keys()) {
-      if (key.length < 4) continue;
-      if (full.startsWith(key) || key.startsWith(full)) {
-        if (!prefixKey || key.length < prefixKey.length) prefixKey = key;
-      }
-    }
-    return prefixKey ? coordIndex.get(prefixKey) : null;
-  }
+  // Координаты площадок и подбор точки — в coords.js (window.BOS_COORDS).
+  const coordsFor = (obj) => window.BOS_COORDS.resolve(obj);
 
   let mapsPromise = null;
   function loadYandexMaps(apiKey) {
@@ -1435,7 +1325,12 @@
   const MAP_USAGE_KEY = "bos_map_usage";
 
   function mapUsageToday() {
-    const today = new Date().toISOString().slice(0, 10);
+    // Дата локальная: счётчик должен обнуляться в местную полночь, а не по UTC.
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+      2,
+      "0",
+    )}-${String(now.getDate()).padStart(2, "0")}`;
     try {
       const raw = localStorage.getItem(MAP_USAGE_KEY);
       const data = raw ? JSON.parse(raw) : null;
@@ -1532,6 +1427,8 @@
       )
       .catch((e) => {
         state.mapLoading = null;
+        // Сбрасываем промис API: иначе после ввода другого ключа скрипт не перезагрузится.
+        mapsPromise = null;
         showMapNotice(`Не удалось загрузить карту: ${esc(e.message)}`);
       });
   }
@@ -1585,7 +1482,7 @@
       const g = grouped.get(r.obj);
       g.area += r.areaBuild;
       // АБЧ считаем отдельно, остальное (склад, СЦ, промпарк, производство, БВС) — этапы.
-      if (/АБЧ/i.test(r.category) || /АБЧ/i.test(r.stage)) g.abch++;
+      if (isAbchRow(r)) g.abch++;
       else g.stages++;
       const st = r.status || "Не указан";
       g.statusAreas[st] = (g.statusAreas[st] || 0) + (r.areaBuild || 1);
@@ -1655,98 +1552,7 @@
   // ---------------------------------------------------------------------------
   // Диагностика «фризов» на конкретном устройстве: откройте страницу с ?debug=1
   // ---------------------------------------------------------------------------
-  function initDebugHud() {
-    if (!/[?&]debug=1(?:&|$)/.test(location.search)) return;
-
-    const hud = document.createElement("div");
-    hud.className = "perf-hud";
-    hud.setAttribute("role", "status");
-    hud.setAttribute("aria-live", "off");
-    document.body.appendChild(hud);
-
-    const s = {
-      frames: 0,
-      since: performance.now(),
-      fps: 0,
-      worstFrame: 0,
-      lastFrame: performance.now(),
-      longTasks: 0,
-      longTaskMax: 0,
-      hides: 0,
-      tiles: 0,
-      tileSum: 0,
-      tileMax: 0,
-      tileSlow: 0,
-    };
-
-    const frameTick = (now) => {
-      s.frames += 1;
-      s.worstFrame = Math.max(s.worstFrame, now - s.lastFrame);
-      s.lastFrame = now;
-      if (now - s.since >= 1000) {
-        s.fps = Math.round((s.frames * 1000) / (now - s.since));
-        s.frames = 0;
-        s.since = now;
-      }
-      requestAnimationFrame(frameTick);
-    };
-    requestAnimationFrame(frameTick);
-
-    try {
-      new PerformanceObserver((list) => {
-        list.getEntries().forEach((e) => {
-          s.longTasks += 1;
-          s.longTaskMax = Math.max(s.longTaskMax, e.duration);
-        });
-      }).observe({ entryTypes: ["longtask"] });
-    } catch {
-      /* API нет */
-    }
-
-    try {
-      new PerformanceObserver((list) => {
-        list.getEntries().forEach((e) => {
-          if (!/tiles/.test(e.name)) return;
-          s.tiles += 1;
-          s.tileSum += e.duration;
-          s.tileMax = Math.max(s.tileMax, e.duration);
-          if (e.duration > 500) s.tileSlow += 1;
-        });
-      }).observe({ type: "resource", buffered: true });
-    } catch {
-      /* API нет */
-    }
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) s.hides += 1;
-    });
-
-    const paint = () => {
-      const tileAvg = s.tiles ? Math.round(s.tileSum / s.tiles) : 0;
-      const heap = performance.memory
-        ? `${Math.round(performance.memory.usedJSHeapSize / 1048576)} МБ`
-        : "—";
-      const canvas = document.querySelector("#map canvas");
-      const href =
-        Array.from(document.querySelectorAll("#map a"))
-          .map((a) => a.href)
-          .find((h) => /[?&]ll=/.test(h)) || "";
-      const pos = href.match(/ll=([\d.-]+),([\d.-]+)&z=(\d+)/);
-      hud.textContent = [
-        `fps ${s.fps} · худший кадр ${Math.round(s.worstFrame)} мс`,
-        `длинных задач ${s.longTasks} (макс ${Math.round(s.longTaskMax)} мс)`,
-        `тайлы ${s.tiles} · сред ${tileAvg} мс · макс ${Math.round(s.tileMax)} мс · >500 мс ${s.tileSlow}`,
-        `heap ${heap} · узлов ${document.querySelectorAll("*").length} · dpr ${window.devicePixelRatio}`,
-        `экран ${screen.width}×${screen.height} · окно ${innerWidth}×${innerHeight} · уходов в фон ${s.hides}`,
-        canvas ? `canvas ${canvas.width}×${canvas.height}` : "карта не инициализирована",
-        `маркеров ${document.querySelectorAll("#map ymaps.ymaps-2-1-79-image").length}` +
-          (pos ? ` · zoom ${pos[3]}` : ""),
-        navigator.onLine ? "сеть: online" : "сеть: offline",
-      ].join("\n");
-    };
-    paint();
-    setInterval(paint, 500);
-  }
+  // Диагностический оверлей ?debug=1 — в debug-hud.js (window.BOS_DEBUG_HUD).
 
   // ---------------------------------------------------------------------------
   // Сравнение
@@ -2390,8 +2196,7 @@
   }
 
   async function readXlsxComp(file, preferredSheets) {
-    if (typeof ExcelJS === "undefined")
-      throw new Error("библиотека ExcelJS не загружена");
+    await ensureExcelJs();
     const buffer = await file.arrayBuffer();
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
@@ -2455,6 +2260,9 @@
   // ---------------------------------------------------------------------------
   // Экспорт
   // ---------------------------------------------------------------------------
+  // ExcelJS грузится по требованию — см. excel-loader.js (window.BOS_EXCEL).
+  const ensureExcelJs = () => window.BOS_EXCEL.load();
+
   function downloadBlob(buffer, filename) {
     const blob = new Blob([buffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -2512,15 +2320,8 @@
       showToast("Нет данных для экспорта", "warning");
       return;
     }
-    if (typeof ExcelJS === "undefined") {
-      showToast(
-        "Библиотека ExcelJS не загрузилась (проверьте сеть)",
-        "error",
-        7000,
-      );
-      return;
-    }
     try {
+      await ensureExcelJs();
       const defs = visibleColumnDefs();
       const workbook = new ExcelJS.Workbook();
 
@@ -2598,16 +2399,9 @@
   async function downloadCompareXlsx() {
     const d = state.compare.result;
     if (!d) return;
-    if (typeof ExcelJS === "undefined") {
-      showToast(
-        "Библиотека ExcelJS не загрузилась (проверьте сеть)",
-        "error",
-        7000,
-      );
-      return;
-    }
     const { left, right } = compareModeLabels();
     try {
+      await ensureExcelJs();
       const workbook = new ExcelJS.Workbook();
       const summary = addSheet(
         workbook,
@@ -2799,7 +2593,35 @@
     }
   }
 
-  function updateTimestamp(ts) {
+  // Офлайн-копия последней удачной загрузки живёт в localStorage и переживает
+  // закрытие вкладки: нужна, если Google-таблица временно недоступна.
+  function readSnapshot() {
+    try {
+      const raw = localStorage.getItem(CONFIG.snapshotKey);
+      if (!raw) return null;
+      const snap = JSON.parse(raw);
+      if (!snap || !Array.isArray(snap.headers) || !snap.headers.length)
+        return null;
+      if (!Array.isArray(snap.rows) || !snap.rows.length) return null;
+      return snap;
+    } catch {
+      return null;
+    }
+  }
+
+  function writeSnapshot(headers, rows) {
+    if (!Array.isArray(rows) || !rows.length) return;
+    try {
+      localStorage.setItem(
+        CONFIG.snapshotKey,
+        JSON.stringify({ ts: Date.now(), headers, rows }),
+      );
+    } catch {
+      /* квота localStorage — работаем без офлайн-копии */
+    }
+  }
+
+  function updateTimestamp(ts, label = "обновлено") {
     const el = $("updated-at");
     if (!el) return;
     if (!ts) {
@@ -2808,7 +2630,7 @@
       return;
     }
     const date = new Date(ts);
-    el.textContent = `обновлено ${date.toLocaleTimeString("ru-RU", {
+    el.textContent = `${label} ${date.toLocaleTimeString("ru-RU", {
       hour: "2-digit",
       minute: "2-digit",
     })}`;
@@ -2847,6 +2669,18 @@
     state.lastFingerprint = fingerprint;
     state.allData = processData(headers, rows);
     processAllData();
+    const badAreaRows = state.allData.filter((r) => r.badArea).length;
+    if (badAreaRows) {
+      showToast(
+        `Площадь не распознана в ${badAreaRows} ${plural(badAreaRows, [
+          "строке",
+          "строках",
+          "строках",
+        ])} — учтена как 0`,
+        "warning",
+        8000,
+      );
+    }
     if (meta.ts) updateTimestamp(meta.ts);
     if (meta.fromCache) showToast("Показаны данные из кэша", "info", 3000);
     if (meta.auto && changed) showToast("Данные обновлены", "info", 2500);
@@ -2856,6 +2690,7 @@
     if (state.loading) return;
     const cached = force || auto ? null : readCache();
     if (cached) {
+      writeSnapshot(cached.headers, cached.rows);
       applyData(cached.headers, cached.rows, {
         ts: cached.ts,
         fromCache: true,
@@ -2869,6 +2704,7 @@
       const { headers, rows } = await loadGoogleSheet();
       if (!headers.length) throw new Error("лист не содержит заголовков");
       writeCache({ headers, rows });
+      writeSnapshot(headers, rows);
       applyData(headers, rows, { ts: Date.now(), auto });
     } catch (e) {
       console.error(e);
@@ -2876,13 +2712,16 @@
         showToast("Не удалось обновить данные автоматически", "warning", 4000);
         return;
       }
-      const fallback = readCache(true);
+      const fallback = readCache(true) || readSnapshot();
       if (fallback) {
         applyData(fallback.headers, fallback.rows, { ts: fallback.ts });
+        updateTimestamp(fallback.ts, "офлайн-копия от");
         showToast(
-          `Не удалось обновить: ${e.message}. Показаны сохранённые данные.`,
+          `Не удалось обновить: ${e.message}. Показана сохранённая копия от ${new Date(
+            fallback.ts,
+          ).toLocaleString("ru-RU")}.`,
           "warning",
-          8000,
+          10000,
         );
       } else {
         const loading = $("dashboard-loading");
@@ -3371,6 +3210,7 @@
     const params = new URLSearchParams(queryString || "");
     const obj = params.get("obj");
     if (obj) {
+      state.pinned.add("obj");
       state.filters.obj = new Set([obj]);
       if (state.seen.obj) state.seen.obj.add(obj);
       renderFilterOptions();
@@ -3401,7 +3241,7 @@
     initCompare();
     initPrint();
     initHash();
-    initDebugHud();
+    if (window.BOS_DEBUG_HUD) window.BOS_DEBUG_HUD.init();
     loadData();
     startAutoRefresh();
   }
