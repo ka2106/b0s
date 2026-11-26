@@ -314,10 +314,10 @@
                 </div>
 
                 <!-- Drag & Drop Колонки -->
-                <div class="filter-group open">
-                  <div class="filter-header" role="button" tabindex="0" aria-expanded="true">
+                <div class="filter-group">
+                  <div class="filter-header" role="button" tabindex="0" aria-expanded="false" title="Перетаскивайте пункты, чтобы изменить порядок столбцов">
                     <div class="filter-title-wrap">
-                      <span class="filter-title">Столбцы (D&D)</span>
+                      <span class="filter-title">Столбцы</span>
                       <svg
                         class="filter-arrow"
                         viewBox="0 0 24 24"
@@ -339,7 +339,10 @@
 
               <div class="table-container" id="main-table-container">
                 <div class="table-header">
-                  <span class="table-title">Реестр объектов <span class="table-count" id="table-count"></span></span>
+                  <div class="table-title-block">
+                    <span class="table-title">Реестр объектов <span class="table-count" id="table-count"></span></span>
+                    <div class="table-stats" id="table-stats"></div>
+                  </div>
                   <div class="table-actions">
                     <input
                       type="search"
@@ -350,6 +353,7 @@
                       autocomplete="off"
                     />
                     <button class="btn btn-secondary btn-filters" id="btn-filters" type="button" aria-controls="sidebar" aria-expanded="false">Фильтры</button>
+                    <button class="btn btn-secondary btn-compact" id="btn-compact" type="button" aria-pressed="false" title="Компактные строки: больше строк на экране">Компактно</button>
                     <button class="btn btn-secondary" id="btn-export-excel" type="button">Экспорт в Excel</button>
                   </div>
                 </div>

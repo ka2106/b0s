@@ -729,6 +729,8 @@ button.filter-actions:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
 }
 .table-title {
   font-size: 16px;
@@ -867,6 +869,14 @@ tbody tr:hover td {
     position: absolute;
     top: -9999px;
     left: -9999px;
+  }
+  /* На мобильном таблица — карточки, итог показываем в конце (tfoot) */
+  #main-table tfoot {
+    display: table-footer-group;
+  }
+  #main-table tfoot th,
+  #main-table tfoot td {
+    position: static;
   }
   table,
   tbody,
@@ -1376,6 +1386,45 @@ td.muted-text {
   color: var(--text-muted);
   margin-left: 6px;
 }
+.table-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.table-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.table-stats:empty {
+  display: none;
+}
+.stat-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+}
+.stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.stat-item b {
+  color: var(--text);
+  font-weight: 600;
+}
+.stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 .empty-state {
   color: var(--text-muted);
   font-style: italic;
@@ -1421,9 +1470,28 @@ td.muted-text {
 }
 .sort-icon {
   display: inline-block;
-  min-width: 10px;
-  font-size: 10px;
-  opacity: 0.7;
+  width: 12px;
+  height: 12px;
+  vertical-align: middle;
+  margin-left: 3px;
+  opacity: 0;
+  color: var(--text-muted);
+  transition:
+    opacity 0.15s,
+    transform 0.2s,
+    color 0.15s;
+}
+th[data-sort]:hover .sort-icon,
+th[data-sort]:focus-visible .sort-icon {
+  opacity: 0.5;
+}
+/* Специфичность как у :hover выше — активный столбец всегда полностью виден */
+th[data-sort].is-sorted .sort-icon {
+  opacity: 1;
+  color: var(--accent);
+}
+th[data-sort].is-sorted .sort-icon.is-desc {
+  transform: rotate(180deg);
 }
 
 /* Карта */
@@ -1885,7 +1953,6 @@ td.muted-text {
   }
   .kpi-card,
   .chart-card,
-  .table-container,
   .stat {
     box-shadow: none !important;
     break-inside: avoid;
@@ -1982,10 +2049,10 @@ td.muted-text {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  padding: 7px 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 6px 9px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
   font-size: 12px;
   color: var(--text-muted);
   cursor: grab;
@@ -1998,16 +2065,20 @@ td.muted-text {
   cursor: grabbing;
 }
 .dnd-item:hover {
-  border-color: var(--accent);
+  border-color: var(--border);
+  background: var(--surface);
   color: var(--text);
 }
 .dnd-item.is-on {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  background: var(--surface);
+  border-color: #cbd5e1;
 }
 .dnd-item.is-on .dnd-label {
   color: var(--text);
   font-weight: 600;
+}
+.dnd-item:not(.is-on) .dnd-label {
+  color: var(--text-muted);
 }
 .dnd-item input[type="checkbox"] {
   margin: 0;
@@ -2050,6 +2121,67 @@ td.muted-text {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Название центрируется по вертикали, когда этапа нет; строки остаются одной высоты */
+#main-table .cell-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 34px;
+}
+#main-table .cell-sub:empty {
+  display: none;
+}
+/* Шапка: одинаковая высота у всех столбцов, подписи в одну строку */
+#main-table thead th {
+  height: 40px;
+  padding: 0 8px;
+  vertical-align: middle;
+  letter-spacing: 0.04em;
+}
+#main-table thead .th-label {
+  vertical-align: middle;
+}
+@media screen {
+  #main-table tfoot {
+    display: none;
+  }
+}
+/* Вторая строка (этап) — мелкая и приглушённая */
+#main-table .cell-sub {
+  line-height: 1.35;
+}
+/* Подсветка совпадений поиска */
+mark.search-hit {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: #fde68a;
+  color: inherit;
+}
+.status-badge mark.search-hit {
+  background: rgba(15, 23, 42, 0.12);
+}
+:root[data-theme="dark"] mark.search-hit {
+  background: rgba(250, 204, 21, 0.3);
+}
+/* Компактные строки */
+body.table-compact #main-table tbody td {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+body.table-compact #main-table .cell-stack {
+  height: 31px;
+}
+body.table-compact #main-table .cell-sub {
+  font-size: 10px;
+}
+body.table-compact #main-table tbody tr {
+  font-size: 11.5px;
+}
+.btn-compact[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .table-scroll {
   scrollbar-gutter: stable;
   min-height: 0;
@@ -2082,7 +2214,15 @@ td.muted-text {
 
 @media (min-width: 769px) {
   .table-layout {
-    align-items: stretch;
+    align-items: flex-start;
+  }
+  /* Панель фильтров по высоте содержимого, но не выше окна: не пустует вниз. */
+  .sidebar {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100dvh - 96px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   .table-container {
     height: calc(100dvh - 112px);
@@ -2109,10 +2249,16 @@ td.muted-text {
 }
 /* Полосатые строки: одинаковый фон во всех столбцах, включая закреплённый */
 :root {
-  --row-alt: #f8fafc;
+  --row-alt: #fbfcfe;
+  --total-bg: #eef2ff;
+  --total-text: #312e81;
+  --total-line: var(--accent);
 }
 :root[data-theme="dark"] {
-  --row-alt: #0e1728;
+  --row-alt: #0f1a2c;
+  --total-bg: #1e1b4b;
+  --total-text: #e0e7ff;
+  --total-line: #6366f1;
 }
 
 /* ==========================================================================
@@ -2182,10 +2328,11 @@ td.muted-text {
   position: sticky;
   bottom: 0;
   z-index: 5;
-  background: var(--surface);
-  border-top: 2px solid var(--border);
+  background: var(--total-bg);
+  border-top: 2px solid var(--total-line);
   font-weight: 700;
-  color: var(--text);
+  color: var(--total-text);
+  font-variant-numeric: tabular-nums;
 }
 #main-table tfoot th {
   text-align: left;
@@ -2453,8 +2600,21 @@ td.muted-text {
   }
   body.printing-report #main-table tfoot th,
   body.printing-report #main-table tfoot td {
-    background: #eef1f5 !important;
-    border-top: 1px solid #999 !important;
+    background: #e8ecfb !important;
+    border-top: 2px solid #4338ca !important;
+    color: #1e1b4b !important;
+  }
+  /* Служебные элементы экрана в отчёт не попадают */
+  body.printing-report .sort-icon,
+  body.printing-report .table-stats,
+  body.printing-report .btn-compact {
+    display: none !important;
+  }
+  body.printing-report #main-table tfoot {
+    display: table-footer-group !important;
+  }
+  body.printing-report mark.search-hit {
+    background: transparent !important;
   }
   /* Цветные плашки статусов в отчёте (общий печатный CSS делает их серыми) */
   body.printing-report .status-badge {
@@ -2491,9 +2651,11 @@ td.muted-text {
      и текст выглядит «мыльным». */
   body.printing-report .container,
   body.printing-report .main-content,
+  body.printing-report .table-layout,
   body.printing-report .table-scroll,
   body.printing-report .table-container,
   body.printing-report .year-table-wrap {
+    width: 100% !important;
     max-width: 100% !important;
     overflow: visible !important;
   }
@@ -2501,6 +2663,18 @@ td.muted-text {
   body.printing-report .year-table {
     width: 100% !important;
     table-layout: auto !important;
+    font-size: 8px !important;
+  }
+  /* 13 числовых столбцов с неразрывными пробелами шире A4: сжимаем отступы,
+     иначе браузер масштабирует всю страницу и текст «мылится». */
+  body.printing-report .year-table th,
+  body.printing-report .year-table td {
+    padding: 2px 2px !important;
+  }
+  body.printing-report .year-table th:first-child,
+  body.printing-report .year-table td:first-child {
+    width: auto !important;
+    padding-left: 2px !important;
   }
 }
 

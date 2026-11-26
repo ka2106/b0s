@@ -116,6 +116,21 @@
       })
       .join("");
 
+  // Подсветка совпадений поиска: экранируем текст, затем оборачиваем найденное в <mark>.
+  let searchHitQuery = "";
+  let searchHitRe = null;
+  const highlightSearch = (value) => {
+    const safe = esc(value);
+    const query = (state.search || "").trim();
+    if (!query) return safe;
+    if (query !== searchHitQuery) {
+      const pattern = esc(query).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      searchHitQuery = query;
+      searchHitRe = new RegExp(`(${pattern})`, "gi");
+    }
+    return safe.replace(searchHitRe, '<mark class="search-hit">$1</mark>');
+  };
+
   const debounce = (fn, ms) => {
     let t = 0;
     return (...args) => {
@@ -209,6 +224,16 @@
     if (!s) return "Не указан";
     return STATUS_ALIASES[s.toLowerCase()] || s;
   };
+  // Длинные формулировки источника сводим к коротким подписям (таблица, фильтр, Excel).
+  const SOURCE_ALIASES = {
+    "предварительная экспертная оценка планируемой площади строительства":
+      "Экспертная оценка",
+  };
+  const canonicalSource = (v) => {
+    const s = String(v ?? "").trim();
+    if (!s) return "";
+    return SOURCE_ALIASES[s.toLowerCase()] || s;
+  };
   const statusConf = (s) =>
     STATUS_CONF[s] || { color: "#94a3b8", hex: "#94a3b8", badge: "gray" };
 
@@ -261,6 +286,7 @@
     },
     sort: { col: null, dir: 1 },
     search: "",
+    compact: true,
     dataTs: null,
     loading: false,
     lastFingerprint: null,
@@ -348,6 +374,7 @@
         CONFIG.stateKey,
         JSON.stringify({
           showBVS: state.showBVS,
+          compact: state.compact,
           columns: state.columnOrder,
           visible: [...state.visible],
           filters,
@@ -367,6 +394,7 @@
       if (!saved) return;
       const s = JSON.parse(saved);
       if (typeof s.showBVS === "boolean") state.showBVS = s.showBVS;
+      if (typeof s.compact === "boolean") state.compact = s.compact;
       if (
         Array.isArray(s.columns) &&
         s.columns.every((c) => typeof c === "string")
@@ -659,6 +687,18 @@
       let category = getVal("категория") || getVal("категория объекта") || "";
       if (category === "Вспомогательные объекты") category = "Прочее";
 
+      // Капремонт — не наш объект: строку из источника полностью игнорируем.
+      const kmText = [
+        getVal("статус площадки"),
+        getVal("статус"),
+        getVal("этап"),
+        getVal("объект"),
+        getVal("категория"),
+      ]
+        .map((v) => String(v ?? "").toLowerCase())
+        .join(" ");
+      if (kmText.includes("капремонт")) return null;
+
       const areaKeys = [
         "площадь блоков мезонина",
         "площадь оперзоны",
@@ -681,7 +721,7 @@
         areaOper: area("площадь оперзоны"),
         areaFreeze: area("площадь заморозки"),
         areaBuild: area("площадь строительства"),
-        source: getVal("источник данных площади") || "",
+        source: canonicalSource(getVal("источник данных площади")),
         damage: getVal("повреждения") || "",
         rvText: cleanRvText,
         rvLink,
@@ -694,7 +734,7 @@
           String(getVal("объект") || "").includes("БВС") ||
           String(getVal("этап") || "").includes("БВС"),
       };
-    });
+    }).filter(Boolean);
   }
 
   function stageLabel(r) {
@@ -703,9 +743,12 @@
       const escapedObj = r.obj.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       s = s.replace(new RegExp(escapedObj, "i"), "");
     }
-    s = s.replace(/^[\s\-()]+|[\s\-()]+$/g, "").trim();
-    if (/^абч$/i.test(s)) s = "(АБЧ)";
-    else if (/^бвс$/i.test(s)) s = "(БВС)";
+    s = s.replace(/^[\s\-]+|[\s\-]+$/g, "").trim();
+    // Снимаем скобки только если они обрамляют строку целиком:
+    // «Алексин (БВС)» должен сохранить закрывающую скобку.
+    if (/^\([^()]+\)$/.test(s)) s = s.slice(1, -1).trim();
+    if (/^абч$/i.test(s)) s = "АБЧ";
+    else if (/^бвс$/i.test(s)) s = "БВС";
     if (s === r.obj) s = "";
     return s;
   }
@@ -926,15 +969,19 @@
         defs
           .map((def) => {
             const active = state.sort.col === def.key;
-            const arrow = active ? (state.sort.dir === 1 ? "▲" : "▼") : "";
             const ariaSort = active
               ? state.sort.dir === 1
                 ? "ascending"
                 : "descending"
               : "none";
-            return `<th class="${def.class}" data-sort="${def.key}" tabindex="0" aria-sort="${ariaSort}">${esc(
+            const iconCls = active
+              ? state.sort.dir === 1
+                ? "sort-icon is-asc"
+                : "sort-icon is-desc"
+              : "sort-icon";
+            return `<th class="${def.class}${active ? " is-sorted" : ""}" data-sort="${def.key}" tabindex="0" aria-sort="${ariaSort}"><span class="th-label">${esc(
               def.label,
-            )} <span class="sort-icon" aria-hidden="true">${arrow}</span></th>`;
+            )}</span><svg class="${iconCls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 15 12 9 18 15"></polyline></svg></th>`;
           })
           .join("") +
         "</tr>";
@@ -950,12 +997,13 @@
     const count = $("table-count");
     if (count) count.textContent = `${state.filteredData.length} из ${state.rawData.length}`;
 
+    renderTableSummary(defs);
     renderTableFoot(defs);
   }
 
-  function renderTableFoot(defs) {
-    const foot = $("table-foot");
-    if (!foot) return;
+  // Итоги для печати: tfoot в конце реестра (на экране tfoot скрыт).
+  function totalsRowMarkup(defs) {
+    if (!state.filteredData.length) return "";
     const sums = new Map();
     for (const def of defs) {
       if (!def.numeric) continue;
@@ -964,20 +1012,107 @@
         state.filteredData.reduce((sum, r) => sum + (r[def.key] || 0), 0),
       );
     }
-    if (!sums.size || !state.filteredData.length) {
-      foot.innerHTML = "";
-      return;
-    }
+    const n = state.filteredData.length;
     const cells = defs.map((def, index) => {
       if (def.numeric) {
         return `<td class="${def.class}">${showNum(sums.get(def.key))}</td>`;
       }
       if (index === 0) {
-        return `<th class="${def.class}" scope="row">Итого: ${state.filteredData.length}</th>`;
+        return `<th class="${def.class}" scope="row">Итого · ${n} ${plural(n, [
+          "строка",
+          "строки",
+          "строк",
+        ])}</th>`;
       }
       return `<td class="${def.class}"></td>`;
     });
-    foot.innerHTML = `<tr>${cells.join("")}</tr>`;
+    return `<tr class="total-row">${cells.join("")}</tr>`;
+  }
+
+  // Сводка под заголовком карточки: объекты, этапы/АБЧ, статусы, площади, РВ.
+  function renderTableSummary(defs) {
+    const host = $("table-stats");
+    if (!host) return;
+    const data = state.filteredData;
+    if (!data.length) {
+      host.innerHTML = "";
+      return;
+    }
+    const objects = new Set(data.map((r) => r.obj).filter(Boolean)).size;
+    const abch = data.filter(isAbchRow).length;
+    const stages = data.length - abch;
+    const sum = (key) => data.reduce((acc, r) => acc + (r[key] || 0), 0);
+    const area = sum("areaBuild");
+    const shortNum = (v) =>
+      v >= 1e6
+        ? `${(v / 1e6).toLocaleString("ru-RU", {
+            maximumFractionDigits: 2,
+          })} млн`
+        : v >= 1e3
+          ? `${(v / 1e3).toLocaleString("ru-RU", {
+              maximumFractionDigits: 1,
+            })} тыс.`
+          : fmt(v);
+    const areaTitle = `Площадь: ${fmt(area)} м² · Стройка ${fmt(
+      sum("areaBuild"),
+    )} · Мезонин ${fmt(sum("areaMezzanine"))} · Оперзона ${fmt(
+      sum("areaOper"),
+    )} · Заморозка ${fmt(sum("areaFreeze"))}`;
+
+    const statusCount = new Map();
+    for (const r of data) {
+      statusCount.set(r.status, (statusCount.get(r.status) || 0) + 1);
+    }
+    const order = [
+      ...Object.keys(STATUS_CONF),
+      ...[...statusCount.keys()].filter((s) => !STATUS_CONF[s]),
+    ];
+    const statusHtml = order
+      .filter((s) => statusCount.has(s))
+      .map(
+        (s) =>
+          `<span class="stat-item"><i class="stat-dot" style="background:${
+            (STATUS_CONF[s] && STATUS_CONF[s].color) || "#64748b"
+          }"></i>${esc(s)} <b>${statusCount.get(s)}</b></span>`,
+      )
+      .join("");
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let rvDone = 0;
+    let rvPlan = 0;
+    for (const r of data) {
+      if (!r.rvDate) continue;
+      if (r.rvDate < today) rvDone++;
+      else rvPlan++;
+    }
+
+    host.innerHTML = `
+      <div class="stat-line"><span class="stat-item"><b>${data.length}</b> ${plural(
+        data.length,
+        ["строка", "строки", "строк"],
+      )} · <b>${objects}</b> ${plural(objects, [
+        "объект",
+        "объекта",
+        "объектов",
+      ])} · <b>${stages}</b> ${plural(stages, [
+        "этап",
+        "этапа",
+        "этапов",
+      ])} · <b>${abch}</b> АБЧ</span></div>
+      <div class="stat-line">${statusHtml}</div>
+      <div class="stat-line">
+        <span class="stat-item" title="РВ получено — дата в прошлом, к получению — в будущем">РВ: получено <b>${rvDone}</b> · к получению <b>${rvPlan}</b></span>
+        <span class="stat-item" title="${esc(areaTitle)}">Площадь <b>${shortNum(
+          area,
+        )}</b> м²</span>
+      </div>`;
+  }
+
+  function renderTableFoot(defs) {
+    const foot = $("table-foot");
+    if (!foot) return;
+    foot.innerHTML = totalsRowMarkup(defs);
   }
 
   function renderRow(r, defs) {
@@ -987,18 +1122,21 @@
       ? `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" class="raw-link">${esc(
           r.rvText || "Ссылка",
         )}</a>`
-      : linkify(r.rvText || "—");
+      : linkify(r.rvText);
     const stage = stageLabel(r);
 
     const cells = defs.map((def) => {
       const label = `data-label="${esc(def.label)}"`;
       if (def.key === "obj") {
-        return `<td ${label} class="${def.class}"><div class="cell-title" title="${esc(
+        // Обёртка центрирует название по вертикали, когда этапа нет.
+        return `<td ${label} class="${def.class}"><div class="cell-stack"><div class="cell-title" title="${esc(
           r.obj,
-        )}">${esc(r.obj)}</div>${stage ? `<div class="cell-sub" title="${esc(stage)}">${esc(stage)}</div>` : ""}</td>`;
+        )}">${highlightSearch(r.obj)}</div><div class="cell-sub" title="${esc(
+          stage,
+        )}">${highlightSearch(stage)}</div></div></td>`;
       }
       if (def.key === "status") {
-        return `<td ${label} class="${def.class}"><span class="status-badge ${conf.badge}">${esc(
+        return `<td ${label} class="${def.class}"><span class="status-badge ${conf.badge}">${highlightSearch(
           r.status,
         )}</span></td>`;
       }
@@ -1015,7 +1153,7 @@
         def.key === "source" || def.key === "damage" ? " cell-muted" : "";
       return `<td ${label} class="${def.class}${cls}" title="${esc(
         r[def.key],
-      )}">${esc(r[def.key])}</td>`;
+      )}">${highlightSearch(r[def.key])}</td>`;
     });
     return `<tr>${cells.join("")}</tr>`;
   }
@@ -3150,7 +3288,29 @@
     }, CONFIG.autoRefreshMs);
   }
 
+  function applyDensity() {
+    document.body.classList.toggle("table-compact", !!state.compact);
+    const btn = $("btn-compact");
+    if (btn) {
+      btn.setAttribute("aria-pressed", state.compact ? "true" : "false");
+      btn.title = state.compact
+        ? "Обычная высота строк"
+        : "Компактные строки: больше строк на экране";
+    }
+  }
+
   function initTableHandlers() {
+    // Плотность строк: запоминается в настройках, печать не затрагивает.
+    applyDensity();
+    const density = $("btn-compact");
+    if (density) {
+      density.addEventListener("click", () => {
+        state.compact = !state.compact;
+        applyDensity();
+        saveState();
+      });
+    }
+
     const head = $("main-table-head");
     if (head) {
       head.addEventListener("click", (e) => {
