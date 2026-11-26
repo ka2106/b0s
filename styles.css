@@ -1791,6 +1791,12 @@ td.muted-text {
   }
 
 /* Печать */
+/* Формат листа задаём одним правилом верхнего уровня: внутри @media print
+   некоторые браузеры игнорируют size и печатают в портрет. */
+@page {
+  size: A4 landscape;
+  margin: 10mm 12mm;
+}
 @media print {
   :root,
   :root[data-theme] {
@@ -1858,9 +1864,15 @@ td.muted-text {
     font-size: 9px;
     table-layout: auto;
   }
+  /* На экране таблице задана мин-ширина по сумме столбцов (inline style) —
+     в печати она не нужна, иначе правые столбцы уходят за лист. */
+  #main-table {
+    min-width: 0 !important;
+  }
   th,
   td {
     white-space: normal !important;
+    font-size: 9px;
   }
   th {
     position: static !important;
@@ -1890,8 +1902,56 @@ td.muted-text {
   .delivery-item {
     border-left-color: #999;
   }
-  @page {
-    margin: 12mm;
+  /* Ширина области печати равна ширине листа, поэтому на A4-портрете срабатывают
+     мобильные правила (max-width: 768px): шапка таблицы уезжает за край, строки
+     становятся «плитками» с подписями из td::before. В печати возвращаем таблицу. */
+  thead tr {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+  }
+  table {
+    display: table !important;
+  }
+  thead {
+    display: table-header-group !important;
+  }
+  tbody {
+    display: table-row-group !important;
+  }
+  tr {
+    display: table-row !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+  }
+  th,
+  td {
+    display: table-cell !important;
+    padding: 4px 5px !important;
+    text-align: left !important;
+  }
+  td::before {
+    content: none !important;
+    display: none !important;
+  }
+  /* Мобильные правила прячут пустые ячейки и делают первую блочной — в печати
+     это сдвигает столбцы, поэтому возвращаем всем ячейкам табличное поведение. */
+  table td:nth-child(1),
+  table td:empty {
+    display: table-cell !important;
+  }
+  /* Выравнивание по левому краю выше сбрасывает центрирование таблицы месяцев. */
+  .year-table th,
+  .year-table td {
+    text-align: center !important;
+  }
+  .year-table th:first-child,
+  .year-table td:first-child {
+    text-align: left !important;
   }
 }
 
@@ -2237,10 +2297,6 @@ td.muted-text {
    Печатный макет: A4 горизонтально, аккуратные отступы, три режима отчёта
    ========================================================================== */
 @media print {
-  @page {
-    size: A4 landscape;
-    margin: 10mm 12mm;
-  }
   .report-menu {
     display: none !important;
   }
@@ -2379,6 +2435,15 @@ td.muted-text {
     padding: 3px 5px !important;
     border-bottom: 1px solid #c9d1db !important;
     color: #111 !important;
+    font-size: 10px !important;
+  }
+  /* На экране первая строка объекта обрезается многоточием (nowrap); в печати
+     переносим — иначе мин-ширина столбца больше листа и таблица не влезает. */
+  body.printing-report #main-table .cell-title,
+  body.printing-report #main-table .cell-sub {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
   }
   body.printing-report #main-table tbody tr:nth-child(even) td {
     background: #f5f7fa !important;
@@ -2394,6 +2459,9 @@ td.muted-text {
   /* Цветные плашки статусов в отчёте (общий печатный CSS делает их серыми) */
   body.printing-report .status-badge {
     border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    font-size: 8px !important;
+    line-height: 1.4 !important;
+    padding: 1px 4px !important;
   }
   body.printing-report .status-badge.delivered {
     background: #dcfce7 !important;
@@ -2447,6 +2515,11 @@ td.muted-text {
   }
   body.printing-report .charts-row {
     grid-template-columns: 1fr !important;
+  }
+  body.printing-report #main-table th,
+  body.printing-report #main-table td {
+    padding: 2px 3px !important;
+    font-size: 8px !important;
   }
   body.print-mode-all #tab-table {
     break-before: page !important;
